@@ -7,7 +7,7 @@
 - Error notification: Network or unexpected errors should be shown as toast notifications.
 - All user-facing text should support localization (English/Finnish) using translation keys.
 - When presenting buttons, labels or links in issue descriptions, uses the following format: `Button label: 'Label text' (use translation key)`. This indicates that the text should be stored as a translation key for localization purposes.
-- The order of UX elements are presented in the same order in issue as they should be implemented in the UI unless specified differently in issue description. For example, if a 'Verify' button is mentioned before a 'Register new PIN code' link, then the 'Verify' button should be implemented and placed in the UI before the 'Register new PIN code' link. This helps maintain a clear and consistent user interface flow.
+- The order of UX elements are presented in the same order in issue as they should be implemented in the UI unless specified differently in issue description. For example, if a 'Verify' button is mentioned after a 'Register new PIN code' link, then the 'Verify' button should be implemented and placed in the UI after the 'Register new PIN code' link. This helps maintain a clear and consistent user interface flow.
 
 ## Frontend top-level layout
 - structure:
