@@ -3,6 +3,11 @@
 - `vite.config.ts` reads `VITE_BASE` from env to configure the correct base for GitHub Pages.
 - For Apps Script POST requests, set `redirect: 'follow'` and `Content-Type: 'text/plain;charset=utf-8'`.
 - Keep API URL in `VITE_GAS_BASE_URL` and token in `VITE_API_TOKEN`.
+- All interactive elements should be accessible via keyboard and screen reader.
+- Error notification: Network or unexpected errors should be shown as toast notifications.
+- All user-facing text should support localization (English/Finnish) using translation keys.
+- When presenting buttons, labels or links in issue descriptions, uses the following format: `Button label: 'Label text' (use translation key)`. This indicates that the text should be stored as a translation key for localization purposes.
+- The order of UX elements are presented in the same order in issue as they should be implemented in the UI unless specified differently in issue description. For example, if a 'Verify' button is mentioned before a 'Register new PIN code' link, then the 'Verify' button should be implemented and placed in the UI before the 'Register new PIN code' link. This helps maintain a clear and consistent user interface flow.
 
 ## Frontend top-level layout
 - structure:
