@@ -1,0 +1,42 @@
+/**
+ * @copyright 2026 Jouni Sipola by OQM
+ * @description CSS Module styles for HomePage.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.placeholder {
+  margin-bottom: 2rem;
+  font-size: 1.2rem;
+  color: #555;
+  text-align: center;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.buttonRow button {
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  border: 1px solid #0066cc;
+  background: #0066cc;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.buttonRow button:hover {
+  background: #0052a3;
+}

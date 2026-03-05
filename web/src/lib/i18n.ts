@@ -1,5 +1,5 @@
 /**
- * @copyright 2026 OQM Registration
+ * @copyright 2026 Jouni Sipola by OQM
  * @description i18n initialisation using i18next and react-i18next.
  *   Supports English (default) and Finnish.
  *   See locales/en.json and locales/fi.json for translation keys.

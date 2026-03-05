@@ -1,5 +1,5 @@
 /**
- * @copyright 2026 OQM Registration
+ * @copyright 2026 Jouni Sipola by OQM
  * @description Application entry point. Initialises i18n and wraps the
  *   component tree with the SettingsProvider so settings are fetched on startup.
  */

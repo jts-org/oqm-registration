@@ -1,5 +1,5 @@
 /**
- * @copyright 2026 OQM Registration
+ * @copyright 2026 Jouni Sipola by OQM
  * @description Tests for settings.api — written before implementation (TDD).
  *   Verifies route URL construction, response parsing, and error handling.
  *   @see skills/SKILL.wire-react-to-gas.md

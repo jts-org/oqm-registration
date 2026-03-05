@@ -1,5 +1,5 @@
 /**
- * @copyright 2026 OQM Registration
+ * @copyright 2026 Jouni Sipola by OQM
  * @description API functions for the settings feature.
  *   Calls the GAS backend route `getSettings` as defined in SKILL.wire-react-to-gas.md.
  *   Env vars are read inside each function so vi.stubEnv works correctly in tests.
