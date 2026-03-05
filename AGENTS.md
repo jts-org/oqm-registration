@@ -9,6 +9,7 @@ This repository follows **issue-driven scoped autonomy**. Agents (including GitH
 4. **No Secrets In Repo**: Use environment variables / Script Properties.
 5. **Debug Efficiently**: Reproduce once, capture output, analyze.
 6. **Contract First**: Backend routes + payloads are declared in `skills/SKILL.wire-react-to-gas.md`.
+7. **Implement in branch**: For each issue, create a dedicated branch named after the issue (e.g., feature/oqm-123-description). Implement the feature or fix in this branch. Open a PR to merge into main/master only after review and CI checks pass.
 
 ## Architecture Overview
 
@@ -31,8 +32,14 @@ This repository follows **issue-driven scoped autonomy**. Agents (including GitH
 - ❌ Add cross-cutting refactors inside a feature PR.
 
 ## Definition of Done (per PR)
-- [ ] Linked issue closed by PR
-- [ ] Unit tests added/updated; pass locally & in CI
-- [ ] No secrets; `.env.example` updated if needed
-- [ ] API contract unchanged or documented migration
-- [ ] Checked against `review-checklist.instructions.md`
+
+## Onboarding New Contributors
+- Read AGENTS.md, skills/, and instructions before starting.
+- Set up local environment as described in README.md.
+- Review localization standards in copilot-instructions.md before implementing UI or API changes.
+
+## Escalation Process
+- If blocked by CI or PR review, tag a maintainer and describe the issue in the PR.
+
+## Skills Summary
+- List each skill file and its purpose for quick reference.

@@ -1,4 +1,4 @@
-# SKILL: Sheet Schema (example)
+# SKILL: Sheet Schema
 
 Sheet: `settings`
 
@@ -8,6 +8,8 @@ Sheet: `settings`
 | B | parameter   | string |
 | C | value       | string |
 | D | created_at  | ISO-8601 |
+| E | updated_at  | ISO-8601 |
+| f | purpose  | string |
 
 Sheet: `coach_login`
 
@@ -54,5 +56,16 @@ Sheet: `weekly_schedule`
 | F | location    | string |
 | G | active    | boolean |
 
-- `id` is UUIDv4 generated server-side.
-- Update this doc if headers change.
+## Changelog
+Track all schema changes here with date and reason.
+
+## Migration Steps
+Document steps for migrating data when columns change.
+Note how to handle deprecated fields and update affected code.
+
+## Deprecation Policy
+Mark deprecated fields in the schema table.
+Remove deprecated fields only after migration and documentation.
+
+## Localization
+If storing localized content, specify language code in the schema and document fallback behavior. For columns or data that are language-dependent, clearly indicate how to store and retrieve localized values.

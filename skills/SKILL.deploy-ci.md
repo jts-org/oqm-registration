@@ -1,8 +1,16 @@
 # SKILL: CI & GH Pages Deploy
 
 ## CI
-- Node setup → install → build → (tests when present).
 
 ## GH Pages
-- Workflow `deploy-pages.yml` sets `VITE_BASE` automatically to `/<repo>/` and uploads `web/dist`.
-- SPA fallback: copies `index.html` to `404.html`.
+
+## Deployment Steps
+- Frontend: `cd web && npm run build`
+- Backend: `cd gas && clasp push`
+- Web App: Deploy via Apps Script UI, copy new URL to .env.local
+
+## Troubleshooting
+- Common errors and solutions (e.g., clasp auth, Vite build errors, CORS issues).
+
+## Rollback
+- Document how to revert to previous deployment (restore from git, re-deploy old build).

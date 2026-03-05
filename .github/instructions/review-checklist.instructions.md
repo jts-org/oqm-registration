@@ -1,6 +1,5 @@
 # PR Review Checklist (Agent + Human)
-- [ ] Tests exist and pass (if applicable)
-- [ ] No secrets committed; env usage documented
-- [ ] API contract & schema unchanged or clearly migrated
-- [ ] Follows Vite/React conventions and GAS ContentService rules
-- [ ] CORS/redirect-safe fetch options used
+- [ ] Documentation updated (skills/ and instructions)
+- [ ] Relevant skill docs referenced in PR and code comments
+- [ ] Test coverage for new/changed code
+- [ ] Contract compliance verified

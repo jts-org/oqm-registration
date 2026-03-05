@@ -32,3 +32,12 @@ A ready-to-commit starter that uses a **React (Vite)** frontend with a **Google 
 - Vite getting started & static deploy to GitHub Pages.
 
 See `AGENTS.md` and `skills/` for the working method.
+## Environment Variables
+- VITE_GAS_BASE_URL: GAS web app endpoint
+- VITE_API_TOKEN: Shared secret for API access
+
+## Documentation Links
+- [AGENTS.md](AGENTS.md)
+- [skills/SKILL.sheet-schema.md](skills/SKILL.sheet-schema.md)
+- [skills/SKILL.wire-react-to-gas.md](skills/SKILL.wire-react-to-gas.md)
+- [skills/SKILL.deploy-ci.md](skills/SKILL.deploy-ci.md)
