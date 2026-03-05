@@ -1,0 +1,6 @@
+{
+  "app.title": "OQM Registration",
+  "settings.loading": "Loading settings…",
+  "settings.error": "Failed to load settings: {{message}}",
+  "settings.retry": "Retry"
+}

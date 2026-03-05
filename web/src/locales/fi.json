@@ -1,0 +1,6 @@
+{
+  "app.title": "OQM Rekisteröinti",
+  "settings.loading": "Ladataan asetuksia…",
+  "settings.error": "Asetusten lataus epäonnistui: {{message}}",
+  "settings.retry": "Yritä uudelleen"
+}
