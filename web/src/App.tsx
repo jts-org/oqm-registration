@@ -1,7 +1,18 @@
+/**
+ * @copyright 2026 OQM Registration
+ * @description Root application component.
+ *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
+ *   @see skills/SKILL.wire-react-to-gas.md
+ */
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { listItems, createItem } from './api'
+import { useSettingsContext } from './app/providers/SettingsProvider'
 
 export default function App() {
+  const { t } = useTranslation()
+  const { loading: settingsLoading, error: settingsError, reload } = useSettingsContext()
+
   const [items, setItems] = useState<any[]>([])
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -39,9 +50,26 @@ export default function App() {
     }
   }
 
+  if (settingsLoading) {
+    return (
+      <div className="container">
+        <p>{t('settings.loading')}</p>
+      </div>
+    )
+  }
+
+  if (settingsError) {
+    return (
+      <div className="container">
+        <p className="error">{t('settings.error', { message: settingsError })}</p>
+        <button onClick={reload}>{t('settings.retry')}</button>
+      </div>
+    )
+  }
+
   return (
     <div className="container">
-      <h1>React + GAS + Sheets</h1>
+      <h1>{t('app.title')}</h1>
       <p>Backend URL: <code>{import.meta.env.VITE_GAS_BASE_URL || '(not set)'}</code></p>
       {error && <p className="error">Error: {error}</p>}
 

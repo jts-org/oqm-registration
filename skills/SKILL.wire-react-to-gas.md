@@ -1,7 +1,8 @@
 # SKILL: Wire React to GAS API
 
 ## Contract
-- GET  `?route=listItems&token=...` → list rows
+- GET  `?route=listItems&token=...` → list rows from `Data` sheet
+- GET  `?route=getSettings&token=...` → list rows from `settings` sheet (QCM-0001)
 - POST `{ route: "createItem", payload, token }` → append row
 - Response JSON shape: `{ ok: true, data } | { ok: false, error }`
 
@@ -9,6 +10,19 @@
 ```ts
 const base = import.meta.env.VITE_GAS_BASE_URL;
 const token = import.meta.env.VITE_API_TOKEN;
+
+/** Shape of a single row returned from the `settings` sheet. */
+type Setting = { key: string; value: string };
+
+/** Fetch all settings rows (QCM-0001 — fetched on application startup). */
+export async function getSettings(): Promise<Setting[]> {
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const url = `${base}?route=getSettings&token=${encodeURIComponent(token || '')}`;
+  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Failed to fetch settings');
+  return data.data;
+}
 
 export async function createItem(payload: {name: string; email: string}) {
   const res = await fetch(base!, {

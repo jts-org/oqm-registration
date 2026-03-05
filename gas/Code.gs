@@ -1,7 +1,8 @@
 /**
  * Web API for Sheets
  * Routes:
- *  - GET  ?route=listItems
+ *  - GET  ?route=listItems       — list items from Data sheet
+ *  - GET  ?route=getSettings     — list rows from settings sheet (QCM-0001)
  *  - POST { route: "createItem", payload: { name, email } }
  */
 
@@ -14,6 +15,10 @@ function doGet(e) {
     const route = (e.parameter.route || '').toString();
     if (route === 'listItems') {
       const data = listItems_();
+      return json_({ ok: true, data });
+    }
+    if (route === 'getSettings') {
+      const data = listSettings_();
       return json_({ ok: true, data });
     }
     return json_({ ok: false, error: 'Unknown route' });
@@ -93,6 +98,23 @@ function listItems_() {
     name: String(r[1]),
     email: String(r[2]),
     created_at: String(r[3])
+  }));
+}
+
+/**
+ * Read all rows from the `settings` sheet.
+ * Schema: id, parameter, value, created_at, updated_at, purpose (columns A-F)
+ * See SKILL.sheet-schema.md for full schema definition.
+ */
+function listSettings_() {
+  const values = getSheetData('settings');
+  return values.filter(r => r[0]).map(r => ({
+    id: String(r[0]),
+    parameter: String(r[1]),
+    value: String(r[2]),
+    created_at: String(r[3]),
+    updated_at: String(r[4]),
+    purpose: String(r[5])
   }));
 }
 
