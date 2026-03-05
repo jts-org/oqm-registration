@@ -11,6 +11,9 @@
 const base = import.meta.env.VITE_GAS_BASE_URL;
 const token = import.meta.env.VITE_API_TOKEN;
 
+/** Shape of a single row returned from the `settings` sheet. */
+type Setting = { key: string; value: string };
+
 /** Fetch all settings rows (QCM-0001 — fetched on application startup). */
 export async function getSettings(): Promise<Setting[]> {
   if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
