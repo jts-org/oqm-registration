@@ -1,54 +1,24 @@
 /**
- * @copyright 2026 OQM Registration
+ * @copyright 2026 Jouni Sipola by OQM
  * @description Root application component.
+ *   Manages top-level view routing between the main view and role-specific pages.
  *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
  *   @see skills/SKILL.wire-react-to-gas.md
  */
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { listItems, createItem } from './api'
 import { useSettingsContext } from './app/providers/SettingsProvider'
+import { HomePage } from './pages/Home/HomePage'
+import { TraineePage } from './pages/Trainee/TraineePage'
+import { CoachPage } from './pages/Coach/CoachPage'
+import { AdminPage } from './pages/Admin/AdminPage'
+
+type View = 'main' | 'trainee' | 'coach' | 'admin'
 
 export default function App() {
   const { t } = useTranslation()
-  const { loading: settingsLoading, error: settingsError, reload } = useSettingsContext()
-
-  const [items, setItems] = useState<any[]>([])
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-
-  async function load() {
-    try {
-      setBusy(true)
-      setError(null)
-      const data = await listItems()
-      setItems(data)
-    } catch (e: any) {
-      setError(e.message || String(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  useEffect(() => { load() }, [])
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    try {
-      setBusy(true)
-      setError(null)
-      const created = await createItem({ name, email })
-      setItems(prev => [created, ...prev])
-      setName('')
-      setEmail('')
-    } catch (e: any) {
-      setError(e.message || String(e))
-    } finally {
-      setBusy(false)
-    }
-  }
+  const { settings, loading: settingsLoading, error: settingsError, reload } = useSettingsContext()
+  const [view, setView] = useState<View>('main')
 
   if (settingsLoading) {
     return (
@@ -67,37 +37,28 @@ export default function App() {
     )
   }
 
+  const coachPassword = settings.find(s => s.parameter === 'coach_pwd')?.value ?? ''
+  const adminPassword = settings.find(s => s.parameter === 'admin_pwd')?.value ?? ''
+
+  if (view === 'trainee') {
+    return <TraineePage onBack={() => setView('main')} />
+  }
+
+  if (view === 'coach') {
+    return <CoachPage onBack={() => setView('main')} />
+  }
+
+  if (view === 'admin') {
+    return <AdminPage onBack={() => setView('main')} />
+  }
+
   return (
-    <div className="container">
-      <h1>{t('app.title')}</h1>
-      <p>Backend URL: <code>{import.meta.env.VITE_GAS_BASE_URL || '(not set)'}</code></p>
-      {error && <p className="error">Error: {error}</p>}
-
-      <form onSubmit={onSubmit} className="card">
-        <h2>Add item</h2>
-        <label>
-          Name
-          <input value={name} onChange={e => setName(e.target.value)} required />
-        </label>
-        <label>
-          Email
-          <input value={email} onChange={e => setEmail(e.target.value)} required type="email" />
-        </label>
-        <button disabled={busy}>Create</button>
-      </form>
-
-      <section className="card">
-        <h2>Items {busy && '…'}</h2>
-        {!busy && items.length === 0 && <p>No data yet.</p>}
-        <ul>
-          {items.map(it => (
-            <li key={it.id}>
-              <b>{it.name}</b> — {it.email}
-              <small> ({it.id})</small>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
+    <HomePage
+      onGoTrainee={() => setView('trainee')}
+      onGoCoach={() => setView('coach')}
+      onGoAdmin={() => setView('admin')}
+      coachPassword={coachPassword}
+      adminPassword={adminPassword}
+    />
   )
 }

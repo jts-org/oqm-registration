@@ -1,5 +1,5 @@
 /**
- * @copyright 2026 OQM Registration
+ * @copyright 2026 Jouni Sipola by OQM
  * @description TypeScript interfaces for the settings feature.
  *   Matches the `settings` sheet schema defined in SKILL.sheet-schema.md.
  */

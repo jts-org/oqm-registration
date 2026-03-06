@@ -17,7 +17,7 @@ You are collaborating on a React (Vite) + Google Apps Script + Google Sheets sys
 - State management: Use React context sparingly. Prefer local state or lightweight libraries (Zustand, Jotai) when needed.
 - Data fetching: Use fetch with redirect: "follow" and Content-Type: text/plain;charset=utf-8 for POST to Apps Script. Parse JSON responses.
 - Error handling: Show user-visible messages and log context to console.
-- Copyright/JSDoc: Every new file/module must have a copyright header and a brief JSDoc comment describing its purpose.
+- Copyright/JSDoc: Every new file/module must have a copyright header and a brief JSDoc comment describing its purpose. See copyright header template below
 - Styling: Use CSS Modules or inline styles only. No global CSS.
 - ESLint: Enable React-specific, type-aware, and modern best-practice rulesets.
 - Exports: Avoid default exports for better discoverability and refactoring safety.
@@ -31,6 +31,16 @@ You are collaborating on a React (Vite) + Google Apps Script + Google Sheets sys
 - Support at least English and Finnish; default to English if no locale is set.
 - Store translations in dedicated files (e.g., locales/en.json, locales/fi.json).
 - Do not hardcode UI strings; use translation keys.
+
+### Copyright Header Template
+- 2026 is replaced with the current year when creating new files. Update the year in existing files if they are modified after 2026 or differ otherwise from the template.
+```js
+/**
+* @copyright 2026 Jouni Sipola by OQM. All rights reserved.
+* Permission granted for personal/internal use only. Commercial
+* use prohibited except by copyright holder. See LICENSE for details.
+*/
+```
 
 ## Architectural Rules
 - Frontend must only call GAS web app endpoints; never call Google APIs directly.

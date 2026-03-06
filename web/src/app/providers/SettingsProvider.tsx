@@ -1,5 +1,5 @@
 /**
- * @copyright 2026 OQM Registration
+ * @copyright 2026 Jouni Sipola by OQM
  * @description SettingsProvider — fetches application settings on startup and
  *   makes them available to all child components via React context.
  *   Also persists settings in sessionStorage for the duration of the session.
