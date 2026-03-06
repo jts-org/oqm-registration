@@ -1,5 +1,7 @@
 /**
- * @copyright 2026 Jouni Sipola by OQM
+ * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
+ * Permission granted for personal/internal use only. Commercial
+ * use prohibited except by copyright holder. See LICENSE for details.
  * @description Root application component.
  *   Manages top-level view routing between the main view and role-specific pages.
  *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
@@ -7,6 +9,7 @@
  */
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Toaster } from 'react-hot-toast'
 import { useSettingsContext } from './app/providers/SettingsProvider'
 import { HomePage } from './pages/Home/HomePage'
 import { TraineePage } from './pages/Trainee/TraineePage'
@@ -53,12 +56,15 @@ export default function App() {
   }
 
   return (
-    <HomePage
-      onGoTrainee={() => setView('trainee')}
-      onGoCoach={() => setView('coach')}
-      onGoAdmin={() => setView('admin')}
-      coachPassword={coachPassword}
-      adminPassword={adminPassword}
-    />
+    <>
+      <Toaster position="top-center" />
+      <HomePage
+        onGoTrainee={() => setView('trainee')}
+        onGoCoach={() => setView('coach')}
+        onGoAdmin={() => setView('admin')}
+        coachPassword={coachPassword}
+        adminPassword={adminPassword}
+      />
+    </>
   )
 }

@@ -1,15 +1,29 @@
 /**
- * @copyright 2026 Jouni Sipola by OQM
+ * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
+ * Permission granted for personal/internal use only. Commercial
+ * use prohibited except by copyright holder. See LICENSE for details.
  * @description Tests for CoachLoginDialog — modal for coach PIN / password login.
  *   Written before implementation (TDD).
  */
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import '../../../../lib/i18n';
 import { CoachLoginDialog } from '../CoachLoginDialog';
+
+vi.mock('../../api/coach.api', () => ({
+  registerCoachPin: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: { error: vi.fn(), success: vi.fn() },
+}));
+
+import { registerCoachPin } from '../../api/coach.api';
+
+const mockRegisterCoachPin = vi.mocked(registerCoachPin);
 
 const defaultProps = {
   open: true,
@@ -19,6 +33,10 @@ const defaultProps = {
 };
 
 describe('CoachLoginDialog', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRegisterCoachPin.mockResolvedValue(undefined);
+  });
   it('does not render when open=false', () => {
     render(<CoachLoginDialog {...defaultProps} open={false} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -142,13 +160,16 @@ describe('CoachLoginDialog', () => {
   it('after registering a PIN, the PIN field is filled with that value', async () => {
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.click(screen.getByRole('button', { name: 'Register new PIN code' }));
-    // Fill in RegisterPinDialog
-    const inputs = screen.getAllByLabelText('Enter new PIN code');
-    await userEvent.type(inputs[0], '9876');
+    // Fill in all required fields in RegisterPinDialog
+    await userEvent.type(screen.getByLabelText('Firstname'), 'John');
+    await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
+    await userEvent.type(screen.getByLabelText('Enter new PIN code'), '9876');
     await userEvent.type(screen.getByLabelText('Enter PIN again'), '9876');
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
-    // RegisterPinDialog should be gone and PIN field should have value
-    expect(screen.queryByRole('button', { name: 'Register' })).not.toBeInTheDocument();
+    // Wait for async registration to complete and dialog to close
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Register' })).not.toBeInTheDocument()
+    );
     expect(screen.getByLabelText('Enter PIN code')).toHaveValue('9876');
   });
 });

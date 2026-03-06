@@ -1,12 +1,17 @@
 /**
- * @copyright 2026 Jouni Sipola by OQM
+ * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
+ * Permission granted for personal/internal use only. Commercial
+ * use prohibited except by copyright holder. See LICENSE for details.
  * @description Modal dialog for coach login via PIN code or password.
  *   PIN must be 4–6 digits. Password is compared to the coach_pwd setting.
+ *   Opens a RegisterPinDialog when the user wants to register a new PIN.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RegisterPinDialog } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
+import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
+import { registerCoachPin } from '../api/coach.api';
 import type { CoachLoginDialogProps } from '../types';
 import styles from './CoachLoginDialog.module.css';
 
@@ -46,6 +51,10 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
     setRegisterPinOpen(true);
   }
 
+  async function handleCoachRegistration(data: RegisterPinData) {
+    await registerCoachPin(data);
+  }
+
   function handlePinRegistered(newPin: string) {
     setPin(newPin);
     setRegisterPinOpen(false);
@@ -72,7 +81,7 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
               <label htmlFor="coach-pin">{t('coachLogin.enterPin')}</label>
               <input
                 id="coach-pin"
-                type="text"
+                type="password"
                 inputMode="numeric"
                 value={pin}
                 onChange={e => setPin(e.target.value)}
@@ -125,9 +134,12 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
 
       <RegisterPinDialog
         open={registerPinOpen}
-        onRegister={handlePinRegistered}
+        onRegister={handleCoachRegistration}
+        onSuccess={handlePinRegistered}
         onCancel={handleRegisterPinCancel}
+        showAlias={true}
       />
     </>
   );
 }
+
