@@ -4,6 +4,7 @@
  *  - GET  ?route=listItems       — list items from Data sheet
  *  - GET  ?route=getSettings     — list rows from settings sheet (QCM-0001)
  *  - POST { route: "createItem", payload: { name, email } }
+ *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin } } — register a new coach PIN code (QCM-0003)
  */
 
 const SHEET_ID = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
@@ -11,8 +12,11 @@ const API_TOKEN = PropertiesService.getScriptProperties().getProperty('API_TOKEN
 
 function doGet(e) {
   try {
+    logToSheet(`doGet - before auth SHEET_ID: ${SHEET_ID}, API_TOKEN: ${API_TOKEN}`);
     authorize_(e);
+    logToSheet(`doGet - after auth`);
     const route = (e.parameter.route || '').toString();
+    logToSheet(`doGet - route: ${route}`);
     if (route === 'listItems') {
       const data = listItems_();
       return json_({ ok: true, data });
@@ -33,12 +37,19 @@ function doPost(e) {
     authorize_(e);
     logToSheet(`doPost - after auth`);
     const body = e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
-    logToSheet(`doPost - body: ${body}`);
+    logToSheet(`doPost - body: ${JSON.stringify(body)}`);
     const route = body.route;
     const payload = body.payload;
     if (route === 'createItem') {
       const created = createItem_(payload);
       return json_({ ok: true, data: created });
+    }
+    if (route === 'registerCoachPin') {
+      const result = registerCoachPin_(payload);
+      if (result.pinReserved) {
+        return json_({ ok: false, error: 'pin_reserved' });
+      }
+      return json_({ ok: true, data: result });
     }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
@@ -47,7 +58,7 @@ function doPost(e) {
 }
 
 function json_(obj, _status) {
-  
+  logToSheet(`return - obj: ${JSON.stringify(obj)}, status: ${_status}`);
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
@@ -125,6 +136,48 @@ function createItem_(payload) {
   const now = new Date().toISOString();
   sh.appendRow([id, payload.name, payload.email, now]);
   return { id, name: payload.name, email: payload.email, created_at: now };
+}
+
+/**
+ * Register a new coach PIN code.
+ * Checks that the PIN does not exist in coach_login or trainee_login sheets.
+ * If the PIN is already taken, returns { pinReserved: true }.
+ * Otherwise appends a new row to coach_login and returns the created record.
+ * Schema: id, firstname, lastname, alias, pin, created_at, last_activity (columns A–G)
+ * See SKILL.sheet-schema.md for full schema definition.
+ * See SKILL.wire-react-to-gas.md for API contract.
+ */
+function registerCoachPin_(payload) {
+  if (!payload || !payload.firstname || !payload.lastname || !payload.pin) {
+    throw new Error('Missing required fields: firstname, lastname, pin');
+  }
+
+  // Check PIN is not already in use in coach_login (column E, index 4)
+  const coachPins = getSheetData('coach_login')
+    .filter(r => r[4])
+    .map(r => String(r[4]));
+
+  // Check PIN is not already in use in trainee_login (column E, index 4)
+  const traineePins = getSheetData('trainee_login')
+    .filter(r => r[4])
+    .map(r => String(r[4]));
+
+  if (coachPins.includes(payload.pin) || traineePins.includes(payload.pin)) {
+    return { pinReserved: true };
+  }
+
+  const sh = getSheetByName('coach_login');
+  const id = Utilities.getUuid();
+  const now = new Date().toISOString();
+  sh.appendRow([id, payload.firstname, payload.lastname, payload.alias || '', payload.pin, now, '']);
+  return {
+    id,
+    firstname: payload.firstname,
+    lastname: payload.lastname,
+    alias: payload.alias || '',
+    pin: payload.pin,
+    created_at: now
+  };
 }
 
 // usage: 
