@@ -216,9 +216,10 @@ describe('CoachLoginDialog', () => {
   it('clicking "Register new PIN code" opens the RegisterPinDialog', async () => {
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.click(screen.getByRole('button', { name: 'Register new PIN code' }));
-    // A second dialog should now be visible (RegisterPinDialog)
-    expect(screen.getAllByRole('dialog').length).toBeGreaterThan(1);
-    // The RegisterPinDialog title heading should be present
+    // When RegisterPinDialog (second modal) opens, MUI sets aria-hidden on the first modal.
+    // Use { hidden: true } to query all dialog roles including aria-hidden ones.
+    expect(screen.getAllByRole('dialog', { hidden: true }).length).toBeGreaterThan(1);
+    // The RegisterPinDialog title heading should be present (active modal)
     expect(screen.getByRole('heading', { name: 'Register new PIN code' })).toBeInTheDocument();
   });
 

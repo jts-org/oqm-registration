@@ -9,7 +9,7 @@
   "include": [
     "**/*.js",
     "**/*.gs"
-  ],
+, "web/src/theme.config.ts"  ],
   "exclude": [
     "node_modules"
   ],

@@ -3,17 +3,27 @@
 - `vite.config.ts` reads `VITE_BASE` from env to configure the correct base for GitHub Pages.
 - For Apps Script POST requests, set `redirect: 'follow'` and `Content-Type: 'text/plain;charset=utf-8'`.
 - Keep API URL in `VITE_GAS_BASE_URL` and token in `VITE_API_TOKEN`.
-- All UX elementsmust have ARIA modal attributes, all fields must have labels, and keyboard focus must be managed.
-- All interactive elements should be accessible via keyboard and screen reader.
+
+## UX and Accessibility
+- Use Material UI library for consistent design and built-in accessibility.
+- All UI components must be responsive and accessible via keyboard and screen reader.
+- Follow ARIA guidelines for modals, forms, and interactive elements.
+- Use CSS modules or CSS-in-JS for styling.
+- Localize all user-facing text using `web/src/lib/i18n.ts` and `web/src/locales/` instead of hardcoded text. By default, use English keys and provide Finnish and English translations.
+- When presenting tittles, buttons, links, etc. in issue descriptions, use of: `Button label: 'Label text' (use translation key)` indicates that the text should be stored as a translation key for localization purposes.
+- During API operations, block user interactions with the UI using dimmed overlay with a centered loader. This ensures that users are aware that an operation is in progress and prevents unintended actions while waiting for a response.
+
+## Theme Utilization
+- Use the provided `ThemeContext` and `getTheme` function to apply themes across the app. The theme is defined in `web/src/theme.config.ts` and can be switched by changing the value passed to `getTheme` (e.g., 'dark', 'light', or sport-specific themes).
+- Ensure that all components consume the theme context to maintain a consistent look and feel throughout the application. This includes using theme colors, fonts, and spacing defined in the theme configuration.
+- When implementing new components or pages, make sure to utilize the theme variables for styling instead of hardcoding values. This allows for easier maintenance and ensures that any theme changes will automatically reflect across the entire app without needing to update individual components.
+
+## Error handling and notifications
 - Error notification types: 
     * Inline notifications for validation errors
     * Toast notifications for network or unexpected errors
     * Modal dialogs for critical errors
 - In error situations show user-friendly messages, log errors and avoid app crashes.
-- All user-facing text should support localization (English/Finnish) using translation keys.
-- When presenting buttons, labels or links in issue descriptions, uses the following format: `Button label: 'Label text' (use translation key)`. This indicates that the text should be stored as a translation key for localization purposes.
-- The order of UX elements are presented in the same order in issue as they should be implemented in the UI unless specified differently in issue description. For example, if a 'Verify' button is mentioned after a 'Register new PIN code' link, then the 'Verify' button should be implemented and placed in the UI after the 'Register new PIN code' link. This helps maintain a clear and consistent user interface flow.
-- During API operations, block user interactions with the UI using dimmed overlay with a centered loader. This ensures that users are aware that an operation is in progress and prevents unintended actions while waiting for a response.
 
 ## Frontend top-level layout
 - structure:
@@ -101,13 +111,13 @@
 ### Styles and assets
 - `web/src/assets/` contains static assets like images, icons, and fonts.
 - Vite handles assets efficiently, so keeping them organized helps maintain clarity.
-- `web/src/styles/` contains global styles. If using Tailwind, the styles/ folder becomes minimal.
+- `web/src/assets/styles/` contains global styles. If using Tailwind, the styles/ folder becomes minimal.
 - structure:
     * web/src/assets/
       * images/
       * icons/
       * fonts/
-    * web/src/styles/
+    * web/src/assets/styles/
       * globals.css
       * variables.css
       * mixins.css
