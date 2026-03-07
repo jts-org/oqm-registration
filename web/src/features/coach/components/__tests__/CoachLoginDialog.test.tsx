@@ -2,6 +2,9 @@
  * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
  * Permission granted for personal/internal use only. Commercial
  * use prohibited except by copyright holder. See LICENSE for details.
+ */
+
+/**
  * @description Tests for CoachLoginDialog — modal for coach PIN / password login.
  *   Written before implementation (TDD).
  */

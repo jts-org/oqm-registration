@@ -2,6 +2,9 @@
  * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
  * Permission granted for personal/internal use only. Commercial
  * use prohibited except by copyright holder. See LICENSE for details.
+ */
+
+/**
  * @description Tests for RegisterPinDialog — refactored reusable modal for registering a PIN code.
  *   Covers name fields, PIN validation, inline notifications, API call, and error handling.
  *   Written before implementation (TDD).

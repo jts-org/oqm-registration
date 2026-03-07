@@ -2,7 +2,11 @@
  * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
  * Permission granted for personal/internal use only. Commercial
  * use prohibited except by copyright holder. See LICENSE for details.
- * @description Root application component.
+ */
+
+/**
+* @description
+  Root application component.
  *   Manages top-level view routing between the main view and role-specific pages.
  *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
  *   @see skills/SKILL.wire-react-to-gas.md

@@ -3,8 +3,13 @@
 - `vite.config.ts` reads `VITE_BASE` from env to configure the correct base for GitHub Pages.
 - For Apps Script POST requests, set `redirect: 'follow'` and `Content-Type: 'text/plain;charset=utf-8'`.
 - Keep API URL in `VITE_GAS_BASE_URL` and token in `VITE_API_TOKEN`.
+- All UX elementsmust have ARIA modal attributes, all fields must have labels, and keyboard focus must be managed.
 - All interactive elements should be accessible via keyboard and screen reader.
-- Error notification: Network or unexpected errors should be shown as toast notifications.
+- Error notification types: 
+    * Inline notifications for validation errors
+    * Toast notifications for network or unexpected errors
+    * Modal dialogs for critical errors
+- In error situations show user-friendly messages, log errors and avoid app crashes.
 - All user-facing text should support localization (English/Finnish) using translation keys.
 - When presenting buttons, labels or links in issue descriptions, uses the following format: `Button label: 'Label text' (use translation key)`. This indicates that the text should be stored as a translation key for localization purposes.
 - The order of UX elements are presented in the same order in issue as they should be implemented in the UI unless specified differently in issue description. For example, if a 'Verify' button is mentioned after a 'Register new PIN code' link, then the 'Verify' button should be implemented and placed in the UI after the 'Register new PIN code' link. This helps maintain a clear and consistent user interface flow.
