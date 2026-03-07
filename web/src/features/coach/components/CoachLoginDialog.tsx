@@ -2,6 +2,9 @@
  * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
  * Permission granted for personal/internal use only. Commercial
  * use prohibited except by copyright holder. See LICENSE for details.
+ */
+
+/**
  * @description Modal dialog for coach login via PIN code or password.
  *   PIN must be 4–6 digits. Password is compared to the coach_pwd setting.
  *   Opens a RegisterPinDialog when the user wants to register a new PIN.

@@ -2,6 +2,9 @@
  * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
  * Permission granted for personal/internal use only. Commercial
  * use prohibited except by copyright holder. See LICENSE for details.
+ */
+
+/**
  * @description API functions for coach registration.
  *   Calls the GAS backend route `registerCoachPin` as defined in SKILL.wire-react-to-gas.md.
  *   Env vars are read inside each function so vi.stubEnv works correctly in tests.

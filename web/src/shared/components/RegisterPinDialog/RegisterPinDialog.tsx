@@ -2,6 +2,9 @@
  * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
  * Permission granted for personal/internal use only. Commercial
  * use prohibited except by copyright holder. See LICENSE for details.
+ */
+
+/**
  * @description Reusable modal dialog for registering a new PIN code.
  *   Collects firstname, lastname, alias (optional) and a validated PIN.
  *   PIN must be 4–6 numeric characters. Used by coach and trainee flows.

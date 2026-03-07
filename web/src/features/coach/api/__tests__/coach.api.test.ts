@@ -2,7 +2,10 @@
  * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
  * Permission granted for personal/internal use only. Commercial
  * use prohibited except by copyright holder. See LICENSE for details.
- * @description Tests for coach API — registerCoachPin function.
+ */
+
+/**
+* @description Tests for coach API — registerCoachPin function.
  *   Written before implementation (TDD).
  *   @see skills/SKILL.wire-react-to-gas.md
  */
