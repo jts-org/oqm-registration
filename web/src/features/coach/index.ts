@@ -3,4 +3,4 @@
  * @description Public exports for the coach feature.
  */
 export { CoachLoginDialog } from './components/CoachLoginDialog';
-export type { CoachLoginDialogProps } from './types';
+export type { CoachLoginDialogProps, CoachData } from './types';

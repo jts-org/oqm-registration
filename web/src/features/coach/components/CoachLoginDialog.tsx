@@ -8,13 +8,15 @@
  * @description Modal dialog for coach login via PIN code or password.
  *   PIN must be 4–6 digits. Password is compared to the coach_pwd setting.
  *   Opens a RegisterPinDialog when the user wants to register a new PIN.
+ *   PIN verification calls the GAS backend (verifyCoachPin route).
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import { RegisterPinDialog } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
-import { registerCoachPin } from '../api/coach.api';
+import { registerCoachPin, verifyCoachPin } from '../api/coach.api';
 import type { CoachLoginDialogProps } from '../types';
 import styles from './CoachLoginDialog.module.css';
 
@@ -29,6 +31,7 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
   const [pin, setPin] = useState('');
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [pinError, setPinError] = useState('');
   const [registerPinOpen, setRegisterPinOpen] = useState(false);
 
   if (!open) return null;
@@ -36,9 +39,16 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
   const pinValid = PIN_PATTERN.test(pin);
   const loginEnabled = password.length > 0;
 
-  function handleVerify() {
-    if (pinValid) {
-      onLoginSuccess();
+  async function handleVerify() {
+    if (!pinValid) return;
+    try {
+      const coachData = await verifyCoachPin(pin);
+      toast.success(t('coachLogin.loginSuccess'));
+      onLoginSuccess(coachData);
+    } catch (err) {
+      setPinError(t('coachLogin.invalidPin'));
+      setPin('');
+      setPassword('');
     }
   }
 
@@ -87,7 +97,7 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
                 type="password"
                 inputMode="numeric"
                 value={pin}
-                onChange={e => setPin(e.target.value)}
+                onChange={e => { setPin(e.target.value); setPinError(''); }}
                 maxLength={6}
                 aria-label={t('coachLogin.enterPin')}
               />
@@ -95,6 +105,11 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
                 {t('coachLogin.verify')}
               </button>
             </div>
+            {pinError && (
+              <p className={styles.error} role="alert">
+                {pinError}
+              </p>
+            )}
             <button
               className={styles.registerLink}
               onClick={handleRegisterPinOpen}

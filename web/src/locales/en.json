@@ -19,6 +19,8 @@
   "coachLogin.login": "Login",
   "coachLogin.cancel": "Cancel",
   "coachLogin.wrongPassword": "Incorrect password. Try again.",
+  "coachLogin.loginSuccess": "Successfully logged in as a coach",
+  "coachLogin.invalidPin": "Invalid PIN. Try again.",
   "registerPin.title": "Register new PIN code",
   "registerPin.firstname": "Firstname",
   "registerPin.lastname": "Lastname",
