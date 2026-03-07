@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { RegisterPinDialog } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
+import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
 import { registerCoachPin, verifyCoachPin } from '../api/coach.api';
 import type { CoachLoginDialogProps } from '../types';
 import styles from './CoachLoginDialog.module.css';
@@ -33,6 +34,7 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
   const [passwordError, setPasswordError] = useState('');
   const [pinError, setPinError] = useState('');
   const [registerPinOpen, setRegisterPinOpen] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   if (!open) return null;
 
@@ -40,7 +42,8 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
   const loginEnabled = password.length > 0;
 
   async function handleVerify() {
-    if (!pinValid) return;
+    if (!pinValid || isVerifying) return;
+    setIsVerifying(true);
     try {
       const coachData = await verifyCoachPin(pin);
       toast.success(t('coachLogin.loginSuccess'));
@@ -49,6 +52,8 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
       setPinError(t('coachLogin.invalidPin'));
       setPin('');
       setPassword('');
+    } finally {
+      setIsVerifying(false);
     }
   }
 
@@ -101,7 +106,7 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
                 maxLength={6}
                 aria-label={t('coachLogin.enterPin')}
               />
-              <button onClick={handleVerify} disabled={!pinValid}>
+              <button onClick={handleVerify} disabled={!pinValid || isVerifying}>
                 {t('coachLogin.verify')}
               </button>
             </div>
@@ -157,6 +162,8 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
         onCancel={handleRegisterPinCancel}
         showAlias={true}
       />
+
+      <LoadingOverlay visible={isVerifying} />
     </>
   );
 }

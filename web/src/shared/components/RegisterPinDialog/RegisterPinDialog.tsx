@@ -13,6 +13,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { LoadingOverlay } from '../LoadingOverlay/LoadingOverlay';
 import styles from './RegisterPinDialog.module.css';
 
 const PIN_PATTERN = /^\d{4,6}$/;
@@ -298,6 +299,8 @@ export function RegisterPinDialog({
           </div>
         </div>
       )}
+
+      <LoadingOverlay visible={isSubmitting} />
     </>
   );
 }

@@ -41,5 +41,6 @@
   "adminLogin.cancel": "Peruuta",
   "adminLogin.incorrectPassword": "Väärä salasana. Yritä uudelleen.",
   "adminView.title": "Ylläpitäjä",
-  "adminView.backToMain": "Takaisin etusivulle"
+  "adminView.backToMain": "Takaisin etusivulle",
+  "loading.overlay": "Ladataan"
 }

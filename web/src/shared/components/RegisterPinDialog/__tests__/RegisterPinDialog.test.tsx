@@ -346,4 +346,46 @@ describe('RegisterPinDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(defaultProps.onCancel).toHaveBeenCalledOnce();
   });
+
+  // ── Loading overlay (OQM-0005) ────────────────────────────────────────────
+
+  it('shows loading overlay while API call is in progress', async () => {
+    let resolveRegister!: () => void;
+    const pendingRegister = new Promise<void>(res => { resolveRegister = res; });
+    defaultProps.onRegister.mockReturnValue(pendingRegister);
+
+    render(<RegisterPinDialog {...defaultProps} />);
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+
+    resolveRegister();
+  });
+
+  it('hides loading overlay after API call completes', async () => {
+    let resolveRegister!: () => void;
+    const pendingRegister = new Promise<void>(res => { resolveRegister = res; });
+    defaultProps.onRegister.mockReturnValue(pendingRegister);
+
+    render(<RegisterPinDialog {...defaultProps} />);
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    resolveRegister();
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+  });
+
+  it('hides loading overlay after API call fails', async () => {
+    let rejectRegister!: (err: Error) => void;
+    const pendingRegister = new Promise<void>((_res, rej) => { rejectRegister = rej; });
+    defaultProps.onRegister.mockReturnValue(pendingRegister);
+
+    render(<RegisterPinDialog {...defaultProps} />);
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    rejectRegister(new Error('Network error'));
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+  });
 });

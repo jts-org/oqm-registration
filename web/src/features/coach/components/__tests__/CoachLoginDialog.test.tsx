@@ -237,4 +237,46 @@ describe('CoachLoginDialog', () => {
     );
     expect(screen.getByLabelText('Enter PIN code')).toHaveValue('9876');
   });
+
+  // ── Loading overlay (OQM-0005) ────────────────────────────────────────────
+
+  it('shows loading overlay while verifyCoachPin is in progress', async () => {
+    let resolveVerify!: (value: unknown) => void;
+    const pendingVerify = new Promise(res => { resolveVerify = res; });
+    mockVerifyCoachPin.mockReturnValue(pendingVerify as ReturnType<typeof mockVerifyCoachPin>);
+
+    render(<CoachLoginDialog {...defaultProps} />);
+    await userEvent.type(screen.getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+
+    resolveVerify({ id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', created_at: '', last_activity: '' });
+  });
+
+  it('hides loading overlay after verifyCoachPin completes successfully', async () => {
+    let resolveVerify!: (value: unknown) => void;
+    const pendingVerify = new Promise(res => { resolveVerify = res; });
+    mockVerifyCoachPin.mockReturnValue(pendingVerify as ReturnType<typeof mockVerifyCoachPin>);
+
+    render(<CoachLoginDialog {...defaultProps} />);
+    await userEvent.type(screen.getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+
+    resolveVerify({ id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', created_at: '', last_activity: '' });
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+  });
+
+  it('hides loading overlay after verifyCoachPin fails', async () => {
+    let rejectVerify!: (err: Error) => void;
+    const pendingVerify = new Promise((_res, rej) => { rejectVerify = rej; });
+    mockVerifyCoachPin.mockReturnValue(pendingVerify as ReturnType<typeof mockVerifyCoachPin>);
+
+    render(<CoachLoginDialog {...defaultProps} />);
+    await userEvent.type(screen.getByLabelText('Enter PIN code'), '9999');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+
+    rejectVerify(new Error('no_match_found'));
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+  });
 });
