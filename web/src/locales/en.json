@@ -41,5 +41,6 @@
   "adminLogin.cancel": "Cancel",
   "adminLogin.incorrectPassword": "Incorrect password. Try again.",
   "adminView.title": "Administrator",
-  "adminView.backToMain": "Back to main"
+  "adminView.backToMain": "Back to main",
+  "loading.overlay": "Loading"
 }
