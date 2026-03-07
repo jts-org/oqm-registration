@@ -9,6 +9,7 @@
   Root application component.
  *   Manages top-level view routing between the main view and role-specific pages.
  *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
+ *   Holds verifiedCoach state during the coach session; cleared when navigating away.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useState } from 'react'
@@ -19,6 +20,7 @@ import { HomePage } from './pages/Home/HomePage'
 import { TraineePage } from './pages/Trainee/TraineePage'
 import { CoachPage } from './pages/Coach/CoachPage'
 import { AdminPage } from './pages/Admin/AdminPage'
+import type { CoachData } from './features/coach/types'
 
 type View = 'main' | 'trainee' | 'coach' | 'admin'
 
@@ -26,6 +28,10 @@ export default function App() {
   const { t } = useTranslation()
   const { settings, loading: settingsLoading, error: settingsError, reload } = useSettingsContext()
   const [view, setView] = useState<View>('main')
+  const [verifiedCoach, setVerifiedCoach] = useState<CoachData | undefined>(undefined)
+
+  const coachPassword = settings.find(s => s.parameter === 'coach_pwd')?.value ?? ''
+  const adminPassword = settings.find(s => s.parameter === 'admin_pwd')?.value ?? ''
 
   if (settingsLoading) {
     return (
@@ -44,31 +50,26 @@ export default function App() {
     )
   }
 
-  const coachPassword = settings.find(s => s.parameter === 'coach_pwd')?.value ?? ''
-  const adminPassword = settings.find(s => s.parameter === 'admin_pwd')?.value ?? ''
-
-  if (view === 'trainee') {
-    return <TraineePage onBack={() => setView('main')} />
-  }
-
-  if (view === 'coach') {
-    return <CoachPage onBack={() => setView('main')} />
-  }
-
-  if (view === 'admin') {
-    return <AdminPage onBack={() => setView('main')} />
-  }
-
   return (
     <>
       <Toaster position="top-center" />
-      <HomePage
-        onGoTrainee={() => setView('trainee')}
-        onGoCoach={() => setView('coach')}
-        onGoAdmin={() => setView('admin')}
-        coachPassword={coachPassword}
-        adminPassword={adminPassword}
-      />
+      {view === 'trainee' && <TraineePage onBack={() => setView('main')} />}
+      {view === 'coach' && (
+        <CoachPage
+          onBack={() => { setVerifiedCoach(undefined); setView('main'); }}
+          coachData={verifiedCoach}
+        />
+      )}
+      {view === 'admin' && <AdminPage onBack={() => setView('main')} />}
+      {view === 'main' && (
+        <HomePage
+          onGoTrainee={() => setView('trainee')}
+          onGoCoach={(coachData) => { setVerifiedCoach(coachData); setView('coach'); }}
+          onGoAdmin={() => setView('admin')}
+          coachPassword={coachPassword}
+          adminPassword={adminPassword}
+        />
+      )}
     </>
   )
 }

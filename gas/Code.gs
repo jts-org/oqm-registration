@@ -4,7 +4,8 @@
  *  - GET  ?route=listItems       — list items from Data sheet
  *  - GET  ?route=getSettings     — list rows from settings sheet (QCM-0001)
  *  - POST { route: "createItem", payload: { name, email } }
- *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin } } — register a new coach PIN code (QCM-0003)
+ *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin } } — register a new coach PIN code (OQM-0003)
+ *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
  */
 
 const SHEET_ID = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
@@ -50,6 +51,13 @@ function doPost(e) {
         return json_({ ok: false, error: 'pin_reserved' });
       }
       return json_({ ok: true, data: result });
+    }
+    if (route === 'verifyCoachPin') {
+      const coachData = verifyCoachPin_(payload);
+      if (!coachData) {
+        return json_({ ok: false, error: 'no_match_found' });
+      }
+      return json_({ ok: true, data: coachData });
     }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
@@ -177,6 +185,31 @@ function registerCoachPin_(payload) {
     alias: payload.alias || '',
     pin: payload.pin,
     created_at: now
+  };
+}
+
+/**
+ * Verify a coach PIN code against the coach_login sheet.
+ * Returns the matching coach's row data or null if no match found.
+ * Schema: id, firstname, lastname, alias, pin, created_at, last_activity (columns A–G)
+ * See SKILL.sheet-schema.md for full schema definition.
+ * See SKILL.wire-react-to-gas.md for API contract (OQM-0004).
+ */
+function verifyCoachPin_(payload) {
+  if (!payload || !payload.pin) {
+    throw new Error('Missing required fields: pin');
+  }
+  const rows = getSheetData('coach_login');
+  const row = rows.find(r => r[4] && String(r[4]) === String(payload.pin));
+  if (!row) return null;
+  return {
+    id: String(row[0]),
+    firstname: String(row[1]),
+    lastname: String(row[2]),
+    alias: String(row[3]),
+    pin: String(row[4]),
+    created_at: String(row[5]),
+    last_activity: String(row[6])
   };
 }
 

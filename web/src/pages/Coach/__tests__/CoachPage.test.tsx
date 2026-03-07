@@ -28,4 +28,15 @@ describe('CoachPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Back to main' }));
     expect(onBack).toHaveBeenCalledOnce();
   });
+
+  it('renders without coachData (no crash)', () => {
+    render(<CoachPage onBack={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: 'Coach registration' })).toBeInTheDocument();
+  });
+
+  it('displays coach name when coachData is provided', () => {
+    const coachData = { id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', created_at: '', last_activity: '' };
+    render(<CoachPage onBack={vi.fn()} coachData={coachData} />);
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+  });
 });

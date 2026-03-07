@@ -18,15 +18,22 @@ import { CoachLoginDialog } from '../CoachLoginDialog';
 
 vi.mock('../../api/coach.api', () => ({
   registerCoachPin: vi.fn().mockResolvedValue(undefined),
+  verifyCoachPin: vi.fn().mockResolvedValue({
+    id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
+    created_at: '2026-01-01T00:00:00Z', last_activity: '',
+  }),
 }));
 
 vi.mock('react-hot-toast', () => ({
   default: { error: vi.fn(), success: vi.fn() },
 }));
 
-import { registerCoachPin } from '../../api/coach.api';
+import toast from 'react-hot-toast';
+import { registerCoachPin, verifyCoachPin } from '../../api/coach.api';
 
 const mockRegisterCoachPin = vi.mocked(registerCoachPin);
+const mockVerifyCoachPin = vi.mocked(verifyCoachPin);
+const mockToast = vi.mocked(toast);
 
 const defaultProps = {
   open: true,
@@ -39,6 +46,10 @@ describe('CoachLoginDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRegisterCoachPin.mockResolvedValue(undefined);
+    mockVerifyCoachPin.mockResolvedValue({
+      id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
+      created_at: '2026-01-01T00:00:00Z', last_activity: '',
+    });
   });
   it('does not render when open=false', () => {
     render(<CoachLoginDialog {...defaultProps} open={false} />);
@@ -103,12 +114,63 @@ describe('CoachLoginDialog', () => {
     expect(screen.getByRole('button', { name: 'Verify' })).toBeDisabled();
   });
 
-  it('clicking Verify with valid PIN calls onLoginSuccess', async () => {
+  it('clicking Verify with valid PIN calls onLoginSuccess with coach data', async () => {
     const onLoginSuccess = vi.fn();
     render(<CoachLoginDialog {...defaultProps} onLoginSuccess={onLoginSuccess} />);
     await userEvent.type(screen.getByLabelText('Enter PIN code'), '1234');
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
-    expect(onLoginSuccess).toHaveBeenCalledOnce();
+    await waitFor(() => expect(onLoginSuccess).toHaveBeenCalledOnce());
+    expect(onLoginSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({ id: '1', firstname: 'John', lastname: 'Doe' })
+    );
+  });
+
+  it('calls verifyCoachPin API when Verify is clicked with valid PIN', async () => {
+    render(<CoachLoginDialog {...defaultProps} />);
+    await userEvent.type(screen.getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    await waitFor(() => expect(mockVerifyCoachPin).toHaveBeenCalledWith('1234'));
+  });
+
+  it('shows toast on successful PIN verification', async () => {
+    render(<CoachLoginDialog {...defaultProps} />);
+    await userEvent.type(screen.getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    await waitFor(() => expect(mockToast.success).toHaveBeenCalledWith('Successfully logged in as a coach'));
+  });
+
+  it('shows inline error when PIN not found', async () => {
+    mockVerifyCoachPin.mockRejectedValue(new Error('no_match_found'));
+    render(<CoachLoginDialog {...defaultProps} />);
+    await userEvent.type(screen.getByLabelText('Enter PIN code'), '9999');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    await waitFor(() =>
+      expect(screen.getByText('Invalid PIN. Try again.')).toBeInTheDocument()
+    );
+  });
+
+  it('clears input fields after no_match_found error', async () => {
+    mockVerifyCoachPin.mockRejectedValue(new Error('no_match_found'));
+    render(<CoachLoginDialog {...defaultProps} />);
+    await userEvent.type(screen.getByLabelText('Enter PIN code'), '9999');
+    await userEvent.type(screen.getByLabelText('Enter password'), 'secret');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    await waitFor(() =>
+      expect(screen.getByText('Invalid PIN. Try again.')).toBeInTheDocument()
+    );
+    expect(screen.getByLabelText('Enter PIN code')).toHaveValue('');
+    expect(screen.getByLabelText('Enter password')).toHaveValue('');
+  });
+
+  it('dialog stays open after no_match_found error', async () => {
+    mockVerifyCoachPin.mockRejectedValue(new Error('no_match_found'));
+    render(<CoachLoginDialog {...defaultProps} />);
+    await userEvent.type(screen.getByLabelText('Enter PIN code'), '9999');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    await waitFor(() =>
+      expect(screen.getByText('Invalid PIN. Try again.')).toBeInTheDocument()
+    );
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('Login button is disabled when password field is empty', () => {

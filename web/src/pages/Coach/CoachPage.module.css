@@ -12,6 +12,13 @@
 
 .title {
   text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.coachName {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #555;
   margin-bottom: auto;
 }
 

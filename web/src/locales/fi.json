@@ -19,6 +19,8 @@
   "coachLogin.login": "Kirjaudu",
   "coachLogin.cancel": "Peruuta",
   "coachLogin.wrongPassword": "Väärä salasana. Yritä uudelleen.",
+  "coachLogin.loginSuccess": "Olet kirjautunut sisään valmentajana",
+  "coachLogin.invalidPin": "Virheellinen PIN-koodi. Yritä uudelleen.",
   "registerPin.title": "Rekisteröi uusi PIN-koodi",
   "registerPin.firstname": "Etunimi",
   "registerPin.lastname": "Sukunimi",

@@ -5,6 +5,7 @@
 - GET  `?route=getSettings&token=...` → list rows from `settings` sheet (QCM-0001)
 - POST `{ route: "createItem", payload, token }` → append row
 - POST `{ route: "registerCoachPin", payload, token }` → register coach PIN (OQM-0003)
+- POST `{ route: "verifyCoachPin", payload, token }` → verify coach PIN, return coach data (OQM-0004)
 - Response JSON shape: `{ ok: true, data } | { ok: false, error }`
 
 ## Settings parameters used by the frontend
@@ -73,6 +74,69 @@ export async function registerCoachPin(data: RegisterPinData): Promise<void> {
   });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Registration failed');
+}
+```
+
+## verifyCoachPin (OQM-0004)
+
+### Request
+```json
+{
+  "route": "verifyCoachPin",
+  "payload": { "pin": "string (required, 4–6 digits)" },
+  "token": "string"
+}
+```
+
+### Response (success)
+```json
+{ "ok": true, "data": { "id": "uuid", "firstname": "...", "lastname": "...", "alias": "...", "pin": "...", "created_at": "ISO-8601", "last_activity": "ISO-8601" } }
+```
+
+### Response (PIN not found)
+```json
+{ "ok": false, "error": "no_match_found" }
+```
+
+### Error cases
+| Error            | Meaning                                      |
+|------------------|----------------------------------------------|
+| `no_match_found` | PIN not found in `coach_login` sheet         |
+| `Unauthorized`   | Invalid or missing API token                 |
+| `Missing required fields: pin` | Payload validation failure     |
+
+### Frontend API function
+```ts
+/** Coach data returned from the backend on successful PIN verification. */
+type CoachData = {
+  id: string;
+  firstname: string;
+  lastname: string;
+  alias: string;
+  pin: string;
+  created_at: string;
+  last_activity: string;
+};
+
+/**
+ * Verify a coach PIN code against the GAS backend.
+ * Returns CoachData on success.
+ * Throws Error('no_match_found') if PIN does not match any coach.
+ * Throws other Errors on network/service failures.
+ */
+export async function verifyCoachPin(pin: string): Promise<CoachData> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'verifyCoachPin', payload: { pin }, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Verification failed');
+  return json.data as CoachData;
 }
 ```
 

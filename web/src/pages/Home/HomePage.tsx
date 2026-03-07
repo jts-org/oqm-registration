@@ -7,14 +7,15 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CoachLoginDialog } from '../../features/coach/components/CoachLoginDialog';
+import type { CoachData } from '../../features/coach/types';
 import { AdminLoginDialog } from '../../features/admin/components/AdminLoginDialog';
 import styles from './HomePage.module.css';
 
 export interface HomePageProps {
   /** Navigates to the trainee registration page. */
   onGoTrainee: () => void;
-  /** Navigates to the coach registration page after successful login. */
-  onGoCoach: () => void;
+  /** Navigates to the coach page after successful login, passing verified coach data. */
+  onGoCoach: (coachData?: CoachData) => void;
   /** Navigates to the admin page after successful login. */
   onGoAdmin: () => void;
   /** Coach password from settings (coach_pwd). */
@@ -42,9 +43,9 @@ export function HomePage({ onGoTrainee, onGoCoach, onGoAdmin, coachPassword, adm
       <CoachLoginDialog
         open={coachDialogOpen}
         coachPassword={coachPassword}
-        onLoginSuccess={() => {
+        onLoginSuccess={(coachData) => {
           setCoachDialogOpen(false);
-          onGoCoach();
+          onGoCoach(coachData);
         }}
         onCancel={() => setCoachDialogOpen(false)}
       />
