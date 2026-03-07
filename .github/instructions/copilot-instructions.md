@@ -8,7 +8,7 @@ You are collaborating on a React (Vite) + Google Apps Script + Google Sheets sys
 - Error boundaries: Wrap critical UI sections to prevent full-app crashes.
 - Vite: Use ES modules everywhere. Avoid unnecessary polyfills. Use plugins for SVG imports, environment variables, or testing setups. Prefix environment variables with VITE_ and store in .env files. Never commit secrets.
 - Imports: Prefer direct imports over index barrels. Use index files sparingly.
-- Assets: Store images, icons, and fonts in assets/.
+- Assets: Store images, icons, and fonts in __web/src/assets/__.
 - Code splitting: Use dynamic imports for large or rarely used components.
 - Image optimization: Use modern formats (WebP/AVIF) and Vite’s asset handling.
 - Bundle analysis: Use Vite plugins to inspect bundle size and dependencies.
@@ -27,10 +27,6 @@ You are collaborating on a React (Vite) + Google Apps Script + Google Sheets sys
 - Deployment: Use clasp for backend code upload. Deploy web app via Apps Script UI. Document deployment steps in skills/SKILL.deploy-ci.md.
 - Documentation: Update skills/ and instructions when code changes affect contracts, schemas, or architecture. Add rationale and test outline to PRs.
 - In skill docs, always define or explain custom types used in code examples to ensure copy/paste usability.
-- All user-facing text must use a localization system (e.g., i18n library).
-- Support at least English and Finnish; default to English if no locale is set.
-- Store translations in dedicated files (e.g., locales/en.json, locales/fi.json).
-- Do not hardcode UI strings; use translation keys.
 
 ### Copyright Header Template
 - 2026 is replaced with the current year when creating new files. Update the year in existing files if they are modified after 2026 or differ otherwise from the template.

@@ -9,17 +9,24 @@
  *   PIN must be 4–6 digits. Password is compared to the coach_pwd setting.
  *   Opens a RegisterPinDialog when the user wants to register a new PIN.
  *   PIN verification calls the GAS backend (verifyCoachPin route).
+ *   Uses MUI Dialog, TextField, and Button for accessible and consistent UI.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 import { RegisterPinDialog } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
 import { registerCoachPin, verifyCoachPin } from '../api/coach.api';
 import type { CoachLoginDialogProps } from '../types';
-import styles from './CoachLoginDialog.module.css';
 
 const PIN_PATTERN = /^\d{4,6}$/;
 
@@ -35,8 +42,6 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
   const [pinError, setPinError] = useState('');
   const [registerPinOpen, setRegisterPinOpen] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-
-  if (!open) return null;
 
   const pinValid = PIN_PATTERN.test(pin);
   const loginEnabled = password.length > 0;
@@ -84,76 +89,76 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
 
   return (
     <>
-      <div className={styles.overlay} role="presentation">
-        <div
-          className={styles.dialog}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="coach-login-title"
-        >
-          <h2 id="coach-login-title">{t('coachLogin.title')}</h2>
-
-          {/* PIN code row */}
-          <div className={styles.field}>
-            <div className={styles.row}>
-              <label htmlFor="coach-pin">{t('coachLogin.enterPin')}</label>
-              <input
-                id="coach-pin"
-                type="password"
-                inputMode="numeric"
-                value={pin}
-                onChange={e => { setPin(e.target.value); setPinError(''); }}
-                maxLength={6}
-                aria-label={t('coachLogin.enterPin')}
-              />
-              <button onClick={handleVerify} disabled={!pinValid || isVerifying}>
-                {t('coachLogin.verify')}
-              </button>
-            </div>
-            {pinError && (
-              <p className={styles.error} role="alert">
-                {pinError}
-              </p>
-            )}
-            <button
-              className={styles.registerLink}
-              onClick={handleRegisterPinOpen}
-              type="button"
+      <Dialog
+        open={open}
+        aria-labelledby="coach-login-title"
+        onClose={onCancel}
+      >
+        <DialogTitle id="coach-login-title">{t('coachLogin.title')}</DialogTitle>
+        <DialogContent>
+          {/* PIN code section */}
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', mb: 0.5 }}>
+            <TextField
+              id="coach-pin"
+              type="password"
+              label={t('coachLogin.enterPin')}
+              value={pin}
+              onChange={e => { setPin(e.target.value); setPinError(''); }}
+              inputProps={{ maxLength: 6, inputMode: 'numeric', 'aria-label': t('coachLogin.enterPin') }}
+              error={!!pinError}
+              helperText={pinError || ' '}
+              margin="dense"
+              sx={{ flex: 1 }}
+              autoComplete="one-time-code"
+            />
+            <Button
+              onClick={handleVerify}
+              disabled={!pinValid || isVerifying}
+              variant="contained"
+              sx={{ mt: 1, whiteSpace: 'nowrap' }}
             >
-              {t('coachLogin.registerNewPin')}
-            </button>
-          </div>
+              {t('coachLogin.verify')}
+            </Button>
+          </Box>
+          <Button
+            onClick={handleRegisterPinOpen}
+            type="button"
+            size="small"
+            sx={{ textTransform: 'none', p: 0, mb: 1 }}
+          >
+            {t('coachLogin.registerNewPin')}
+          </Button>
 
-          {/* Password row */}
-          <div className={styles.field}>
-            <div className={styles.row}>
-              <label htmlFor="coach-password">{t('coachLogin.enterPassword')}</label>
-              <input
-                id="coach-password"
-                type="password"
-                value={password}
-                onChange={e => {
-                  setPassword(e.target.value);
-                  setPasswordError('');
-                }}
-                aria-label={t('coachLogin.enterPassword')}
-              />
-              <button onClick={handleLogin} disabled={!loginEnabled}>
-                {t('coachLogin.login')}
-              </button>
-            </div>
-            {passwordError && (
-              <p className={styles.error} role="alert">
-                {passwordError}
-              </p>
-            )}
-          </div>
-
-          <div className={styles.cancelRow}>
-            <button onClick={onCancel}>{t('coachLogin.cancel')}</button>
-          </div>
-        </div>
-      </div>
+          {/* Password section */}
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+            <TextField
+              id="coach-password"
+              type="password"
+              label={t('coachLogin.enterPassword')}
+              value={password}
+              onChange={e => { setPassword(e.target.value); setPasswordError(''); }}
+              inputProps={{ 'aria-label': t('coachLogin.enterPassword') }}
+              error={!!passwordError}
+              helperText={passwordError || ' '}
+              margin="dense"
+              sx={{ flex: 1 }}
+              autoComplete="current-password"
+            />
+            <Button
+              onClick={handleLogin}
+              disabled={!loginEnabled}
+              variant="contained"
+              sx={{ mt: 1, whiteSpace: 'nowrap' }}
+            >
+              {t('coachLogin.login')}
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onCancel}>{t('coachLogin.cancel')}</Button>
+        </DialogActions>
+        <LoadingOverlay visible={isVerifying} />
+      </Dialog>
 
       <RegisterPinDialog
         open={registerPinOpen}
@@ -162,9 +167,9 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
         onCancel={handleRegisterPinCancel}
         showAlias={true}
       />
-
-      <LoadingOverlay visible={isVerifying} />
     </>
   );
 }
+
+
 

@@ -7,10 +7,12 @@
 /**
  * @description Full-screen dimmed overlay with a centered spinner.
  *   Rendered during API operations to block user interaction and signal loading.
+ *   Uses MUI CircularProgress for the spinner with a custom accessible overlay.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import CircularProgress from '@mui/material/CircularProgress';
 import styles from './LoadingOverlay.module.css';
 
 export interface LoadingOverlayProps {
@@ -34,7 +36,7 @@ export function LoadingOverlay({ visible }: LoadingOverlayProps) {
       aria-live="polite"
       aria-label={t('loading.overlay')}
     >
-      <div className={styles.spinner} />
+      <CircularProgress color="inherit" />
     </div>
   );
 }

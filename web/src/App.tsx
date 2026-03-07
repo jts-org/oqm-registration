@@ -10,17 +10,28 @@
  *   Manages top-level view routing between the main view and role-specific pages.
  *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
  *   Holds verifiedCoach state during the coach session; cleared when navigating away.
+ *   Wraps the app in MUI ThemeProvider for consistent design.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Toaster } from 'react-hot-toast'
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
 import { useSettingsContext } from './app/providers/SettingsProvider'
 import { HomePage } from './pages/Home/HomePage'
 import { TraineePage } from './pages/Trainee/TraineePage'
 import { CoachPage } from './pages/Coach/CoachPage'
 import { AdminPage } from './pages/Admin/AdminPage'
 import type { CoachData } from './features/coach/types'
+
+const theme = createTheme({
+  palette: {
+    primary: { main: '#0066cc' },
+  },
+})
 
 type View = 'main' | 'trainee' | 'coach' | 'admin'
 
@@ -35,23 +46,30 @@ export default function App() {
 
   if (settingsLoading) {
     return (
-      <div className="container">
-        <p>{t('settings.loading')}</p>
-      </div>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
+          <Typography>{t('settings.loading')}</Typography>
+        </Box>
+      </ThemeProvider>
     )
   }
 
   if (settingsError) {
     return (
-      <div className="container">
-        <p className="error">{t('settings.error', { message: settingsError })}</p>
-        <button onClick={reload}>{t('settings.retry')}</button>
-      </div>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
+          <Typography color="error">{t('settings.error', { message: settingsError })}</Typography>
+          <Button onClick={reload} sx={{ mt: 1 }}>{t('settings.retry')}</Button>
+        </Box>
+      </ThemeProvider>
     )
   }
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
       <Toaster position="top-center" />
       {view === 'trainee' && <TraineePage onBack={() => setView('main')} />}
       {view === 'coach' && (
@@ -70,6 +88,6 @@ export default function App() {
           adminPassword={adminPassword}
         />
       )}
-    </>
+    </ThemeProvider>
   )
 }
