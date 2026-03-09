@@ -9,11 +9,15 @@ import './lib/i18n'
 import { SettingsProvider } from './app/providers/SettingsProvider'
 import App from './App'
 import './styles.css'
+import { ThemeContext } from './app/providers/themeContext'
+import { getTheme } from './theme.config'
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <SettingsProvider>
-      <App />
+      <ThemeContext.Provider value={getTheme('kickboxing')}>
+        <App />
+      </ThemeContext.Provider>
     </SettingsProvider>
   </React.StrictMode>
 )

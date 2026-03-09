@@ -10,17 +10,43 @@
  *   Manages top-level view routing between the main view and role-specific pages.
  *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
  *   Holds verifiedCoach state during the coach session; cleared when navigating away.
+ *   Wraps the app in MUI ThemeProvider for consistent design.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Toaster } from 'react-hot-toast'
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
+import { getTheme } from './theme.config';
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
 import { useSettingsContext } from './app/providers/SettingsProvider'
 import { HomePage } from './pages/Home/HomePage'
 import { TraineePage } from './pages/Trainee/TraineePage'
 import { CoachPage } from './pages/Coach/CoachPage'
 import { AdminPage } from './pages/Admin/AdminPage'
 import type { CoachData } from './features/coach/types'
+
+const customTheme = getTheme('kickboxing'); // Change to your desired theme
+const theme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: { main: customTheme.colors.accentPrimary },
+    secondary: { main: customTheme.colors.accentSecondary },
+    background: {
+      default: customTheme.colors.bgPrimary,
+      paper: customTheme.colors.bgCard,
+    },
+    text: {
+      primary: customTheme.colors.textPrimary,
+      secondary: customTheme.colors.textSecondary,
+    },
+    error: { main: customTheme.colors.accentWarning },
+    success: { main: customTheme.colors.accentSuccess },
+    warning: { main: customTheme.colors.accentGold },
+  },
+});
 
 type View = 'main' | 'trainee' | 'coach' | 'admin'
 
@@ -35,23 +61,30 @@ export default function App() {
 
   if (settingsLoading) {
     return (
-      <div className="container">
-        <p>{t('settings.loading')}</p>
-      </div>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
+          <Typography>{t('settings.loading')}</Typography>
+        </Box>
+      </ThemeProvider>
     )
   }
 
   if (settingsError) {
     return (
-      <div className="container">
-        <p className="error">{t('settings.error', { message: settingsError })}</p>
-        <button onClick={reload}>{t('settings.retry')}</button>
-      </div>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
+          <Typography color="error">{t('settings.error', { message: settingsError })}</Typography>
+          <Button onClick={reload} sx={{ mt: 1 }}>{t('settings.retry')}</Button>
+        </Box>
+      </ThemeProvider>
     )
   }
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
       <Toaster position="top-center" />
       {view === 'trainee' && <TraineePage onBack={() => setView('main')} />}
       {view === 'coach' && (
@@ -70,6 +103,6 @@ export default function App() {
           adminPassword={adminPassword}
         />
       )}
-    </>
+    </ThemeProvider>
   )
 }

@@ -1,15 +1,24 @@
 /**
- * @copyright 2026 Jouni Sipola by OQM
+ * @copyright 2026 Jouni Sipola by OQM. All rights reserved.
+ * Permission granted for personal/internal use only. Commercial
+ * use prohibited except by copyright holder. See LICENSE for details.
+ */
+
+/**
  * @description Main view shown after application startup.
  *   Presents three entry-point buttons: Trainees, Coaches, Admin.
  *   Opens login dialogs for Coach and Admin flows.
+ *   Uses MUI components for accessible and consistent UI.
  */
 import React, { useState } from 'react';
+import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import { CoachLoginDialog } from '../../features/coach/components/CoachLoginDialog';
 import type { CoachData } from '../../features/coach/types';
 import { AdminLoginDialog } from '../../features/admin/components/AdminLoginDialog';
-import styles from './HomePage.module.css';
 
 export interface HomePageProps {
   /** Navigates to the trainee registration page. */
@@ -27,18 +36,38 @@ export interface HomePageProps {
 /** Main view with three role-selection buttons. */
 export function HomePage({ onGoTrainee, onGoCoach, onGoAdmin, coachPassword, adminPassword }: HomePageProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const [coachDialogOpen, setCoachDialogOpen] = useState(false);
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 
   return (
-    <div className={styles.page}>
-      <p className={styles.placeholder}>{t('mainView.placeholder')}</p>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 4,
+        background: theme.palette.background.default,
+        color: theme.palette.text.primary,
+      }}
+    >
+      <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', textAlign: 'center' }}>
+        {t('mainView.placeholder')}
+      </Typography>
 
-      <div className={styles.buttonRow}>
-        <button onClick={onGoTrainee}>{t('mainView.trainees')}</button>
-        <button onClick={() => setCoachDialogOpen(true)}>{t('mainView.coaches')}</button>
-        <button onClick={() => setAdminDialogOpen(true)}>{t('mainView.admin')}</button>
-      </div>
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Button variant="contained" onClick={onGoTrainee} sx={{ background: theme.palette.primary.main, color: theme.palette.text.primary }}>
+          {t('mainView.trainees')}
+        </Button>
+        <Button variant="contained" onClick={() => setCoachDialogOpen(true)} sx={{ background: theme.palette.primary.main, color: theme.palette.text.primary }}>
+          {t('mainView.coaches')}
+        </Button>
+        <Button variant="contained" onClick={() => setAdminDialogOpen(true)} sx={{ background: theme.palette.primary.main, color: theme.palette.text.primary }}>
+          {t('mainView.admin')}
+        </Button>
+      </Box>
 
       <CoachLoginDialog
         open={coachDialogOpen}
@@ -59,6 +88,6 @@ export function HomePage({ onGoTrainee, onGoCoach, onGoAdmin, coachPassword, adm
         }}
         onCancel={() => setAdminDialogOpen(false)}
       />
-    </div>
+    </Box>
   );
 }

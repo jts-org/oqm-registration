@@ -8,13 +8,20 @@
  * @description Reusable modal dialog for registering a new PIN code.
  *   Collects firstname, lastname, alias (optional) and a validated PIN.
  *   PIN must be 4–6 numeric characters. Used by coach and trainee flows.
+ *   Uses MUI Dialog, TextField, and Button for accessible and consistent UI.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useEffect, useState } from 'react';
+import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
 import { LoadingOverlay } from '../LoadingOverlay/LoadingOverlay';
-import styles from './RegisterPinDialog.module.css';
 
 const PIN_PATTERN = /^\d{4,6}$/;
 /** Allows letters (including Nordic), spaces and hyphens between letter groups. */
@@ -65,6 +72,7 @@ export function RegisterPinDialog({
   showAlias = true,
 }: RegisterPinDialogProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [alias, setAlias] = useState('');
@@ -87,8 +95,6 @@ export function RegisterPinDialog({
       setPinReservedOpen(false);
     }
   }, [open]);
-
-  if (!open) return null;
 
   function markDirty(field: string) {
     setDirty(prev => ({ ...prev, [field]: true }));
@@ -153,154 +159,203 @@ export function RegisterPinDialog({
 
   return (
     <>
-      <div className={styles.overlay} role="presentation">
-        <div
-          className={styles.dialog}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="register-pin-title"
-        >
-          <h2 id="register-pin-title">{t('registerPin.title')}</h2>
-
+      <Dialog
+        open={open}
+        aria-labelledby="register-pin-title"
+        onClose={onCancel}
+        slotProps={{
+          paper: {
+            sx: {
+              background: theme.palette.background.default,
+              color: theme.palette.text.primary,
+              border: '2px solid',
+              borderColor: theme.palette.secondary.main,
+            },
+          },
+          backdrop: {
+            sx: {
+              backgroundColor: 'rgba(10, 10, 15, 0.85)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            },
+          },
+        }}
+      >
+        <DialogTitle id="register-pin-title">{t('registerPin.title')}</DialogTitle>
+        <DialogContent>
           {/* Firstname */}
-          <div className={styles.field}>
-            <label htmlFor="register-pin-firstname">{t('registerPin.firstname')}</label>
-            <input
-              id="register-pin-firstname"
-              type="text"
-              value={firstname}
-              maxLength={30}
-              onChange={e => {
-                setFirstname(e.target.value);
-                markDirty('firstname');
-              }}
-              aria-label={t('registerPin.firstname')}
-              aria-describedby={firstnameError ? 'register-pin-firstname-error' : undefined}
-            />
-            {firstnameError && (
-              <span id="register-pin-firstname-error" className={styles.error} role="alert">
-                {firstnameError}
-              </span>
-            )}
-          </div>
+          <TextField
+            id="register-pin-firstname"
+            type="text"
+            label={t('registerPin.firstname')}
+            value={firstname}
+            inputProps={{ maxLength: 30, 'aria-label': t('registerPin.firstname') }}
+            onChange={e => {
+              setFirstname(e.target.value);
+              markDirty('firstname');
+            }}
+            error={!!firstnameError}
+            helperText={firstnameError || ' '}
+            fullWidth
+            margin="dense"
+            sx={{ 
+              flex: 1,
+              background: theme.palette.background.default,
+              color: theme.palette.text.primary,
+              borderColor: theme.palette.primary.main,
+            }}            
+          />
 
           {/* Lastname */}
-          <div className={styles.field}>
-            <label htmlFor="register-pin-lastname">{t('registerPin.lastname')}</label>
-            <input
-              id="register-pin-lastname"
-              type="text"
-              value={lastname}
-              maxLength={30}
-              onChange={e => {
-                setLastname(e.target.value);
-                markDirty('lastname');
-              }}
-              aria-label={t('registerPin.lastname')}
-              aria-describedby={lastnameError ? 'register-pin-lastname-error' : undefined}
-            />
-            {lastnameError && (
-              <span id="register-pin-lastname-error" className={styles.error} role="alert">
-                {lastnameError}
-              </span>
-            )}
-          </div>
+          <TextField
+            id="register-pin-lastname"
+            type="text"
+            label={t('registerPin.lastname')}
+            value={lastname}
+            inputProps={{ maxLength: 30, 'aria-label': t('registerPin.lastname') }}
+            onChange={e => {
+              setLastname(e.target.value);
+              markDirty('lastname');
+            }}
+            error={!!lastnameError}
+            helperText={lastnameError || ' '}
+            fullWidth
+            margin="dense"
+            sx={{ 
+              flex: 1,
+              background: theme.palette.background.default,
+              color: theme.palette.text.primary,
+              borderColor: theme.palette.primary.main,
+            }}            
+          />
 
           {/* Alias (optional, hidden for trainee) */}
           {showAlias && (
-            <div className={styles.field}>
-              <label htmlFor="register-pin-alias">{t('registerPin.alias')}</label>
-              <input
-                id="register-pin-alias"
-                type="text"
-                value={alias}
-                maxLength={30}
-                onChange={e => setAlias(e.target.value)}
-                aria-label={t('registerPin.alias')}
-              />
-            </div>
+            <TextField
+              id="register-pin-alias"
+              type="text"
+              label={t('registerPin.alias')}
+              value={alias}
+              inputProps={{ maxLength: 30, 'aria-label': t('registerPin.alias') }}
+              onChange={e => setAlias(e.target.value)}
+              fullWidth
+              margin="dense"
+              sx={{ 
+                flex: 1,
+                background: theme.palette.background.default,
+                color: theme.palette.text.primary,
+                borderColor: theme.palette.primary.main,
+              }}
+            />
           )}
 
           {/* Enter new PIN code */}
-          <div className={styles.field}>
-            <label htmlFor="register-pin-new">{t('registerPin.enterNewPin')}</label>
-            <input
-              id="register-pin-new"
-              type="password"
-              value={pin}
-              onChange={e => {
-                setPin(e.target.value);
-                markDirty('pin');
-              }}
-              aria-label={t('registerPin.enterNewPin')}
-              aria-describedby={pinError ? 'register-pin-new-error' : undefined}
-            />
-            {pinError && (
-              <span id="register-pin-new-error" className={styles.error} role="alert">
-                {pinError}
-              </span>
-            )}
-          </div>
+          <TextField
+            id="register-pin-new"
+            type="password"
+            label={t('registerPin.enterNewPin')}
+            value={pin}
+            onChange={e => {
+              setPin(e.target.value);
+              markDirty('pin');
+            }}
+            inputProps={{ 'aria-label': t('registerPin.enterNewPin') }}
+            error={!!pinError}
+            helperText={pinError || ' '}
+            fullWidth
+            margin="dense"
+            sx={{ 
+              flex: 1,
+              background: theme.palette.background.default,
+              color: theme.palette.text.primary,
+              borderColor: theme.palette.primary.main,
+            }}
+          />
 
           {/* Enter PIN again */}
-          <div className={styles.field}>
-            <label htmlFor="register-pin-again">{t('registerPin.enterPinAgain')}</label>
-            <input
-              id="register-pin-again"
-              type="password"
-              value={pinAgain}
-              onChange={e => {
-                setPinAgain(e.target.value);
-                markDirty('pinAgain');
-              }}
-              aria-label={t('registerPin.enterPinAgain')}
-              aria-describedby={
-                pinAgainError || pinMismatch ? 'register-pin-again-error' : undefined
-              }
-            />
-            {pinAgainError && (
-              <span id="register-pin-again-error" className={styles.error} role="alert">
-                {pinAgainError}
-              </span>
-            )}
-            {!pinAgainError && pinMismatch && (
-              <span id="register-pin-again-error" className={styles.error} role="alert">
-                {pinMismatch}
-              </span>
-            )}
-          </div>
-
-          <div className={styles.actions}>
-            <button onClick={handleRegister} disabled={!isFormValid || isSubmitting}>
-              {t('registerPin.register')}
-            </button>
-            <button onClick={onCancel}>
-              {t('registerPin.cancel')}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* PIN reserved modal notification */}
-      {pinReservedOpen && (
-        <div className={styles.overlay} role="presentation">
-          <div
-            className={styles.pinReservedDialog}
-            role="alertdialog"
-            aria-modal="true"
-            aria-describedby="pin-reserved-message"
+          <TextField
+            id="register-pin-again"
+            type="password"
+            label={t('registerPin.enterPinAgain')}
+            value={pinAgain}
+            onChange={e => {
+              setPinAgain(e.target.value);
+              markDirty('pinAgain');
+            }}
+            inputProps={{ 'aria-label': t('registerPin.enterPinAgain') }}
+            error={!!(pinAgainError || pinMismatch)}
+            helperText={pinAgainError || pinMismatch || ' '}
+            fullWidth
+            margin="dense"
+            sx={{ 
+              flex: 1,
+              background: theme.palette.background.default,
+              color: theme.palette.text.primary,
+              borderColor: theme.palette.primary.main,
+            }}            
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleRegister} 
+            disabled={!isFormValid || isSubmitting} 
+            variant="contained"
+            sx={{ 
+              whiteSpace: 'nowrap', 
+              background: theme.palette.background.default,
+              color: theme.palette.text.primary,
+              borderColor: theme.palette.primary.main,                
+            }}
           >
-            <p id="pin-reserved-message">{t('registerPin.pinReserved')}</p>
-            <div className={styles.actions}>
-              <button onClick={handlePinReservedClose}>
-                {t('registerPin.cancel')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            {t('registerPin.register')}
+          </Button>
+          <Button 
+            onClick={onCancel}
+            sx={{
+              background: theme.palette.primary.main,
+              color: theme.palette.text.primary,
+              borderColor: theme.palette.primary.main,
+            }}
+          >
+            {t('registerPin.cancel')}
+          </Button>
+        </DialogActions>
+        <LoadingOverlay visible={isSubmitting} />
+      </Dialog>
 
-      <LoadingOverlay visible={isSubmitting} />
+      {/* PIN reserved notification dialog */}
+      <Dialog
+        open={pinReservedOpen}
+        slotProps={{
+          paper: { 
+            role: 'alertdialog', 
+            'aria-describedby': 'pin-reserved-message', 
+            sx: {
+              background: theme.palette.background.default,
+              color: theme.palette.text.primary,
+              border: '2px solid',
+              borderColor: theme.palette.secondary.main,
+            },
+          }
+        }}
+        onClose={handlePinReservedClose}
+      >
+        <DialogContent>
+          <p id="pin-reserved-message">{t('registerPin.pinReserved')}</p>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handlePinReservedClose}
+            sx={{
+              background: theme.palette.primary.main,
+              color: theme.palette.text.primary,
+              borderColor: theme.palette.primary.main,
+            }}
+          >
+            {t('registerPin.cancel')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
