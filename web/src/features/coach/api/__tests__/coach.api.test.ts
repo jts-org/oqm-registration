@@ -126,3 +126,66 @@ describe('verifyCoachPin', () => {
     await expect(verifyCoachPin('1234')).rejects.toThrow('Unauthorized');
   });
 });
+
+import { getCoachSessions } from '../coach.api';
+
+const mockSessionItem = {
+  id: 'ws-1_2026-03-09',
+  session_type: 'Kickboxing',
+  session_type_alias: 'Nyrkkeilyharjoitus',
+  date: '2026-03-09',
+  start_time: '18:00',
+  end_time: '19:30',
+  location: 'Gym A',
+  coach_firstname: '',
+  coach_lastname: '',
+  coach_alias: '',
+  registration_id: '',
+  is_free_sparring: false,
+};
+
+describe('getCoachSessions', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    vi.stubEnv('VITE_API_TOKEN', TOKEN);
+    mockFetch.mockReset();
+  });
+
+  it('throws when VITE_GAS_BASE_URL is not configured', async () => {
+    vi.stubEnv('VITE_GAS_BASE_URL', '');
+    await expect(getCoachSessions()).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
+  });
+
+  it('sends a GET request with route=getCoachSessions and token', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: true, data: [] }),
+    });
+    await getCoachSessions();
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE}?route=getCoachSessions&token=${encodeURIComponent(TOKEN)}`,
+      expect.objectContaining({ method: 'GET', redirect: 'follow' })
+    );
+  });
+
+  it('returns array of SessionItem on success', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: true, data: [mockSessionItem] }),
+    });
+    const result = await getCoachSessions();
+    expect(result).toEqual([mockSessionItem]);
+  });
+
+  it('throws error message from backend on failure', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'Unauthorized' }),
+    });
+    await expect(getCoachSessions()).rejects.toThrow('Unauthorized');
+  });
+
+  it('throws generic error when backend returns ok: false with no error message', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false }),
+    });
+    await expect(getCoachSessions()).rejects.toThrow('Failed to fetch sessions');
+  });
+});

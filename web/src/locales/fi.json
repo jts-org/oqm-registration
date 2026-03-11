@@ -42,5 +42,21 @@
   "adminLogin.incorrectPassword": "Väärä salasana. Yritä uudelleen.",
   "adminView.title": "Ylläpitäjä",
   "adminView.backToMain": "Takaisin etusivulle",
-  "loading.overlay": "Ladataan"
+  "loading.overlay": "Ladataan",
+  "coachQuickRegistration.title": "Valmentajan pikailmoittautuminen",
+  "coachQuickRegistration.loggedInAs": "Kirjautunut: {{name}}",
+  "coachQuickRegistration.notRegistered": "Et ole rekisteröitynyt",
+  "coachQuickRegistration.refreshData": "Päivitä tiedot",
+  "coachQuickRegistration.backToMain": "Takaisin etusivulle",
+  "coachQuickRegistration.register": "Ilmoittaudu",
+  "coachQuickRegistration.remove": "Poista",
+  "coachQuickRegistration.noSessions": "Ei harjoituksia löytynyt",
+  "coachQuickRegistration.loadError": "Harjoitusten lataus epäonnistui. Yritä uudelleen.",
+  "coachQuickRegistration.confirmRegisterTitle": "Vahvista ilmoittautuminen",
+  "coachQuickRegistration.confirmRegisterMessage": "Ilmoittautua tälle harjoitukselle?",
+  "coachQuickRegistration.confirmRemoveTitle": "Vahvista poistaminen",
+  "coachQuickRegistration.confirmRemoveMessage": "Poistua tältä harjoitukselta?",
+  "coachQuickRegistration.confirm": "Vahvista",
+  "coachQuickRegistration.cancel": "Peruuta",
+  "coachQuickRegistration.coach": "Valmentaja: {{alias}}"
 }

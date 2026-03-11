@@ -42,5 +42,21 @@
   "adminLogin.incorrectPassword": "Incorrect password. Try again.",
   "adminView.title": "Administrator",
   "adminView.backToMain": "Back to main",
-  "loading.overlay": "Loading"
+  "loading.overlay": "Loading",
+  "coachQuickRegistration.title": "Coach Quick Registration",
+  "coachQuickRegistration.loggedInAs": "Logged in as: {{name}}",
+  "coachQuickRegistration.notRegistered": "You are not registered",
+  "coachQuickRegistration.refreshData": "Refresh data",
+  "coachQuickRegistration.backToMain": "Back to main",
+  "coachQuickRegistration.register": "Register",
+  "coachQuickRegistration.remove": "Remove",
+  "coachQuickRegistration.noSessions": "No sessions found",
+  "coachQuickRegistration.loadError": "Failed to load sessions. Please try again.",
+  "coachQuickRegistration.confirmRegisterTitle": "Confirm Registration",
+  "coachQuickRegistration.confirmRegisterMessage": "Register for this session?",
+  "coachQuickRegistration.confirmRemoveTitle": "Confirm Removal",
+  "coachQuickRegistration.confirmRemoveMessage": "Remove from this session?",
+  "coachQuickRegistration.confirm": "Confirm",
+  "coachQuickRegistration.cancel": "Cancel",
+  "coachQuickRegistration.coach": "Coach: {{alias}}"
 }

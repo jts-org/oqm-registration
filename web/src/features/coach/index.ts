@@ -3,4 +3,7 @@
  * @description Public exports for the coach feature.
  */
 export { CoachLoginDialog } from './components/CoachLoginDialog';
-export type { CoachLoginDialogProps, CoachData } from './types';
+export { SessionCard } from './components/SessionCard';
+export { ConfirmCoachRegistrationDialog } from './components/ConfirmCoachRegistrationDialog';
+export { ConfirmRemoveCoachDialog } from './components/ConfirmRemoveCoachDialog';
+export type { CoachLoginDialogProps, CoachData, SessionItem } from './types';
