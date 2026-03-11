@@ -14,6 +14,38 @@ export interface CoachData {
   last_activity: string;
 }
 
+/**
+ * A single session instance returned from the GAS backend for the 21-day window.
+ * Used by CoachQuickRegistrationPage to build session cards.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export interface SessionItem {
+  /** Unique identifier: schedule_id + date */
+  id: string;
+  /** English session type name */
+  session_type: string;
+  /** Localized session type name (Finnish or other) */
+  session_type_alias: string;
+  /** Date in 'YYYY-MM-DD' format */
+  date: string;
+  /** Start time in 'HH:MM' format */
+  start_time: string;
+  /** End time in 'HH:MM' format */
+  end_time: string;
+  /** Training location */
+  location: string;
+  /** Assigned coach first name, empty if none */
+  coach_firstname: string;
+  /** Assigned coach last name, empty if none */
+  coach_lastname: string;
+  /** Assigned coach alias from coach_login, empty if none */
+  coach_alias: string;
+  /** ID of the coach_registrations row if a coach is registered, empty if none */
+  registration_id: string;
+  /** True if this is a free/sparring session (has custom start/end times) */
+  is_free_sparring: boolean;
+}
+
 /** Props for the CoachLoginDialog component. */
 export interface CoachLoginDialogProps {
   /** Whether the dialog is visible. */

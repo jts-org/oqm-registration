@@ -11,7 +11,7 @@
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
-import type { CoachData } from '../types';
+import type { CoachData, SessionItem } from '../types';
 
 /**
  * Register a new coach PIN code by posting to the GAS backend.
@@ -54,4 +54,21 @@ export async function verifyCoachPin(pin: string): Promise<CoachData> {
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Verification failed');
   return json.data as CoachData;
+}
+
+/**
+ * Fetch all coach sessions for the 21-day window (7 days prior to this week's Monday, 14 days forward).
+ * GET ?route=getCoachSessions&token=...
+ * Returns array of SessionItem objects sorted by date and start_time.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export async function getCoachSessions(): Promise<SessionItem[]> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const url = `${base}?route=getCoachSessions&token=${encodeURIComponent(token || '')}`;
+  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to fetch sessions');
+  return json.data as SessionItem[];
 }

@@ -3,6 +3,7 @@
 ## Contract
 - GET  `?route=listItems&token=...` → list rows from `Data` sheet
 - GET  `?route=getSettings&token=...` → list rows from `settings` sheet (QCM-0001)
+- GET  `?route=getCoachSessions&token=...` → fetch 21-day session window (OQM-0007)
 - POST `{ route: "createItem", payload, token }` → append row
 - POST `{ route: "registerCoachPin", payload, token }` → register coach PIN (OQM-0003)
 - POST `{ route: "verifyCoachPin", payload, token }` → verify coach PIN, return coach data (OQM-0004)
@@ -323,3 +324,41 @@ Before merging, use the review-checklist.instructions.md to ensure all requireme
 
 ## Localization
 API must accept a language parameter and return localized responses where applicable. Document how error messages and data should be localized for English and Finnish.
+
+## getCoachSessions (OQM-0007)
+
+### Request
+```
+GET ?route=getCoachSessions&token=<token>
+```
+
+### Response (success)
+Returns an array of `SessionItem` objects sorted by date and start_time, covering a 21-day window (7 days before the current week's Monday through the following 2 weeks).
+
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "string (schedule_id_date or camp_id_date)",
+      "session_type": "string (English name)",
+      "session_type_alias": "string (localized name, e.g. Finnish)",
+      "date": "YYYY-MM-DD",
+      "start_time": "HH:MM",
+      "end_time": "HH:MM",
+      "location": "string",
+      "coach_firstname": "string (empty if no coach assigned)",
+      "coach_lastname": "string (empty if no coach assigned)",
+      "coach_alias": "string (from coach_login, empty if none)",
+      "registration_id": "string (coach_registrations id, empty if none)",
+      "is_free_sparring": false
+    }
+  ]
+}
+```
+
+### Error cases
+| Error          | Meaning                              |
+|----------------|--------------------------------------|
+| `Unauthorized` | Invalid or missing API token         |
+| `Sheet not found: sessions` | Required sheet missing  |
