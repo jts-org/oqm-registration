@@ -189,3 +189,74 @@ describe('getCoachSessions', () => {
     await expect(getCoachSessions()).rejects.toThrow('Failed to fetch sessions');
   });
 });
+
+import { registerCoachForSession } from '../coach.api';
+
+describe('registerCoachForSession', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    vi.stubEnv('VITE_API_TOKEN', TOKEN);
+    mockFetch.mockReset();
+  });
+
+  it('throws when VITE_GAS_BASE_URL is not configured', async () => {
+    vi.stubEnv('VITE_GAS_BASE_URL', '');
+    await expect(
+      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
+  });
+
+  it('sends a POST request with correct shape', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'new-uuid' } }) });
+    const payload = { firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' };
+    await registerCoachForSession(payload);
+    expect(mockFetch).toHaveBeenCalledWith(
+      BASE,
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ route: 'registerCoachForSession', payload, token: TOKEN }),
+      })
+    );
+  });
+
+  it('sends optional start_time and end_time for free/sparring sessions', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'new-uuid' } }) });
+    const payload = { firstname: 'John', lastname: 'Doe', session_type: 'free/sparring', date: '2026-03-09', start_time: '10:00', end_time: '11:30' };
+    await registerCoachForSession(payload);
+    expect(mockFetch).toHaveBeenCalledWith(
+      BASE,
+      expect.objectContaining({
+        body: JSON.stringify({ route: 'registerCoachForSession', payload, token: TOKEN }),
+      })
+    );
+  });
+
+  it('returns registration id when backend returns ok: true', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'reg-123' } }) });
+    const result = await registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' });
+    expect(result).toBe('reg-123');
+  });
+
+  it('throws "already_taken" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'already_taken' }) });
+    await expect(
+      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('already_taken');
+  });
+
+  it('throws "unknown_coach" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'unknown_coach' }) });
+    await expect(
+      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('unknown_coach');
+  });
+
+  it('throws with backend error message on other errors', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'Unauthorized' }) });
+    await expect(
+      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('Unauthorized');
+  });
+});

@@ -11,7 +11,7 @@
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
-import type { CoachData, SessionItem } from '../types';
+import type { CoachData, SessionItem, RegisterCoachForSessionPayload } from '../types';
 
 /**
  * Register a new coach PIN code by posting to the GAS backend.
@@ -71,4 +71,28 @@ export async function getCoachSessions(): Promise<SessionItem[]> {
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Failed to fetch sessions');
   return json.data as SessionItem[];
+}
+
+/**
+ * Register a coach for a specific session.
+ * POST { route: "registerCoachForSession", payload: RegisterCoachForSessionPayload, token }
+ * Returns the new registration id on success.
+ * Throws Error('already_taken') if a coach is already registered for that session and date.
+ * Throws Error('unknown_coach') if the coach is not found in coach_login.
+ * Throws other Errors for network/service failures.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export async function registerCoachForSession(payload: RegisterCoachForSessionPayload): Promise<string> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'registerCoachForSession', payload, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data.id as string;
 }

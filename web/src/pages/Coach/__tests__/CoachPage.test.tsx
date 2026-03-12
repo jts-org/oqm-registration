@@ -21,9 +21,16 @@ vi.mock('../../../features/coach/api/coach.api', () => ({
   getCoachSessions: vi.fn(),
 }));
 
+vi.mock('react-hot-toast', () => ({
+  default: vi.fn(),
+  toast: vi.fn(),
+}));
+
 import { getCoachSessions } from '../../../features/coach/api/coach.api';
+import toast from 'react-hot-toast';
 
 const mockGetCoachSessions = vi.mocked(getCoachSessions);
+const mockToast = vi.mocked(toast);
 
 const mockSession: SessionItem = {
   id: 'ws-1_2026-03-09',
@@ -121,5 +128,26 @@ describe('CoachPage', () => {
     await waitFor(() => screen.getByRole('button', { name: 'Remove' }));
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(screen.getByText('Confirm Removal')).toBeInTheDocument();
+  });
+
+  it('passes selected session and coachData to ConfirmCoachRegistrationDialog', async () => {
+    const coachData = { id: '1', firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', created_at: '', last_activity: '' };
+    mockGetCoachSessions.mockResolvedValue([mockSession]);
+    render(<CoachPage onBack={vi.fn()} coachData={coachData} />);
+    await waitFor(() => screen.getByRole('button', { name: 'Register' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+    // Dialog should open and show confirmation title
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Confirm Registration' })).toBeInTheDocument();
+  });
+
+  it('dismisses dialog and shows cancellation toast when cancel is clicked', async () => {
+    mockGetCoachSessions.mockResolvedValue([mockSession]);
+    render(<CoachPage onBack={vi.fn()} />);
+    await waitFor(() => screen.getByRole('button', { name: 'Register' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    await userEvent.click(cancelBtn);
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Registration cancelled.'));
   });
 });

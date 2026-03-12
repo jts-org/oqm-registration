@@ -7,6 +7,7 @@
 - POST `{ route: "createItem", payload, token }` → append row
 - POST `{ route: "registerCoachPin", payload, token }` → register coach PIN (OQM-0003)
 - POST `{ route: "verifyCoachPin", payload, token }` → verify coach PIN, return coach data (OQM-0004)
+- POST `{ route: "registerCoachForSession", payload, token }` → register coach for a session (OQM-0008)
 - Response JSON shape: `{ ok: true, data } | { ok: false, error }`
 
 ## Settings parameters used by the frontend
@@ -211,6 +212,82 @@ API must accept a language parameter and return localized responses where applic
 |-------------|---------------------------------|----------------------|
 | `coach_pwd` | Password for coach login        | CoachLoginDialog     |
 | `admin_pwd` | Password for admin login        | AdminLoginDialog     |
+
+## registerCoachForSession (OQM-0008)
+
+### Request
+```json
+{
+  "route": "registerCoachForSession",
+  "payload": {
+    "firstname": "string (required)",
+    "lastname":  "string (required)",
+    "session_type": "string (required)",
+    "date":      "string (required, YYYY-MM-DD)",
+    "start_time": "string (optional, HH:MM — only for free/sparring sessions)",
+    "end_time":   "string (optional, HH:MM — only for free/sparring sessions)"
+  },
+  "token": "string"
+}
+```
+
+### Response (success)
+```json
+{ "ok": true, "data": { "id": "uuid" } }
+```
+
+### Response (session already taken)
+```json
+{ "ok": false, "error": "already_taken" }
+```
+
+### Response (unknown coach)
+```json
+{ "ok": false, "error": "unknown_coach" }
+```
+
+### Error cases
+| Error            | Meaning                                                         |
+|------------------|-----------------------------------------------------------------|
+| `already_taken`  | A coach is already registered for this session on this date     |
+| `unknown_coach`  | Coach (firstname + lastname) not found in `coach_login` sheet   |
+| `Unauthorized`   | Invalid or missing API token                                    |
+| `Missing required fields: ...` | Payload validation failure                    |
+
+### Frontend API function
+```ts
+/** Payload for registering a coach for a session. */
+type RegisterCoachForSessionPayload = {
+  firstname: string;
+  lastname: string;
+  session_type: string;
+  date: string;
+  start_time?: string;
+  end_time?: string;
+};
+
+/**
+ * Register a coach for a specific session.
+ * Returns the newly created registration id on success.
+ * Throws Error('already_taken') if the session already has a registered coach.
+ * Throws Error('unknown_coach') if the coach is not found in coach_login.
+ * Throws other Errors on network/service failures.
+ */
+export async function registerCoachForSession(payload: RegisterCoachForSessionPayload): Promise<string> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'registerCoachForSession', payload, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data.id as string;
+}
+```
 
 ## Frontend fetch patterns
 ```ts

@@ -7,12 +7,14 @@
 /**
  * @description Coach Quick Registration Page — shown after coach authenticates via PIN or password.
  *   Fetches a 21-day window of session data from the GAS backend and displays session cards
- *   grouped by date. Coaches can click Register or Remove to trigger dummy confirmation dialogs.
+ *   grouped by date. Coaches can click Register to open a confirmation dialog that sends a
+ *   real registration to the backend (OQM-0008), or Remove to trigger a removal confirmation.
  *   Uses MUI for accessible and consistent UI.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
@@ -90,6 +92,33 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
     setConfirmRemoveOpen(true);
   }
 
+  function handleRegisterSuccess(registrationId: string) {
+    setConfirmRegisterOpen(false);
+    if (selectedSession && coachData) {
+      const coachName = coachData.alias || `${coachData.firstname} ${coachData.lastname}`;
+      setSessions(prev =>
+        prev.map(s =>
+          s.id === selectedSession.id
+            ? {
+                ...s,
+                coach_firstname: coachData.firstname,
+                coach_lastname: coachData.lastname,
+                coach_alias: coachName,
+                registration_id: registrationId,
+              }
+            : s
+        )
+      );
+    }
+    setSelectedSession(null);
+  }
+
+  function handleRegisterCancel() {
+    setConfirmRegisterOpen(false);
+    setSelectedSession(null);
+    toast(t('coachQuickRegistration.registrationCancelled'));
+  }
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', p: 2 }}>
       <LoadingOverlay visible={loading} />
@@ -144,8 +173,10 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
 
       <ConfirmCoachRegistrationDialog
         open={confirmRegisterOpen}
-        onConfirm={() => { setConfirmRegisterOpen(false); setSelectedSession(null); }}
-        onCancel={() => { setConfirmRegisterOpen(false); setSelectedSession(null); }}
+        session={selectedSession}
+        coachData={coachData}
+        onSuccess={handleRegisterSuccess}
+        onCancel={handleRegisterCancel}
       />
 
       <ConfirmRemoveCoachDialog

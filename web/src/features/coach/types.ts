@@ -46,6 +46,22 @@ export interface SessionItem {
   is_free_sparring: boolean;
 }
 
+/**
+ * Payload for registering a coach for a specific session.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export interface RegisterCoachForSessionPayload {
+  firstname: string;
+  lastname: string;
+  session_type: string;
+  /** Date in 'YYYY-MM-DD' format */
+  date: string;
+  /** Start time 'HH:MM' — only for free/sparring sessions */
+  start_time?: string;
+  /** End time 'HH:MM' — only for free/sparring sessions */
+  end_time?: string;
+}
+
 /** Props for the CoachLoginDialog component. */
 export interface CoachLoginDialogProps {
   /** Whether the dialog is visible. */

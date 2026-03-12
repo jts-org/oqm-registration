@@ -7,6 +7,7 @@
  *  - POST { route: "createItem", payload: { name, email } }
  *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin } } — register a new coach PIN code (OQM-0003)
  *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
+ *  - POST { route: "registerCoachForSession", payload: { firstname, lastname, session_type, date, start_time?, end_time? } } — register coach for a session (OQM-0008)
  */
 
 const SHEET_ID = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
@@ -63,6 +64,16 @@ function doPost(e) {
         return json_({ ok: false, error: 'no_match_found' });
       }
       return json_({ ok: true, data: coachData });
+    }
+    if (route === 'registerCoachForSession') {
+      const result = registerCoachForSession_(payload);
+      if (result.alreadyTaken) {
+        return json_({ ok: false, error: 'already_taken' });
+      }
+      if (result.unknownCoach) {
+        return json_({ ok: false, error: 'unknown_coach' });
+      }
+      return json_({ ok: true, data: { id: result.id } });
     }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
@@ -216,6 +227,56 @@ function verifyCoachPin_(payload) {
     created_at: String(row[5]),
     last_activity: String(row[6])
   };
+}
+
+/**
+ * Register a coach for a specific session.
+ * Validates that the coach exists in coach_login and that no coach is already registered for the session.
+ * On success, appends a row to coach_registrations and returns the new row id.
+ * Returns { alreadyTaken: true } if a coach is already registered for the session+date.
+ * Returns { unknownCoach: true } if the coach is not in coach_login.
+ * Schema: id, first_name, last_name, session_type, date, realized, start_time, end_time, created_at, updated_at (columns A–J)
+ * See SKILL.sheet-schema.md for full schema definition.
+ * See SKILL.wire-react-to-gas.md for API contract (OQM-0008).
+ */
+function registerCoachForSession_(payload) {
+  if (!payload || !payload.firstname || !payload.lastname || !payload.session_type || !payload.date) {
+    throw new Error('Missing required fields: firstname, lastname, session_type, date');
+  }
+
+  // Check coach exists in coach_login (columns B=firstname, C=lastname)
+  const coachRows = getSheetData('coach_login');
+  const coachExists = coachRows.some(r =>
+    String(r[1]).trim().toLowerCase() === payload.firstname.trim().toLowerCase() &&
+    String(r[2]).trim().toLowerCase() === payload.lastname.trim().toLowerCase()
+  );
+  if (!coachExists) {
+    return { unknownCoach: true };
+  }
+
+  // Check if session already has a registered coach (session_type + date with realized=true)
+  const coachRegRows = getSheetData('coach_registrations');
+  const tz = Session.getScriptTimeZone();
+  const sessionTypeUpper = payload.session_type.toUpperCase();
+  const alreadyRegistered = coachRegRows.some(r => {
+    const regSessionType = String(r[3] || '').toUpperCase();
+    const regDate = timeToStr(r[4], tz, 'yyyy-MM-dd');
+    const realized = r.length >= 6 ? getBooleanValue(r[5]) : true;
+    return regSessionType === sessionTypeUpper && regDate === payload.date && realized;
+  });
+  if (alreadyRegistered) {
+    return { alreadyTaken: true };
+  }
+
+  // Append row to coach_registrations
+  const sh = getSheetByName('coach_registrations');
+  const id = Utilities.getUuid();
+  const now = new Date().toISOString();
+  const startTime = payload.start_time || '';
+  const endTime = payload.end_time || '';
+  sh.appendRow([id, payload.firstname, payload.lastname, payload.session_type, payload.date, true, startTime, endTime, now, now]);
+
+  return { id };
 }
 
 function getBooleanValue(value) {
@@ -492,8 +553,8 @@ function getCoachSessions_() {
           return; // Camp session outside of session window
         }
         var sessionName = String(r[2]);
-        var startTime = Utilities.formatDate(r[4], tz, 'yyyy-MM-dd');
-        var endTime = Utilities.formatDate(r[5], tz, 'yyyy-MM-dd');
+        var startTime = timeToStr(r[4], tz, 'HH:mm');
+        var endTime = timeToStr(r[5], tz, 'HH:mm');
 
         // Remove any regular session with same date from sessions
         sessions = sessions.filter(function(s) {
