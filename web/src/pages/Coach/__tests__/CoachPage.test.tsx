@@ -19,17 +19,23 @@ import type { SessionItem } from '../../../features/coach/types';
 
 vi.mock('../../../features/coach/api/coach.api', () => ({
   getCoachSessions: vi.fn(),
+  removeCoachFromSession: vi.fn(),
 }));
 
-vi.mock('react-hot-toast', () => ({
-  default: vi.fn(),
-  toast: vi.fn(),
-}));
+vi.mock('react-hot-toast', () => {
+  const toastFn = Object.assign(vi.fn(), {
+    success: vi.fn(),
+    error: vi.fn(),
+  });
+  return { default: toastFn };
+});
 
 import { getCoachSessions } from '../../../features/coach/api/coach.api';
+import { removeCoachFromSession } from '../../../features/coach/api/coach.api';
 import toast from 'react-hot-toast';
 
 const mockGetCoachSessions = vi.mocked(getCoachSessions);
+const mockRemoveCoachFromSession = vi.mocked(removeCoachFromSession);
 const mockToast = vi.mocked(toast);
 
 const mockSession: SessionItem = {
@@ -149,5 +155,27 @@ describe('CoachPage', () => {
     const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
     await userEvent.click(cancelBtn);
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Registration cancelled.'));
+  });
+
+  it('shows ConfirmRemoveCoachDialog dismisses on cancel with removal cancellation toast', async () => {
+    const sessionWithCoach = { ...mockSession, coach_alias: 'JD', coach_firstname: 'John', coach_lastname: 'Doe', registration_id: 'reg-1' };
+    mockGetCoachSessions.mockResolvedValue([sessionWithCoach]);
+    render(<CoachPage onBack={vi.fn()} />);
+    await waitFor(() => screen.getByRole('button', { name: 'Remove' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    await userEvent.click(cancelBtn);
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Registration removal cancelled.'));
+  });
+
+  it('updates session card to show Register button after successful removal', async () => {
+    const sessionWithCoach = { ...mockSession, coach_alias: 'JD', coach_firstname: 'John', coach_lastname: 'Doe', registration_id: 'reg-1' };
+    mockGetCoachSessions.mockResolvedValue([sessionWithCoach]);
+    mockRemoveCoachFromSession.mockResolvedValue('reg-1');
+    render(<CoachPage onBack={vi.fn()} />);
+    await waitFor(() => screen.getByRole('button', { name: 'Remove' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument());
   });
 });

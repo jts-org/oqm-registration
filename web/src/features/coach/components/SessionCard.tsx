@@ -41,6 +41,9 @@ export function SessionCard({ session, onRegister, onRemove, cardStyle }: Sessio
 
   const displayName = session.session_type_alias || session.session_type;
 
+  /** Register button is disabled for free/sparring sessions that have no coach assigned. */
+  const isRegisterDisabled = !hasCoach && session.is_free_sparring;
+
   return (
     <Card sx={{ backgroundColor, mb: 1, color: '#fff', border: `2px solid ${theme.palette.common.white}`, ...cardStyle }}>
       <Box sx={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
@@ -77,6 +80,7 @@ export function SessionCard({ session, onRegister, onRemove, cardStyle }: Sessio
               variant="contained"
               color="primary"
               onClick={() => onRegister(session)}
+              disabled={isRegisterDisabled}
               sx={{ border: '1px solid #000' }}
             >
               {t('coachQuickRegistration.register')}

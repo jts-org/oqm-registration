@@ -119,6 +119,26 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
     toast(t('coachQuickRegistration.registrationCancelled'));
   }
 
+  function handleRemoveSuccess(_registrationId: string) {
+    setConfirmRemoveOpen(false);
+    if (selectedSession) {
+      setSessions(prev =>
+        prev.map(s =>
+          s.id === selectedSession.id
+            ? { ...s, coach_firstname: '', coach_lastname: '', coach_alias: '', registration_id: '' }
+            : s
+        )
+      );
+    }
+    setSelectedSession(null);
+  }
+
+  function handleRemoveCancel() {
+    setConfirmRemoveOpen(false);
+    setSelectedSession(null);
+    toast(t('coachQuickRegistration.removalCancelled'));
+  }
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', p: 2 }}>
       <LoadingOverlay visible={loading} />
@@ -181,8 +201,9 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
 
       <ConfirmRemoveCoachDialog
         open={confirmRemoveOpen}
-        onConfirm={() => { setConfirmRemoveOpen(false); setSelectedSession(null); }}
-        onCancel={() => { setConfirmRemoveOpen(false); setSelectedSession(null); }}
+        session={selectedSession}
+        onSuccess={handleRemoveSuccess}
+        onCancel={handleRemoveCancel}
       />
     </Box>
   );

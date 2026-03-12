@@ -62,6 +62,18 @@ export interface RegisterCoachForSessionPayload {
   end_time?: string;
 }
 
+/**
+ * Payload for removing a coach from a specific session (OQM-0009).
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export interface RemoveCoachFromSessionPayload {
+  firstname: string;
+  lastname: string;
+  session_type: string;
+  /** Date in 'YYYY-MM-DD' format */
+  date: string;
+}
+
 /** Props for the CoachLoginDialog component. */
 export interface CoachLoginDialogProps {
   /** Whether the dialog is visible. */

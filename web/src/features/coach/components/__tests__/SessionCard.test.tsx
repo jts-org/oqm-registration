@@ -105,4 +105,15 @@ describe('SessionCard', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(onRemove).toHaveBeenCalledWith(sessionWithCoach);
   });
+
+  it('disables Register button when no coach and session is free/sparring', () => {
+    const freeSparringSession: SessionItem = { ...baseSession, session_type: 'free/sparring', is_free_sparring: true };
+    renderCard(freeSparringSession);
+    expect(screen.getByRole('button', { name: 'Register' })).toBeDisabled();
+  });
+
+  it('enables Register button when no coach and session is not free/sparring', () => {
+    renderCard(baseSession);
+    expect(screen.getByRole('button', { name: 'Register' })).not.toBeDisabled();
+  });
 });
