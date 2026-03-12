@@ -8,6 +8,7 @@
  *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin } } — register a new coach PIN code (OQM-0003)
  *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
  *  - POST { route: "registerCoachForSession", payload: { firstname, lastname, session_type, date, start_time?, end_time? } } — register coach for a session (OQM-0008)
+ *  - POST { route: "removeCoachFromSession", payload: { firstname, lastname, session_type, date } } — remove coach from a session (OQM-0009)
  */
 
 const SHEET_ID = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
@@ -72,6 +73,19 @@ function doPost(e) {
       }
       if (result.unknownCoach) {
         return json_({ ok: false, error: 'unknown_coach' });
+      }
+      return json_({ ok: true, data: { id: result.id } });
+    }
+    if (route === 'removeCoachFromSession') {
+      const result = removeCoachFromSession_(payload);
+      if (result.concurrentOperation) {
+        return json_({ ok: false, error: 'concurrent_operation' });
+      }
+      if (result.registrationNotFound) {
+        return json_({ ok: false, error: 'registration_not_found' });
+      }
+      if (result.sessionAvailable) {
+        return json_({ ok: false, error: 'session_available' });
       }
       return json_({ ok: true, data: { id: result.id } });
     }
@@ -588,6 +602,80 @@ function getCoachSessions_() {
   logToSheet(`getCoachSessions_() - returned sessions: ` + JSON.stringify(sessions));
   
   return sessions;
+}
+
+/**
+ * Remove a coach from a specific session (OQM-0009).
+ * Acquires a script lock to prevent concurrent operations.
+ * Identifies the registration row by matching firstname, lastname, session_type, and date where realized=true.
+ * Updates realized to false and updated_at to the current timestamp.
+ * Returns { concurrentOperation: true } if the lock cannot be acquired.
+ * Returns { registrationNotFound: true } if no matching realized=true row exists.
+ * Returns { sessionAvailable: true } if the identified row has realized=false.
+ * Returns { id } of the updated row on success.
+ * Schema: id, first_name, last_name, session_type, date, realized, start_time, end_time, created_at, updated_at (cols A–J)
+ * See SKILL.sheet-schema.md for full schema definition.
+ * See SKILL.wire-react-to-gas.md for API contract (OQM-0009).
+ */
+function removeCoachFromSession_(payload) {
+  if (!payload || !payload.firstname || !payload.lastname || !payload.session_type || !payload.date) {
+    throw new Error('Missing required fields: firstname, lastname, session_type, date');
+  }
+
+  const lock = LockService.getScriptLock();
+  const acquired = lock.tryLock(5000);
+  if (!acquired) {
+    return { concurrentOperation: true };
+  }
+
+  try {
+    const tz = Session.getScriptTimeZone();
+    const sessionTypeUpper = payload.session_type.toUpperCase();
+    const sheet = getSheetByName('coach_registrations');
+    if (!sheet) throw new Error('Sheet not found: coach_registrations');
+
+    const data = sheet.getDataRange().getValues();
+    // data[0] is the header row; data starts at index 1 for actual rows
+    let matchRowIndex = -1;
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowFirstname = String(row[1] || '').trim();
+      const rowLastname = String(row[2] || '').trim();
+      const rowSessionType = String(row[3] || '').toUpperCase();
+      const rowDate = timeToStr(row[4], tz, 'yyyy-MM-dd');
+      const rowRealized = row.length >= 6 ? getBooleanValue(row[5]) : true;
+
+      if (
+        rowFirstname.toLowerCase() === payload.firstname.trim().toLowerCase() &&
+        rowLastname.toLowerCase() === payload.lastname.trim().toLowerCase() &&
+        rowSessionType === sessionTypeUpper &&
+        rowDate === payload.date
+      ) {
+        if (!rowRealized) {
+          return { sessionAvailable: true };
+        }
+        matchRowIndex = i;
+        break;
+      }
+    }
+
+    if (matchRowIndex === -1) {
+      return { registrationNotFound: true };
+    }
+
+    // Update realized=false and updated_at; sheet row is matchRowIndex + 1 (1-based)
+    const now = new Date().toISOString();
+    const sheetRow = matchRowIndex + 1;
+    sheet.getRange(sheetRow, 6).setValue(false);   // col F = realized
+    sheet.getRange(sheetRow, 10).setValue(now);    // col J = updated_at
+
+    const registrationId = String(data[matchRowIndex][0]);
+    logToSheet(`removeCoachFromSession_ - updated row ${sheetRow}, id: ${registrationId}`);
+    return { id: registrationId };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // usage: 

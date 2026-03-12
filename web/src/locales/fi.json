@@ -69,5 +69,14 @@
   "coachQuickRegistration.registrationFailed": "Ilmoittautuminen epäonnistui. Yritä uudelleen.",
   "coachQuickRegistration.alreadyTaken": "Harjoituksella on jo ilmoittautunut valmentaja. Päivitä sivu.",
   "coachQuickRegistration.unknownCoach": "Tuntematon valmentaja. Ota yhteyttä järjestelmänvalvojaan.",
-  "coachQuickRegistration.registrationCancelled": "Ilmoittautuminen peruutettu."
+  "coachQuickRegistration.registrationCancelled": "Ilmoittautuminen peruutettu.",
+  "coachQuickRegistration.confirmRemoveQuestion": "Poistetaanko valmentaja tältä harjoitukselta?",
+  "coachQuickRegistration.confirmRemoveNotification": "Harjoittelijat ovat saattaneet ilmoittautua harjoitukseen. Varmista, että heitä tiedotetaan peruutuksesta asianmukaisten kanavien kautta mahdollisimman pian tai että harjoitukselle rekisteröidään uusi valmentaja.",
+  "coachQuickRegistration.removalOngoing": "Ilmoittautumisen poistaminen käynnissä. Odota.",
+  "coachQuickRegistration.removalSuccess": "Ilmoittautuminen poistettu onnistuneesti!",
+  "coachQuickRegistration.removalFailed": "Ilmoittautumisen poistaminen epäonnistui. Yritä uudelleen.",
+  "coachQuickRegistration.concurrentOperation": "Samanaikainen operaatio käynnissä. Päivitä sivu ennen kuin yrität uudelleen.",
+  "coachQuickRegistration.sessionAvailable": "Harjoituksella ei ole rekisteröitynyttä valmentajaa. Päivitä sivu.",
+  "coachQuickRegistration.registrationNotFound": "Ilmoittautumista ei löydy. Päivitä sivu.",
+  "coachQuickRegistration.removalCancelled": "Ilmoittautumisen poistaminen peruutettu."
 }

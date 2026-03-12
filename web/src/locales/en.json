@@ -69,5 +69,14 @@
   "coachQuickRegistration.registrationFailed": "Registration failed. Please try again.",
   "coachQuickRegistration.alreadyTaken": "Session already has a registered coach. Refresh page.",
   "coachQuickRegistration.unknownCoach": "Unknown coach. Contact system administrator.",
-  "coachQuickRegistration.registrationCancelled": "Registration cancelled."
+  "coachQuickRegistration.registrationCancelled": "Registration cancelled.",
+  "coachQuickRegistration.confirmRemoveQuestion": "Remove a coach from this session?",
+  "coachQuickRegistration.confirmRemoveNotification": "Trainees may have registered to the session. Make sure they are informed about the cancellation via proper channels as soon as possible or that a new coach is registered for the session.",
+  "coachQuickRegistration.removalOngoing": "Registration removal ongoing. Please wait.",
+  "coachQuickRegistration.removalSuccess": "Registration removed successfully!",
+  "coachQuickRegistration.removalFailed": "Registration removal failed. Please try again.",
+  "coachQuickRegistration.concurrentOperation": "Concurrent operation ongoing. Refresh page before trying again.",
+  "coachQuickRegistration.sessionAvailable": "Session already without registered coach. Refresh page.",
+  "coachQuickRegistration.registrationNotFound": "Registration not found. Refresh page.",
+  "coachQuickRegistration.removalCancelled": "Registration removal cancelled."
 }

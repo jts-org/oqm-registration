@@ -11,7 +11,7 @@
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
-import type { CoachData, SessionItem, RegisterCoachForSessionPayload } from '../types';
+import type { CoachData, SessionItem, RegisterCoachForSessionPayload, RemoveCoachFromSessionPayload } from '../types';
 
 /**
  * Register a new coach PIN code by posting to the GAS backend.
@@ -94,5 +94,30 @@ export async function registerCoachForSession(payload: RegisterCoachForSessionPa
   });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data.id as string;
+}
+
+/**
+ * Remove a coach from a specific session (OQM-0009).
+ * POST { route: "removeCoachFromSession", payload: RemoveCoachFromSessionPayload, token }
+ * Returns the updated registration id on success.
+ * Throws Error('concurrent_operation') if a concurrent script lock is held.
+ * Throws Error('registration_not_found') if no realized registration matches.
+ * Throws Error('session_available') if the matching registration is already realized=false.
+ * Throws other Errors for network/service failures.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export async function removeCoachFromSession(payload: RemoveCoachFromSessionPayload): Promise<string> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'removeCoachFromSession', payload, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Removal failed');
   return json.data.id as string;
 }

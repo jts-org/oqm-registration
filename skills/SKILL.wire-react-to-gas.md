@@ -8,6 +8,7 @@
 - POST `{ route: "registerCoachPin", payload, token }` → register coach PIN (OQM-0003)
 - POST `{ route: "verifyCoachPin", payload, token }` → verify coach PIN, return coach data (OQM-0004)
 - POST `{ route: "registerCoachForSession", payload, token }` → register coach for a session (OQM-0008)
+- POST `{ route: "removeCoachFromSession", payload, token }` → remove coach from a session (OQM-0009)
 - Response JSON shape: `{ ok: true, data } | { ok: false, error }`
 
 ## Settings parameters used by the frontend
@@ -142,20 +143,81 @@ export async function verifyCoachPin(pin: string): Promise<CoachData> {
 }
 ```
 
+## removeCoachFromSession (OQM-0009)
+
+### Request
+```json
+{
+  "route": "removeCoachFromSession",
+  "payload": {
+    "firstname":    "string (required)",
+    "lastname":     "string (required)",
+    "session_type": "string (required)",
+    "date":         "string (required, YYYY-MM-DD)"
+  },
+  "token": "string"
+}
+```
+
+### Response (success)
+```json
+{ "ok": true, "data": { "id": "uuid" } }
+```
+
+### Response (error)
+```json
+{ "ok": false, "error": "concurrent_operation | registration_not_found | session_available" }
+```
+
+### Error cases
+| Error                    | Meaning                                                                                  |
+|--------------------------|------------------------------------------------------------------------------------------|
+| `concurrent_operation`   | Script lock could not be acquired — another operation is in progress                     |
+| `registration_not_found` | No realized=true row in `coach_registrations` for the given coach/session/date           |
+| `session_available`      | Matching row found but realized=false (session already has no coach)                     |
+| `Unauthorized`           | Invalid or missing API token                                                             |
+
+### Frontend API function
+```ts
+/** Payload for removing a coach from a specific session. */
+type RemoveCoachFromSessionPayload = {
+  firstname: string;
+  lastname: string;
+  session_type: string;
+  /** Date in 'YYYY-MM-DD' format */
+  date: string;
+};
+
+/**
+ * Remove a coach from a specific session.
+ * Returns the updated registration id on success.
+ * Throws Error('concurrent_operation') if a concurrent script lock is held.
+ * Throws Error('registration_not_found') if no realized registration matches.
+ * Throws Error('session_available') if the matching registration is already realized=false.
+ * Throws other Errors on network/service failures.
+ */
+export async function removeCoachFromSession(payload: RemoveCoachFromSessionPayload): Promise<string> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'removeCoachFromSession', payload, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Removal failed');
+  return json.data.id as string;
+}
+```
+
 ## Frontend fetch patterns
 ```ts
 const base = import.meta.env.VITE_GAS_BASE_URL;
 const token = import.meta.env.VITE_API_TOKEN;
 
 /** Shape of a single row returned from the `settings` sheet. */
-type Setting = {
-  id: string;
-  parameter: string;
-  value: string;
-  created_at: string;
-  updated_at: string;
-  purpose: string;
-};
 
 /** Fetch all settings rows (QCM-0001 — fetched on application startup). */
 export async function getSettings(): Promise<Setting[]> {

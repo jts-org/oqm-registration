@@ -260,3 +260,69 @@ describe('registerCoachForSession', () => {
     ).rejects.toThrow('Unauthorized');
   });
 });
+
+import { removeCoachFromSession } from '../coach.api';
+
+describe('removeCoachFromSession', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    vi.stubEnv('VITE_API_TOKEN', TOKEN);
+    mockFetch.mockReset();
+  });
+
+  it('throws when VITE_GAS_BASE_URL is not configured', async () => {
+    vi.stubEnv('VITE_GAS_BASE_URL', '');
+    await expect(
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
+  });
+
+  it('sends a POST request with correct shape', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'reg-1' } }) });
+    const payload = { firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' };
+    await removeCoachFromSession(payload);
+    expect(mockFetch).toHaveBeenCalledWith(
+      BASE,
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ route: 'removeCoachFromSession', payload, token: TOKEN }),
+      })
+    );
+  });
+
+  it('returns registration id when backend returns ok: true', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'reg-1' } }) });
+    const result = await removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' });
+    expect(result).toBe('reg-1');
+  });
+
+  it('throws "concurrent_operation" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'concurrent_operation' }) });
+    await expect(
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('concurrent_operation');
+  });
+
+  it('throws "registration_not_found" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'registration_not_found' }) });
+    await expect(
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('registration_not_found');
+  });
+
+  it('throws "session_available" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'session_available' }) });
+    await expect(
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('session_available');
+  });
+
+  it('throws with backend error message on other errors', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'Unauthorized' }) });
+    await expect(
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('Unauthorized');
+  });
+});
