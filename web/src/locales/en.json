@@ -58,5 +58,16 @@
   "coachQuickRegistration.confirmRemoveMessage": "Remove from this session?",
   "coachQuickRegistration.confirm": "Confirm",
   "coachQuickRegistration.cancel": "Cancel",
-  "coachQuickRegistration.coach": "Coach: {{alias}}"
+  "coachQuickRegistration.coach": "Coach: {{alias}}",
+  "coachQuickRegistration.confirmRegisterQuestion": "Do you register as coach for this session?",
+  "coachQuickRegistration.sessionTypeLabel": "Session",
+  "coachQuickRegistration.sessionDateLabel": "Date",
+  "coachQuickRegistration.sessionTimeLabel": "Time",
+  "coachQuickRegistration.coachNameLabel": "Coach",
+  "coachQuickRegistration.registrationOngoing": "Registration ongoing. Please wait.",
+  "coachQuickRegistration.registrationSuccess": "Registration successful!",
+  "coachQuickRegistration.registrationFailed": "Registration failed. Please try again.",
+  "coachQuickRegistration.alreadyTaken": "Session already has a registered coach. Refresh page.",
+  "coachQuickRegistration.unknownCoach": "Unknown coach. Contact system administrator.",
+  "coachQuickRegistration.registrationCancelled": "Registration cancelled."
 }

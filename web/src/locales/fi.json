@@ -58,5 +58,16 @@
   "coachQuickRegistration.confirmRemoveMessage": "Poistua tältä harjoitukselta?",
   "coachQuickRegistration.confirm": "Vahvista",
   "coachQuickRegistration.cancel": "Peruuta",
-  "coachQuickRegistration.coach": "Valmentaja: {{alias}}"
+  "coachQuickRegistration.coach": "Valmentaja: {{alias}}",
+  "coachQuickRegistration.confirmRegisterQuestion": "Ilmoittaudutko valmentajaksi tälle harjoitukselle?",
+  "coachQuickRegistration.sessionTypeLabel": "Harjoitus",
+  "coachQuickRegistration.sessionDateLabel": "Päivämäärä",
+  "coachQuickRegistration.sessionTimeLabel": "Aika",
+  "coachQuickRegistration.coachNameLabel": "Valmentaja",
+  "coachQuickRegistration.registrationOngoing": "Ilmoittautuminen käynnissä. Odota.",
+  "coachQuickRegistration.registrationSuccess": "Ilmoittautuminen onnistui!",
+  "coachQuickRegistration.registrationFailed": "Ilmoittautuminen epäonnistui. Yritä uudelleen.",
+  "coachQuickRegistration.alreadyTaken": "Harjoituksella on jo ilmoittautunut valmentaja. Päivitä sivu.",
+  "coachQuickRegistration.unknownCoach": "Tuntematon valmentaja. Ota yhteyttä järjestelmänvalvojaan.",
+  "coachQuickRegistration.registrationCancelled": "Ilmoittautuminen peruutettu."
 }

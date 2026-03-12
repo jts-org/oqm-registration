@@ -6,4 +6,4 @@ export { CoachLoginDialog } from './components/CoachLoginDialog';
 export { SessionCard } from './components/SessionCard';
 export { ConfirmCoachRegistrationDialog } from './components/ConfirmCoachRegistrationDialog';
 export { ConfirmRemoveCoachDialog } from './components/ConfirmRemoveCoachDialog';
-export type { CoachLoginDialogProps, CoachData, SessionItem } from './types';
+export type { CoachLoginDialogProps, CoachData, SessionItem, RegisterCoachForSessionPayload } from './types';
