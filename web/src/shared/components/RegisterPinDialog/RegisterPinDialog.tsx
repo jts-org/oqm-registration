@@ -21,6 +21,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import Box from '@mui/material/Box';
 import { LoadingOverlay } from '../LoadingOverlay/LoadingOverlay';
 
 const PIN_PATTERN = /^\d{4,6}$/;
@@ -57,6 +59,10 @@ export interface RegisterPinDialogProps {
   onCancel: () => void;
   /** Whether to show the Alias input field. Defaults to true. */
   showAlias?: boolean;
+  /** Pre-fill the Firstname field when the dialog opens (OQM-0010). */
+  initialFirstname?: string;
+  /** Pre-fill the Lastname field when the dialog opens (OQM-0010). */
+  initialLastname?: string;
 }
 
 /**
@@ -70,6 +76,8 @@ export function RegisterPinDialog({
   onSuccess,
   onCancel,
   showAlias = true,
+  initialFirstname = '',
+  initialLastname = '',
 }: RegisterPinDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -82,11 +90,11 @@ export function RegisterPinDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pinReservedOpen, setPinReservedOpen] = useState(false);
 
-  // Reset form state each time the dialog opens.
+  // Reset form state each time the dialog opens; pre-fill names when provided (OQM-0010).
   useEffect(() => {
     if (open) {
-      setFirstname('');
-      setLastname('');
+      setFirstname(initialFirstname);
+      setLastname(initialLastname);
       setAlias('');
       setPin('');
       setPinAgain('');
@@ -94,7 +102,7 @@ export function RegisterPinDialog({
       setIsSubmitting(false);
       setPinReservedOpen(false);
     }
-  }, [open]);
+  }, [open, initialFirstname, initialLastname]);
 
   function markDirty(field: string) {
     setDirty(prev => ({ ...prev, [field]: true }));
@@ -296,29 +304,35 @@ export function RegisterPinDialog({
           />
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={handleRegister} 
-            disabled={!isFormValid || isSubmitting} 
-            variant="contained"
-            sx={{ 
-              whiteSpace: 'nowrap', 
-              background: theme.palette.background.default,
-              color: theme.palette.text.primary,
-              borderColor: theme.palette.primary.main,                
-            }}
-          >
-            {t('registerPin.register')}
-          </Button>
-          <Button 
-            onClick={onCancel}
-            sx={{
-              background: theme.palette.primary.main,
-              color: theme.palette.text.primary,
-              borderColor: theme.palette.primary.main,
-            }}
-          >
-            {t('registerPin.cancel')}
-          </Button>
+          <Box>
+            <ButtonGroup>
+              <Button 
+                onClick={handleRegister} 
+                disabled={!isFormValid || isSubmitting} 
+                variant="contained"
+                color="primary"
+//                sx={{ 
+//                  whiteSpace: 'nowrap', 
+//                  background: theme.palette.background.default,
+//                  color: theme.palette.text.primary,
+//                  borderColor: theme.palette.primary.main,                
+//                }}
+              >
+                {t('registerPin.register')}
+              </Button>
+              <Button 
+                onClick={onCancel}
+                variant="outlined"
+//                sx={{
+//                  background: theme.palette.primary.main,
+//                  color: theme.palette.text.primary,
+//                  borderColor: theme.palette.primary.main,
+//                }}
+              >
+                {t('registerPin.cancel')}
+              </Button>
+            </ButtonGroup>
+          </Box>
         </DialogActions>
         <LoadingOverlay visible={isSubmitting} />
       </Dialog>

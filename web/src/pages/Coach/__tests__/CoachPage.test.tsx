@@ -119,12 +119,21 @@ describe('CoachPage', () => {
     });
   });
 
-  it('shows ConfirmCoachRegistrationDialog when Register is clicked', async () => {
+  it('shows ConfirmCoachRegistrationDialog when Register is clicked (PIN-authenticated coach)', async () => {
+    const coachData = { id: '1', firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', created_at: '', last_activity: '' };
+    mockGetCoachSessions.mockResolvedValue([mockSession]);
+    render(<CoachPage onBack={vi.fn()} coachData={coachData} />);
+    await waitFor(() => screen.getByRole('button', { name: 'Register' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+    expect(screen.getByText('Confirm Registration')).toBeInTheDocument();
+  });
+
+  it('shows ManualCoachRegistrationDialog when Register is clicked (password-authenticated coach)', async () => {
     mockGetCoachSessions.mockResolvedValue([mockSession]);
     render(<CoachPage onBack={vi.fn()} />);
     await waitFor(() => screen.getByRole('button', { name: 'Register' }));
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
-    expect(screen.getByText('Confirm Registration')).toBeInTheDocument();
+    expect(screen.getByText('Fill your information')).toBeInTheDocument();
   });
 
   it('shows ConfirmRemoveCoachDialog when Remove is clicked', async () => {

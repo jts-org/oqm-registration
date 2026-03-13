@@ -22,6 +22,7 @@ import { LoadingOverlay } from '../../shared/components/LoadingOverlay/LoadingOv
 import { SessionCard } from '../../features/coach/components/SessionCard';
 import { ConfirmCoachRegistrationDialog } from '../../features/coach/components/ConfirmCoachRegistrationDialog';
 import { ConfirmRemoveCoachDialog } from '../../features/coach/components/ConfirmRemoveCoachDialog';
+import { ManualCoachRegistrationDialog } from '../../features/coach/components/ManualCoachRegistrationDialog';
 import { getCoachSessions } from '../../features/coach/api/coach.api';
 import type { CoachData, SessionItem } from '../../features/coach/types';
 
@@ -49,7 +50,10 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [confirmRegisterOpen, setConfirmRegisterOpen] = useState(false);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
+  const [manualRegisterOpen, setManualRegisterOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionItem | null>(null);
+  // Temporary CoachData built from manual name entry or PIN registration (OQM-0010).
+  const [pendingCoachData, setPendingCoachData] = useState<CoachData | undefined>(undefined);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -84,7 +88,13 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
 
   function handleRegister(session: SessionItem) {
     setSelectedSession(session);
-    setConfirmRegisterOpen(true);
+    if (coachData) {
+      // PIN-authenticated coach: go directly to confirmation dialog.
+      setConfirmRegisterOpen(true);
+    } else {
+      // Password-authenticated coach: collect name first (OQM-0010).
+      setManualRegisterOpen(true);
+    }
   }
 
   function handleRemove(session: SessionItem) {
@@ -94,15 +104,16 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
 
   function handleRegisterSuccess(registrationId: string) {
     setConfirmRegisterOpen(false);
-    if (selectedSession && coachData) {
-      const coachName = coachData.alias || `${coachData.firstname} ${coachData.lastname}`;
+    const activeCoach = coachData || pendingCoachData;
+    if (selectedSession && activeCoach) {
+      const coachName = activeCoach.alias || `${activeCoach.firstname} ${activeCoach.lastname}`;
       setSessions(prev =>
         prev.map(s =>
           s.id === selectedSession.id
             ? {
                 ...s,
-                coach_firstname: coachData.firstname,
-                coach_lastname: coachData.lastname,
+                coach_firstname: activeCoach.firstname,
+                coach_lastname: activeCoach.lastname,
                 coach_alias: coachName,
                 registration_id: registrationId,
               }
@@ -111,10 +122,24 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
       );
     }
     setSelectedSession(null);
+    setPendingCoachData(undefined);
   }
 
   function handleRegisterCancel() {
     setConfirmRegisterOpen(false);
+    setSelectedSession(null);
+    setPendingCoachData(undefined);
+    toast(t('coachQuickRegistration.registrationCancelled'));
+  }
+
+  function handleManualRegisterOk(newCoachData: CoachData) {
+    setManualRegisterOpen(false);
+    setPendingCoachData(newCoachData);
+    setConfirmRegisterOpen(true);
+  }
+
+  function handleManualRegisterCancel() {
+    setManualRegisterOpen(false);
     setSelectedSession(null);
     toast(t('coachQuickRegistration.registrationCancelled'));
   }
@@ -194,9 +219,15 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
       <ConfirmCoachRegistrationDialog
         open={confirmRegisterOpen}
         session={selectedSession}
-        coachData={coachData}
+        coachData={coachData ?? pendingCoachData}
         onSuccess={handleRegisterSuccess}
         onCancel={handleRegisterCancel}
+      />
+
+      <ManualCoachRegistrationDialog
+        open={manualRegisterOpen}
+        onOk={handleManualRegisterOk}
+        onCancel={handleManualRegisterCancel}
       />
 
       <ConfirmRemoveCoachDialog

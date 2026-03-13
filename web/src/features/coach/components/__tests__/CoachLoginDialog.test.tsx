@@ -45,7 +45,10 @@ const defaultProps = {
 describe('CoachLoginDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRegisterCoachPin.mockResolvedValue(undefined);
+    mockRegisterCoachPin.mockResolvedValue({
+      id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
+      created_at: '2026-01-01T00:00:00Z', last_activity: '',
+    });
     mockVerifyCoachPin.mockResolvedValue({
       id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
       created_at: '2026-01-01T00:00:00Z', last_activity: '',
