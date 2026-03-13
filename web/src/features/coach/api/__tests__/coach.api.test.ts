@@ -33,8 +33,9 @@ describe('registerCoachPin', () => {
   });
 
   it('sends a POST request with correct shape', async () => {
+    const coachData = { id: 'abc', firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', created_at: '2026-01-01T00:00:00Z', last_activity: '' };
     mockFetch.mockResolvedValue({
-      json: async () => ({ ok: true, data: {} }),
+      json: async () => ({ ok: true, data: coachData }),
     });
     await registerCoachPin({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234' });
     expect(mockFetch).toHaveBeenCalledWith(
@@ -52,13 +53,14 @@ describe('registerCoachPin', () => {
     );
   });
 
-  it('resolves when backend returns ok: true', async () => {
+  it('returns CoachData when backend returns ok: true', async () => {
+    const coachData = { id: 'abc', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', created_at: '2026-01-01T00:00:00Z', last_activity: '' };
     mockFetch.mockResolvedValue({
-      json: async () => ({ ok: true, data: { id: 'abc' } }),
+      json: async () => ({ ok: true, data: coachData }),
     });
     await expect(
       registerCoachPin({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234' })
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual(coachData);
   });
 
   it('throws "pin_reserved" when backend returns error "pin_reserved"', async () => {

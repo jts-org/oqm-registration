@@ -78,5 +78,14 @@
   "coachQuickRegistration.concurrentOperation": "Samanaikainen operaatio käynnissä. Päivitä sivu ennen kuin yrität uudelleen.",
   "coachQuickRegistration.sessionAvailable": "Harjoituksella ei ole rekisteröitynyttä valmentajaa. Päivitä sivu.",
   "coachQuickRegistration.registrationNotFound": "Ilmoittautumista ei löydy. Päivitä sivu.",
-  "coachQuickRegistration.removalCancelled": "Ilmoittautumisen poistaminen peruutettu."
+  "coachQuickRegistration.removalCancelled": "Ilmoittautumisen poistaminen peruutettu.",
+  "manualCoachRegistration.title": "Täytä tietosi",
+  "manualCoachRegistration.firstName": "Etunimi:",
+  "manualCoachRegistration.firstNamePlaceholder": "Oma etunimi",
+  "manualCoachRegistration.lastName": "Sukunimi:",
+  "manualCoachRegistration.lastNamePlaceholder": "Oma sukunimi",
+  "manualCoachRegistration.pinHint": "Henkilökohtaisella PIN-koodilla nopeutat ja yksinkertaistat ilmoittautumistasi.",
+  "manualCoachRegistration.registerPinLink": "Rekisteröi PIN-koodi",
+  "manualCoachRegistration.ok": "Ok",
+  "manualCoachRegistration.cancel": "Peruuta"
 }

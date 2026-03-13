@@ -78,5 +78,14 @@
   "coachQuickRegistration.concurrentOperation": "Concurrent operation ongoing. Refresh page before trying again.",
   "coachQuickRegistration.sessionAvailable": "Session already without registered coach. Refresh page.",
   "coachQuickRegistration.registrationNotFound": "Registration not found. Refresh page.",
-  "coachQuickRegistration.removalCancelled": "Registration removal cancelled."
+  "coachQuickRegistration.removalCancelled": "Registration removal cancelled.",
+  "manualCoachRegistration.title": "Fill your information",
+  "manualCoachRegistration.firstName": "First name:",
+  "manualCoachRegistration.firstNamePlaceholder": "Your first name",
+  "manualCoachRegistration.lastName": "Last name:",
+  "manualCoachRegistration.lastNamePlaceholder": "Your last name",
+  "manualCoachRegistration.pinHint": "With personal PIN code, you speed up and simplify your registration.",
+  "manualCoachRegistration.registerPinLink": "Register PIN code",
+  "manualCoachRegistration.ok": "Ok",
+  "manualCoachRegistration.cancel": "Cancel"
 }

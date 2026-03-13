@@ -16,10 +16,11 @@ import type { CoachData, SessionItem, RegisterCoachForSessionPayload, RemoveCoac
 /**
  * Register a new coach PIN code by posting to the GAS backend.
  * POST { route: "registerCoachPin", payload: RegisterPinData, token }
+ * Returns the newly created CoachData on success (OQM-0010: used to pre-fill ConfirmCoachRegistrationDialog).
  * Throws Error('pin_reserved') if the PIN already exists in coach_login or trainee_login.
  * Throws other Errors for network/service failures.
  */
-export async function registerCoachPin(data: RegisterPinData): Promise<void> {
+export async function registerCoachPin(data: RegisterPinData): Promise<CoachData> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
   const token = import.meta.env.VITE_API_TOKEN as string;
   if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
@@ -31,6 +32,7 @@ export async function registerCoachPin(data: RegisterPinData): Promise<void> {
   });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data as CoachData;
 }
 
 /**
