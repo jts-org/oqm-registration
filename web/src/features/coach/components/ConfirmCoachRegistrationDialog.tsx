@@ -78,6 +78,11 @@ export function ConfirmCoachRegistrationDialog({
         toast.error(t('coachQuickRegistration.alreadyTaken'));
       } else if (code === 'unknown_coach') {
         toast.error(t('coachQuickRegistration.unknownCoach'));
+      } else if (code.startsWith('overlapping_session')) {
+        const [, date, start, end] = code.split('|');
+        toast.error(t('coachQuickRegistration.overlappingSession', { date, start_time: start, end_time: end }));
+      } else if (code === 'concurrent_request') {
+        toast.error(t('coachQuickRegistration.concurrentRequest'));
       } else {
         toast.error(t('coachQuickRegistration.registrationFailed'));
       }

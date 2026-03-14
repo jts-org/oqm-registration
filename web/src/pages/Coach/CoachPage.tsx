@@ -17,12 +17,14 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
 import Typography from '@mui/material/Typography';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay/LoadingOverlay';
 import { SessionCard } from '../../features/coach/components/SessionCard';
 import { ConfirmCoachRegistrationDialog } from '../../features/coach/components/ConfirmCoachRegistrationDialog';
 import { ConfirmRemoveCoachDialog } from '../../features/coach/components/ConfirmRemoveCoachDialog';
 import { ManualCoachRegistrationDialog } from '../../features/coach/components/ManualCoachRegistrationDialog';
+import { SparringCoachRegistrationDialog } from '../../features/coach/components/SparringCoachRegistrationDialog';
 import { getCoachSessions } from '../../features/coach/api/coach.api';
 import type { CoachData, SessionItem } from '../../features/coach/types';
 
@@ -51,6 +53,8 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
   const [confirmRegisterOpen, setConfirmRegisterOpen] = useState(false);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
   const [manualRegisterOpen, setManualRegisterOpen] = useState(false);
+  const [sparringDialogOpen, setSparringDialogOpen] = useState(false);
+  const [sparringDialogData, setSparringDialogData] = useState<{ firstname: string; lastname: string } | undefined>(undefined);
   const [selectedSession, setSelectedSession] = useState<SessionItem | null>(null);
   // Temporary CoachData built from manual name entry or PIN registration (OQM-0010).
   const [pendingCoachData, setPendingCoachData] = useState<CoachData | undefined>(undefined);
@@ -88,11 +92,12 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
 
   function handleRegister(session: SessionItem) {
     setSelectedSession(session);
-    if (coachData) {
-      // PIN-authenticated coach: go directly to confirmation dialog.
+    if (session.is_free_sparring) {
+      setSparringDialogOpen(true);
+      setSparringDialogData(coachData ? { firstname: coachData.firstname, lastname: coachData.lastname } : undefined);
+    } else if (coachData) {
       setConfirmRegisterOpen(true);
     } else {
-      // Password-authenticated coach: collect name first (OQM-0010).
       setManualRegisterOpen(true);
     }
   }
@@ -104,22 +109,43 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
 
   function handleRegisterSuccess(registrationId: string) {
     setConfirmRegisterOpen(false);
+    const wasSparringFlow = sparringDialogOpen;
+    setSparringDialogOpen(false);
     const activeCoach = coachData || pendingCoachData;
     if (selectedSession && activeCoach) {
       const coachName = activeCoach.alias || `${activeCoach.firstname} ${activeCoach.lastname}`;
-      setSessions(prev =>
-        prev.map(s =>
-          s.id === selectedSession.id
-            ? {
-                ...s,
-                coach_firstname: activeCoach.firstname,
-                coach_lastname: activeCoach.lastname,
-                coach_alias: coachName,
-                registration_id: registrationId,
-              }
-            : s
-        )
-      );
+      if (wasSparringFlow) {
+        // New free/sparring session — add to list only if date is within current window
+        const isWithinSpan = sessionsByDate.has(selectedSession.date);
+        if (isWithinSpan) {
+          setSessions(prev => [
+            ...prev,
+            {
+              ...selectedSession,
+              coach_firstname: activeCoach.firstname,
+              coach_lastname: activeCoach.lastname,
+              coach_alias: coachName,
+              registration_id: registrationId,
+            },
+          ]);
+        } else {
+          toast(t('coachQuickRegistration.newSessionOutsideSpan'));
+        }
+      } else {
+        setSessions(prev =>
+          prev.map(s =>
+            s.id === selectedSession.id
+              ? {
+                  ...s,
+                  coach_firstname: activeCoach.firstname,
+                  coach_lastname: activeCoach.lastname,
+                  coach_alias: coachName,
+                  registration_id: registrationId,
+                }
+              : s
+          )
+        );
+      }
     }
     setSelectedSession(null);
     setPendingCoachData(undefined);
@@ -127,9 +153,14 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
 
   function handleRegisterCancel() {
     setConfirmRegisterOpen(false);
-    setSelectedSession(null);
-    setPendingCoachData(undefined);
-    toast(t('coachQuickRegistration.registrationCancelled'));
+    if (sparringDialogOpen) {
+      // Sparring flow — keep SparringDialog open for modifications, don't show cancel toast
+      setSelectedSession(null);
+    } else {
+      setSelectedSession(null);
+      setPendingCoachData(undefined);
+      toast(t('coachQuickRegistration.registrationCancelled'));
+    }
   }
 
   function handleManualRegisterOk(newCoachData: CoachData) {
@@ -177,12 +208,20 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
       </Typography>
 
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 2 }}>
-        <Button variant="outlined" onClick={fetchSessions} disabled={loading}>
-          {t('coachQuickRegistration.refreshData')}
-        </Button>
-        <Button variant="outlined" onClick={onBack}>
-          {t('coachQuickRegistration.backToMain')}
-        </Button>
+        <ButtonGroup variant="outlined" aria-label="coach-page-actions">
+          <Button onClick={() => {
+            setSparringDialogData(coachData ? { firstname: coachData.firstname, lastname: coachData.lastname } : undefined);
+            setSparringDialogOpen(true);
+          }}>
+            {t('coachQuickRegistration.freeSparringSession')}
+          </Button>
+          <Button onClick={fetchSessions} disabled={loading}>
+            {t('coachQuickRegistration.refreshData')}
+          </Button>
+          <Button onClick={onBack}>
+            {t('coachQuickRegistration.backToMain')}
+          </Button>
+        </ButtonGroup>
       </Box>
 
       {error && (
@@ -228,6 +267,47 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
         open={manualRegisterOpen}
         onOk={handleManualRegisterOk}
         onCancel={handleManualRegisterCancel}
+      />
+
+      <SparringCoachRegistrationDialog
+        open={sparringDialogOpen}
+        coachData={sparringDialogData}
+        onConfirm={data => {
+          // Keep SparringDialog open — ConfirmDialog shows on top.
+          // If ConfirmDialog is cancelled, SparringDialog stays open for modifications.
+          const sparringPendingCoach: import('../../features/coach/types').CoachData = {
+            id: coachData?.id || '',
+            firstname: data.firstname,
+            lastname: data.lastname,
+            alias: coachData?.alias || `${data.firstname} ${data.lastname}`,
+            pin: '',
+            created_at: '',
+            last_activity: '',
+          };
+          const newSession: import('../../features/coach/types').SessionItem = {
+            id: `sparring_${Date.now()}`,
+            session_type: 'free/sparring',
+            session_type_alias: t('coachQuickRegistration.freeSparringSession'),
+            date: data.date,
+            start_time: data.start_time,
+            end_time: data.end_time,
+            location: '',
+            coach_firstname: data.firstname,
+            coach_lastname: data.lastname,
+            coach_alias: sparringPendingCoach.alias,
+            registration_id: '',
+            is_free_sparring: true,
+          };
+          setSelectedSession(newSession);
+          setPendingCoachData(sparringPendingCoach);
+          setConfirmRegisterOpen(true);
+        }}
+        onCancel={() => {
+          setSparringDialogOpen(false);
+          setSelectedSession(null);
+          setPendingCoachData(undefined);
+          toast(t('coachQuickRegistration.registrationCancelled'));
+        }}
       />
 
       <ConfirmRemoveCoachDialog
