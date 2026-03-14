@@ -63,7 +63,15 @@ export default function App() {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
+        <Box sx={{
+          maxWidth: 800,
+          mx: 'auto',
+          p: 2,
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
           <Typography>{t('settings.loading')}</Typography>
         </Box>
       </ThemeProvider>

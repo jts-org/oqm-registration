@@ -20,6 +20,17 @@ import type { SessionItem } from '../../../features/coach/types';
 vi.mock('../../../features/coach/api/coach.api', () => ({
   getCoachSessions: vi.fn(),
   removeCoachFromSession: vi.fn(),
+  registerCoachForSession: vi.fn(),
+}));
+
+vi.mock('../../../features/coach/components/SparringCoachRegistrationDialog', () => ({
+  SparringCoachRegistrationDialog: ({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: (d: unknown) => void }) =>
+    open ? (
+      <div role="dialog" aria-label="Sparring Registration">
+        <button onClick={onCancel}>Cancel Sparring</button>
+        <button onClick={() => onConfirm({ firstname: 'John', lastname: 'Doe', date: '2026-03-09', start_time: '18:00', end_time: '19:00' })}>Confirm Sparring</button>
+      </div>
+    ) : null,
 }));
 
 vi.mock('react-hot-toast', () => {
@@ -186,5 +197,43 @@ describe('CoachPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument());
+  });
+
+  it('renders "Free/sparring session" button', async () => {
+    render(<CoachPage onBack={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Free/sparring session' })).toBeInTheDocument();
+  });
+
+  it('shows SparringCoachRegistrationDialog when "Free/sparring session" button is clicked', async () => {
+    render(<CoachPage onBack={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Free/sparring session' }));
+    expect(screen.getByRole('dialog', { name: 'Sparring Registration' })).toBeInTheDocument();
+  });
+
+  it('cancelling SparringCoachRegistrationDialog shows cancellation toast', async () => {
+    render(<CoachPage onBack={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Free/sparring session' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel Sparring' }));
+    expect(mockToast).toHaveBeenCalledWith('Registration cancelled.');
+  });
+
+  it('confirming SparringCoachRegistrationDialog opens ConfirmCoachRegistrationDialog', async () => {
+    render(<CoachPage onBack={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Free/sparring session' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Sparring' }));
+    expect(screen.getByText('Confirm Registration')).toBeInTheDocument();
+  });
+
+  it('cancelling ConfirmCoachRegistrationDialog in sparring flow keeps SparringDialog open', async () => {
+    render(<CoachPage onBack={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Free/sparring session' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Sparring' }));
+    // Wait for ConfirmDialog to appear before clicking Cancel
+    await screen.findByText('Confirm Registration');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    // SparringDialog should still be visible for modifications
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Sparring Registration' })).toBeInTheDocument()
+    );
   });
 });
