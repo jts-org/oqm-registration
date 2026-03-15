@@ -7,7 +7,7 @@
 /**
 * @description
   Root application component.
- *   Manages top-level view routing between the main view and role-specific pages.
+ *   Manages route-based navigation between the main view and role-specific pages.
  *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
  *   Holds verifiedCoach state during the coach session; cleared when navigating away.
  *   Wraps the app in MUI ThemeProvider for consistent design.
@@ -17,6 +17,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Toaster } from 'react-hot-toast'
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { getTheme } from './theme.config';
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -48,12 +49,88 @@ const theme = createTheme({
   },
 });
 
-type View = 'main' | 'trainee' | 'coach' | 'admin'
+interface HomeRouteProps {
+  coachPassword: string;
+  adminPassword: string;
+  onCoachVerified: (coachData?: CoachData) => void;
+  onAdminAuthenticated: () => void;
+  onCoachAuthenticated: () => void;
+}
+
+function HomeRoute({ coachPassword, adminPassword, onCoachVerified, onAdminAuthenticated, onCoachAuthenticated }: HomeRouteProps) {
+  const navigate = useNavigate();
+
+  return (
+    <HomePage
+      onGoTrainee={() => navigate('/trainee')}
+      onGoCoach={(coachData) => {
+        onCoachAuthenticated();
+        onCoachVerified(coachData);
+        navigate('/coach');
+      }}
+      onGoAdmin={() => {
+        onAdminAuthenticated();
+        navigate('/admin');
+      }}
+      coachPassword={coachPassword}
+      adminPassword={adminPassword}
+    />
+  );
+}
+
+function TraineeRoute() {
+  const navigate = useNavigate();
+
+  return <TraineePage onBack={() => navigate('/')} />;
+}
+
+interface CoachRouteProps {
+  isCoachAuthenticated: boolean;
+  verifiedCoach?: CoachData;
+  onLeaveCoach: () => void;
+}
+
+function CoachRoute({ isCoachAuthenticated, verifiedCoach, onLeaveCoach }: CoachRouteProps) {
+  const navigate = useNavigate();
+
+  if (!isCoachAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <CoachPage
+      onBack={() => {
+        onLeaveCoach();
+        navigate('/');
+      }}
+      coachData={verifiedCoach}
+    />
+  );
+}
+
+interface AdminRouteProps {
+  isAdminAuthenticated: boolean;
+  onLeaveAdmin: () => void;
+}
+
+function AdminRoute({ isAdminAuthenticated, onLeaveAdmin }: AdminRouteProps) {
+  const navigate = useNavigate();
+
+  if (!isAdminAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <AdminPage onBack={() => {
+    onLeaveAdmin();
+    navigate('/');
+  }} />;
+}
 
 export default function App() {
   const { t } = useTranslation()
   const { settings, loading: settingsLoading, error: settingsError, reload } = useSettingsContext()
-  const [view, setView] = useState<View>('main')
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false)
+  const [coachAuthenticated, setCoachAuthenticated] = useState(false)
   const [verifiedCoach, setVerifiedCoach] = useState<CoachData | undefined>(undefined)
 
   const coachPassword = settings.find(s => s.parameter === 'coach_pwd')?.value ?? ''
@@ -94,23 +171,46 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Toaster position="top-center" />
-      {view === 'trainee' && <TraineePage onBack={() => setView('main')} />}
-      {view === 'coach' && (
-        <CoachPage
-          onBack={() => { setVerifiedCoach(undefined); setView('main'); }}
-          coachData={verifiedCoach}
-        />
-      )}
-      {view === 'admin' && <AdminPage onBack={() => setView('main')} />}
-      {view === 'main' && (
-        <HomePage
-          onGoTrainee={() => setView('trainee')}
-          onGoCoach={(coachData) => { setVerifiedCoach(coachData); setView('coach'); }}
-          onGoAdmin={() => setView('admin')}
-          coachPassword={coachPassword}
-          adminPassword={adminPassword}
-        />
-      )}
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={(
+              <HomeRoute
+                coachPassword={coachPassword}
+                adminPassword={adminPassword}
+                onCoachVerified={setVerifiedCoach}
+                onAdminAuthenticated={() => setAdminAuthenticated(true)}
+                onCoachAuthenticated={() => setCoachAuthenticated(true)}
+              />
+            )}
+          />
+          <Route path="/trainee" element={<TraineeRoute />} />
+          <Route
+            path="/coach"
+            element={(
+              <CoachRoute
+                isCoachAuthenticated={coachAuthenticated}
+                verifiedCoach={verifiedCoach}
+                onLeaveCoach={() => {
+                  setCoachAuthenticated(false)
+                  setVerifiedCoach(undefined)
+                }}
+              />
+            )}
+          />
+          <Route
+            path="/admin"
+            element={(
+              <AdminRoute
+                isAdminAuthenticated={adminAuthenticated}
+                onLeaveAdmin={() => setAdminAuthenticated(false)}
+              />
+            )}
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   )
 }
