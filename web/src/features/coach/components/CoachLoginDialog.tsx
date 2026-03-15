@@ -23,6 +23,10 @@ import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { RegisterPinDialog } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
@@ -102,20 +106,21 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
       <Dialog
         open={open}
         aria-labelledby="coach-login-title"
-        onClose={onCancel}
+        onClose={handleCloseDialog}
+        maxWidth="xs"
+        fullWidth
         slotProps={{
           paper: {
             sx: {
-              background: theme.palette.background.default,
+              borderRadius: 3,
+              background: theme.palette.background.paper,
               color: theme.palette.text.primary,
-              border: '2px solid',
-              borderColor: theme.palette.secondary.main,
             },
           },
           backdrop: {
             sx: {
-              backgroundColor: 'rgba(10, 10, 15, 0.85)',
-              backdropFilter: 'blur(8px)',
+              backgroundColor: 'rgba(10, 10, 15, 0.75)',
+              backdropFilter: 'blur(6px)',
               WebkitBackdropFilter: 'blur(8px)',
             },
           },
@@ -123,119 +128,72 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
       >
         <DialogTitle id="coach-login-title">{t('coachLogin.title')}</DialogTitle>
         <DialogContent>
-          {/* PIN code section */}
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              gap: 1, 
-              alignItems: 'flex-start', 
-              mb: 0.5, 
-              background: theme.palette.background.default, 
-              color: theme.palette.text.primary,
-              borderColor: theme.palette.primary.main,
-            }}
-          >
-            <TextField
-              id="coach-pin"
-              type="password"
-              label={t('coachLogin.enterPin')}
-              value={pin}
-              onChange={e => { setPin(e.target.value); setPinError(''); }}
-              inputProps={{ maxLength: 6, inputMode: 'numeric', 'aria-label': t('coachLogin.enterPin') }}
-              error={!!pinError}
-              helperText={pinError || ' '}
-              margin="dense"
-              sx={{ 
-                flex: 1,
-                background: theme.palette.background.default,
-                color: theme.palette.text.primary,
-                borderColor: theme.palette.primary.main,
-              }}
-              autoComplete="one-time-code"
-            />
-            <Button
-              onClick={handleVerify}
-              disabled={!pinValid || isVerifying}
-              variant="contained"
-              sx={{ 
-                mt: 1, 
-                whiteSpace: 'nowrap', 
-                background: theme.palette.background.default,
-                color: theme.palette.text.primary,
-                borderColor: theme.palette.primary.main,                
-              }}
-            >
-              {t('coachLogin.verify')}
-            </Button>
-          </Box>
-          <Button
-            onClick={handleRegisterPinOpen}
-            type="button"
-            size="small"
-            sx={{ 
-              textTransform: 'none', 
-              p: 0, 
-              mb: 1,
-              background: theme.palette.background.default,
-              color: theme.palette.text.primary,
-              borderColor: theme.palette.primary.main,
-            }}
-          >
-            {t('coachLogin.registerNewPin')}
-          </Button>
+          <Stack spacing={2} mt={1}>
+            <Box>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-start' }}>
+                <TextField
+                  id="coach-pin"
+                  type="password"
+                  label={t('coachLogin.enterPin')}
+                  value={pin}
+                  onChange={e => { setPin(e.target.value); setPinError(''); }}
+                  inputProps={{ maxLength: 6, inputMode: 'numeric', 'aria-label': t('coachLogin.enterPin') }}
+                  error={!!pinError}
+                  margin="dense"
+                  sx={{ flex: 1 }}
+                  autoComplete="one-time-code"
+                />
+                <Button
+                  onClick={handleVerify}
+                  disabled={!pinValid || isVerifying}
+                  variant="contained"
+                  sx={{ mt: { xs: 0.5, sm: 1 }, minWidth: 120, whiteSpace: 'nowrap' }}
+                >
+                  {t('coachLogin.verify')}
+                </Button>
+              </Stack>
+              {pinError && <Alert severity="error" sx={{ mt: 1 }}>{pinError}</Alert>}
+              <Button
+                onClick={handleRegisterPinOpen}
+                type="button"
+                size="small"
+                sx={{ textTransform: 'none', p: 0, mt: 1 }}
+              >
+                {t('coachLogin.registerNewPin')}
+              </Button>
+            </Box>
 
-          {/* Password section */}
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 1, 
-            alignItems: 'flex-start', 
-            background: theme.palette.background.default, 
-            color: theme.palette.text.primary 
-          }}
-          >
-            <TextField
-              id="coach-password"
-              type="password"
-              label={t('coachLogin.enterPassword')}
-              value={password}
-              onChange={e => { setPassword(e.target.value); setPasswordError(''); }}
-              inputProps={{ 'aria-label': t('coachLogin.enterPassword') }}
-              error={!!passwordError}
-              helperText={passwordError || ' '}
-              margin="dense"
-              sx={{ 
-                flex: 1, 
-                background: theme.palette.background.default,
-                color: theme.palette.text.primary,
-                borderColor: theme.palette.primary.main,
-              }}
-              autoComplete="current-password"
-            />
-            <Button
-              onClick={handleLogin}
-              disabled={!loginEnabled}
-              variant="contained"
-              sx={{ 
-                mt: 1, 
-                whiteSpace: 'nowrap',
-                background: theme.palette.background.default,
-                color: theme.palette.text.primary,
-                borderColor: theme.palette.primary.main,
-              }}
-            >
-              {t('coachLogin.login')}
-            </Button>
-          </Box>
+            <Divider />
+
+            <Box>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-start' }}>
+                <TextField
+                  id="coach-password"
+                  type="password"
+                  label={t('coachLogin.enterPassword')}
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setPasswordError(''); }}
+                  inputProps={{ 'aria-label': t('coachLogin.enterPassword') }}
+                  error={!!passwordError}
+                  margin="dense"
+                  sx={{ flex: 1 }}
+                  autoComplete="current-password"
+                />
+                <Button
+                  onClick={handleLogin}
+                  disabled={!loginEnabled}
+                  variant="contained"
+                  sx={{ mt: { xs: 0.5, sm: 1 }, minWidth: 120, whiteSpace: 'nowrap' }}
+                >
+                  {t('coachLogin.login')}
+                </Button>
+              </Stack>
+              {passwordError && <Alert severity="error" sx={{ mt: 1 }}>{passwordError}</Alert>}
+            </Box>
+          </Stack>
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={handleCloseDialog}
-            sx={{
-              background: theme.palette.primary.main,
-              color: theme.palette.text.primary,
-              borderColor: theme.palette.primary.main,
-            }}
-          >
+          <Button onClick={handleCloseDialog} variant="outlined">
             {t('coachLogin.cancel')}
           </Button>
         </DialogActions>

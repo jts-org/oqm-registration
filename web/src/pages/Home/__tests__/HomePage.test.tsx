@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import '../../../lib/i18n';
@@ -20,43 +20,63 @@ const defaultProps = {
 };
 
 describe('HomePage', () => {
-  it('renders placeholder message', () => {
+  const getRoleCardButton = (title: string) => {
+    const cardTitle = screen.getByText(title);
+    const button = cardTitle.closest('button');
+
+    expect(button).not.toBeNull();
+
+    return button as HTMLButtonElement;
+  };
+
+  it('renders the localized title and subtitle', () => {
     render(<HomePage {...defaultProps} />);
-    expect(screen.getByText('Welcome to OQM Registration')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'OKB logo' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'OQM compact logo' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'React logo' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Vite logo' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'OQM Registration' })).toBeInTheDocument();
+    expect(screen.getByText('Select your role to continue')).toBeInTheDocument();
+    expect(screen.getByText('Powered by React + Vite')).toBeInTheDocument();
+    expect(screen.getByText(/Overclocked Quantum Moose/i)).toBeInTheDocument();
+    expect(screen.getByText(/All rights reserved/i)).toBeInTheDocument();
   });
 
-  it('renders Trainees button', () => {
+  it('renders trainee role card', () => {
     render(<HomePage {...defaultProps} />);
-    expect(screen.getByRole('button', { name: 'Trainees' })).toBeInTheDocument();
+    expect(screen.getByText('Create a trainee profile and register for training sessions.')).toBeInTheDocument();
+    expect(within(getRoleCardButton('Trainees')).getByText('Trainees')).toBeInTheDocument();
   });
 
-  it('renders Coaches button', () => {
+  it('renders coach role card', () => {
     render(<HomePage {...defaultProps} />);
-    expect(screen.getByRole('button', { name: 'Coaches' })).toBeInTheDocument();
+    expect(screen.getByText('Create a coach profile, register as a coach, and track your progress.')).toBeInTheDocument();
+    expect(within(getRoleCardButton('Coaches')).getByText('Coaches')).toBeInTheDocument();
   });
 
-  it('renders Admin button', () => {
+  it('renders admin role card', () => {
     render(<HomePage {...defaultProps} />);
-    expect(screen.getByRole('button', { name: 'Admin' })).toBeInTheDocument();
+    expect(screen.getByText('Manage system settings and users.')).toBeInTheDocument();
+    expect(within(getRoleCardButton('Admin')).getByText('Admin')).toBeInTheDocument();
   });
 
-  it('calls onGoTrainee when Trainees button is clicked', async () => {
+  it('calls onGoTrainee when the trainee role card is clicked', async () => {
     const onGoTrainee = vi.fn();
     render(<HomePage {...defaultProps} onGoTrainee={onGoTrainee} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Trainees' }));
+    await userEvent.click(getRoleCardButton('Trainees'));
     expect(onGoTrainee).toHaveBeenCalledOnce();
   });
 
-  it('opens coach login dialog when Coaches button is clicked', async () => {
+  it('opens coach login dialog when the coach role card is clicked', async () => {
     render(<HomePage {...defaultProps} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Coaches' }));
+    await userEvent.click(getRoleCardButton('Coaches'));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Coach login')).toBeInTheDocument();
   });
 
-  it('opens admin login dialog when Admin button is clicked', async () => {
+  it('opens admin login dialog when the admin role card is clicked', async () => {
     render(<HomePage {...defaultProps} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Admin' }));
+    await userEvent.click(getRoleCardButton('Admin'));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Admin login')).toBeInTheDocument();
   });

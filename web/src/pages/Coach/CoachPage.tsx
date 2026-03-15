@@ -13,11 +13,18 @@
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import SportsMartialArtsIcon from '@mui/icons-material/SportsMartialArts';
+import Alert from '@mui/material/Alert';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import ButtonGroup from '@mui/material/ButtonGroup';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Container from '@mui/material/Container';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay/LoadingOverlay';
 import { SessionCard } from '../../features/coach/components/SessionCard';
@@ -195,49 +202,84 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
     toast(t('coachQuickRegistration.removalCancelled'));
   }
 
+  const actionButtons = (
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+      <Button
+        variant="contained"
+        startIcon={<SportsMartialArtsIcon />}
+        onClick={() => {
+          setSparringDialogData(coachData ? { firstname: coachData.firstname, lastname: coachData.lastname } : undefined);
+          setSparringDialogOpen(true);
+        }}
+        sx={{ flex: 1 }}
+      >
+        {t('coachQuickRegistration.freeSparringSession')}
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<RefreshIcon />}
+        onClick={fetchSessions}
+        disabled={loading}
+        sx={{ flex: 1 }}
+      >
+        {t('coachQuickRegistration.refreshData')}
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<ArrowBackIcon />}
+        onClick={onBack}
+        sx={{ flex: 1 }}
+      >
+        {t('coachQuickRegistration.backToMain')}
+      </Button>
+    </Stack>
+  );
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', p: 2 }}>
+    <Container maxWidth="md" sx={{ py: { xs: 3, sm: 5 } }}>
+      <Box sx={{ minHeight: '100vh' }}>
       <LoadingOverlay visible={loading} />
 
-      <Typography variant="h5" component="h1" align="center" gutterBottom>
-        {t('coachQuickRegistration.title')}
-      </Typography>
-
-      <Typography align="center" color="text.secondary" gutterBottom>
-        {loggedInLabel}
-      </Typography>
-
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 2 }}>
-        <ButtonGroup variant="outlined" aria-label="coach-page-actions">
-          <Button onClick={() => {
-            setSparringDialogData(coachData ? { firstname: coachData.firstname, lastname: coachData.lastname } : undefined);
-            setSparringDialogOpen(true);
-          }}>
-            {t('coachQuickRegistration.freeSparringSession')}
-          </Button>
-          <Button onClick={fetchSessions} disabled={loading}>
-            {t('coachQuickRegistration.refreshData')}
-          </Button>
-          <Button onClick={onBack}>
-            {t('coachQuickRegistration.backToMain')}
-          </Button>
-        </ButtonGroup>
+      <Box mt={1} mb={4} textAlign="center">
+        <Typography variant="h4" component="h1" gutterBottom>
+          {t('coachQuickRegistration.title')}
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          {t('coachQuickRegistration.subtitle')}
+        </Typography>
       </Box>
 
+      <Card sx={{ mb: 3, borderRadius: 3 }}>
+        <CardContent>
+          <Alert severity={coachData?.alias ? 'success' : 'warning'} sx={{ borderRadius: 2 }}>
+            {loggedInLabel}
+          </Alert>
+        </CardContent>
+      </Card>
+
+      <Card sx={{ mb: 3, borderRadius: 3 }}>
+        <CardContent>{actionButtons}</CardContent>
+      </Card>
+
       {error && (
-        <Typography color="error" align="center" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
           {error}
-        </Typography>
+        </Alert>
       )}
 
       {!loading && !error && sessionsByDate.size === 0 && (
-        <Typography align="center" color="text.secondary">
-          {t('coachQuickRegistration.noSessions')}
-        </Typography>
+        <Card sx={{ borderRadius: 3 }}>
+          <CardContent>
+            <Typography align="center" color="text.secondary">
+              {t('coachQuickRegistration.noSessions')}
+            </Typography>
+          </CardContent>
+        </Card>
       )}
 
       {Array.from(sessionsByDate.entries()).map(([date, dateSessions]) => (
-        <Box key={date} sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Card key={date} sx={{ mb: 3, borderRadius: 3 }}>
+          <CardContent>
           <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
             {formatDateLabel(date, i18n.language)}
           </Typography>
@@ -252,7 +294,8 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
               />
             ))}
           </Box>
-        </Box>
+          </CardContent>
+        </Card>
       ))}
 
       <ConfirmCoachRegistrationDialog
@@ -316,6 +359,7 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
         onSuccess={handleRemoveSuccess}
         onCancel={handleRemoveCancel}
       />
-    </Box>
+      </Box>
+    </Container>
   );
 }
