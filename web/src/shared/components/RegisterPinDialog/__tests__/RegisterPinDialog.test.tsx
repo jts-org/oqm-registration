@@ -17,9 +17,15 @@ import userEvent from '@testing-library/user-event';
 import '../../../../lib/i18n';
 import { RegisterPinDialog } from '../RegisterPinDialog';
 
-vi.mock('react-hot-toast', () => ({
-  default: { error: vi.fn(), success: vi.fn() },
-}));
+vi.mock('react-hot-toast', () => {
+  const toastFn = vi.fn();
+  return {
+    default: Object.assign(toastFn, {
+      error: vi.fn(),
+      success: vi.fn(),
+    }),
+  };
+});
 
 import toast from 'react-hot-toast';
 const mockToast = vi.mocked(toast);
@@ -82,6 +88,43 @@ describe('RegisterPinDialog', () => {
   it('does NOT render "Alias" input when showAlias=false', () => {
     render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
     expect(screen.queryByLabelText('Alias')).not.toBeInTheDocument();
+  });
+
+  it('renders trainee underage checkbox only when showAlias=false', () => {
+    const { rerender } = render(<RegisterPinDialog {...defaultProps} />);
+    expect(screen.queryByLabelText("I'm under 18 years old")).not.toBeInTheDocument();
+
+    rerender(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+    expect(screen.getByLabelText("I'm under 18 years old")).toBeInTheDocument();
+  });
+
+  it('keeps trainee underage checkbox unchecked by default and hides the age field', () => {
+    render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+    expect(screen.getByLabelText("I'm under 18 years old")).not.toBeChecked();
+    expect(screen.queryByLabelText('Age:')).not.toBeInTheDocument();
+  });
+
+  it('shows the age field with default age 15 when the underage checkbox is selected', async () => {
+    render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+
+    await userEvent.click(screen.getByLabelText("I'm under 18 years old"));
+
+    expect(screen.getByLabelText('Age:')).toBeInTheDocument();
+    expect(screen.getByLabelText('Age:')).toHaveValue(15);
+  });
+
+  it('prefills trainee underage controls from initialIsUnderage and initialAge', () => {
+    render(
+      <RegisterPinDialog
+        {...defaultProps}
+        showAlias={false}
+        initialIsUnderage={true}
+        initialAge={13}
+      />
+    );
+
+    expect(screen.getByLabelText("I'm under 18 years old")).toBeChecked();
+    expect(screen.getByLabelText('Age:')).toHaveValue(13);
   });
 
   it('renders "Enter new PIN code" input', () => {
@@ -207,6 +250,15 @@ describe('RegisterPinDialog', () => {
     expect(screen.getByRole('button', { name: 'Register' })).toBeEnabled();
   });
 
+  it('Register button is enabled when firstname contains a dot (e.g. "John J.")', async () => {
+    render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+    await userEvent.type(screen.getByLabelText('Firstname'), 'John J.');
+    await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
+    await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
+    await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
+    expect(screen.getByRole('button', { name: 'Register' })).toBeEnabled();
+  });
+
   it('Register button is enabled when lastname has a space (e.g. "von Kuckelkören")', async () => {
     render(<RegisterPinDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Firstname'), 'August');
@@ -269,6 +321,61 @@ describe('RegisterPinDialog', () => {
     });
   });
 
+  it('shows the ongoing registration toast before awaiting onRegister', async () => {
+    let resolveRegister!: () => void;
+    const pendingRegister = new Promise<void>(resolve => {
+      resolveRegister = resolve;
+    });
+    defaultProps.onRegister.mockReturnValue(pendingRegister);
+
+    render(<RegisterPinDialog {...defaultProps} />);
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    expect(mockToast).toHaveBeenCalledWith('Registration ongoing. Please wait.');
+
+    resolveRegister();
+  });
+
+  it('submits trainee underage payload when trainee mode is used', async () => {
+    render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+
+    await userEvent.type(screen.getByLabelText('Firstname'), 'John J.');
+    await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
+    await userEvent.click(screen.getByLabelText("I'm under 18 years old"));
+    await userEvent.clear(screen.getByLabelText('Age:'));
+    await userEvent.type(screen.getByLabelText('Age:'), '16');
+    await userEvent.type(screen.getByLabelText('Enter new PIN code'), '4321');
+    await userEvent.type(screen.getByLabelText('Enter PIN again'), '4321');
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    expect(defaultProps.onRegister).toHaveBeenCalledWith({
+      firstname: 'John J.',
+      lastname: 'Doe',
+      pin: '4321',
+      isUnderage: true,
+      age: 16,
+    });
+  });
+
+  it('clears trainee age from the submitted payload when underage is unchecked again', async () => {
+    render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+
+    await userEvent.type(screen.getByLabelText('Firstname'), 'John');
+    await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
+    await userEvent.click(screen.getByLabelText("I'm under 18 years old"));
+    await userEvent.click(screen.getByLabelText("I'm under 18 years old"));
+    await userEvent.type(screen.getByLabelText('Enter new PIN code'), '4321');
+    await userEvent.type(screen.getByLabelText('Enter PIN again'), '4321');
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    expect(defaultProps.onRegister).toHaveBeenCalledWith({
+      firstname: 'John',
+      lastname: 'Doe',
+      pin: '4321',
+    });
+  });
+
   it('calls onSuccess with the PIN after successful registration', async () => {
     render(<RegisterPinDialog {...defaultProps} />);
     await fillValidForm('4321');
@@ -308,6 +415,48 @@ describe('RegisterPinDialog', () => {
     );
   });
 
+  it('shows concurrent_request error message and preserves the filled form values', async () => {
+    defaultProps.onRegister.mockRejectedValue(new Error('concurrent_request'));
+    render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+
+    await userEvent.type(screen.getByLabelText('Firstname'), 'John');
+    await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
+    await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
+    await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Concurrent operation ongoing. Please try again.')).toBeInTheDocument();
+    });
+
+    expect(screen.getByLabelText('Firstname')).toHaveValue('John');
+    expect(screen.getByLabelText('Lastname')).toHaveValue('Doe');
+    expect(screen.getByLabelText('Enter new PIN code')).toHaveValue('1234');
+    expect(screen.getByLabelText('Enter PIN again')).toHaveValue('1234');
+  });
+
+  it('shows name_already_exists error message and preserves the filled form values', async () => {
+    defaultProps.onRegister.mockRejectedValue(new Error('name_already_exists'));
+    render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+
+    await userEvent.type(screen.getByLabelText('Firstname'), 'John J.');
+    await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
+    await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
+    await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Trainee with the same name already exists. Try adding your second first name initial into your first name, For example: 'John J.' and try again."
+        )
+      ).toBeInTheDocument();
+    });
+
+    expect(screen.getByLabelText('Firstname')).toHaveValue('John J.');
+    expect(screen.getByLabelText('Lastname')).toHaveValue('Doe');
+  });
+
   it('dismissing pin_reserved modal clears PIN fields but keeps name fields', async () => {
     defaultProps.onRegister.mockRejectedValue(new Error('pin_reserved'));
     render(<RegisterPinDialog {...defaultProps} />);
@@ -344,7 +493,56 @@ describe('RegisterPinDialog', () => {
   it('calls onCancel when Cancel is clicked', async () => {
     render(<RegisterPinDialog {...defaultProps} />);
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockToast).toHaveBeenCalledWith('Registration cancelled');
     expect(defaultProps.onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('reapplies initial names and underage state each time the dialog is reopened', async () => {
+    const { rerender } = render(
+      <RegisterPinDialog
+        {...defaultProps}
+        showAlias={false}
+        initialFirstname="Jane"
+        initialLastname="Doe"
+        initialIsUnderage={true}
+        initialAge={12}
+      />
+    );
+
+    await userEvent.clear(screen.getByLabelText('Firstname'));
+    await userEvent.type(screen.getByLabelText('Firstname'), 'Changed');
+    await userEvent.clear(screen.getByLabelText('Age:'));
+    await userEvent.type(screen.getByLabelText('Age:'), '17');
+    await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
+
+    rerender(
+      <RegisterPinDialog
+        {...defaultProps}
+        open={false}
+        showAlias={false}
+        initialFirstname="Jane"
+        initialLastname="Doe"
+        initialIsUnderage={true}
+        initialAge={12}
+      />
+    );
+    rerender(
+      <RegisterPinDialog
+        {...defaultProps}
+        showAlias={false}
+        initialFirstname="Jane"
+        initialLastname="Doe"
+        initialIsUnderage={true}
+        initialAge={12}
+      />
+    );
+
+    expect(screen.getByLabelText('Firstname')).toHaveValue('Jane');
+    expect(screen.getByLabelText('Lastname')).toHaveValue('Doe');
+    expect(screen.getByLabelText("I'm under 18 years old")).toBeChecked();
+    expect(screen.getByLabelText('Age:')).toHaveValue(12);
+    expect(screen.getByLabelText('Enter new PIN code')).toHaveValue('');
+    expect(screen.getByLabelText('Enter PIN again')).toHaveValue('');
   });
 
   // ── Loading overlay (OQM-0005) ────────────────────────────────────────────

@@ -13,15 +13,14 @@
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import ButtonGroup from '@mui/material/ButtonGroup';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
@@ -63,7 +62,6 @@ export function ManualCoachRegistrationDialog({
   onCancel,
 }: ManualCoachRegistrationDialogProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [registerPinOpen, setRegisterPinOpen] = useState(false);
@@ -129,13 +127,12 @@ export function ManualCoachRegistrationDialog({
         open={open}
         aria-labelledby="manual-coach-registration-title"
         onClose={handleCancel}
+        maxWidth="xs"
+        fullWidth
         slotProps={{
           paper: {
             sx: {
-              background: theme.palette.background.default,
-              color: theme.palette.text.primary,
-              border: '2px solid',
-              borderColor: theme.palette.secondary.main,
+              borderRadius: 3,
             },
           },
           backdrop: {
@@ -152,7 +149,7 @@ export function ManualCoachRegistrationDialog({
         </DialogTitle>
 
         <DialogContent>
-          <Stack spacing={1} sx={{ mt: 0.5 }}>
+          <Stack spacing={2} sx={{ mt: 0.5 }}>
             <TextField
               id="outlined-helpertext-firstname"
               label={t('manualCoachRegistration.firstName')}
@@ -161,12 +158,7 @@ export function ManualCoachRegistrationDialog({
               onChange={e => setFirstname(e.target.value)}
               required
               inputProps={{ maxLength: 30, 'aria-label': t('manualCoachRegistration.firstName') }}
-              margin="dense"
               fullWidth
-              sx={{
-                background: theme.palette.background.default,
-                color: theme.palette.text.primary,
-              }}
             />
             <TextField
               id="outlined-helpertext-lastname"
@@ -176,49 +168,33 @@ export function ManualCoachRegistrationDialog({
               onChange={e => setLastname(e.target.value)}
               required
               inputProps={{ maxLength: 30, 'aria-label': t('manualCoachRegistration.lastName') }}
-              margin="dense"
               fullWidth
-              sx={{
-                background: theme.palette.background.default,
-                color: theme.palette.text.primary,
-              }}
             />
           </Stack>
 
-          <Box sx={{ mt: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-              {t('manualCoachRegistration.pinHint')}
-            </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
+            {t('manualCoachRegistration.pinHint')}
+          </Typography>
+
+          <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
             <Link
               component="button"
               variant="body2"
               onClick={handleOpenRegisterPin}
-              sx={{ cursor: 'pointer' }}
+              sx={{ cursor: 'pointer', textAlign: 'left' }}
             >
               {t('manualCoachRegistration.registerPinLink')}
             </Link>
-          </Box>
+          </Alert>
         </DialogContent>
 
-        <DialogActions>
-          <Box>
-            <ButtonGroup>
-              <Button
-                onClick={handleOk}
-                disabled={!isFormValid}
-                variant="contained"
-                color="primary"
-              >
-                {t('manualCoachRegistration.ok')}
-              </Button>
-              <Button
-                onClick={handleCancel}
-                variant="outlined"
-              >
-                {t('manualCoachRegistration.cancel')}
-              </Button>
-            </ButtonGroup>
-          </Box>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleCancel} variant="outlined">
+            {t('manualCoachRegistration.cancel')}
+          </Button>
+          <Button onClick={handleOk} disabled={!isFormValid} variant="contained" color="primary">
+            {t('manualCoachRegistration.ok')}
+          </Button>
         </DialogActions>
       </Dialog>
 

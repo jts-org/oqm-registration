@@ -27,9 +27,15 @@ vi.mock('../../api/coach.api', () => ({
 import { registerCoachPin } from '../../api/coach.api';
 const mockRegisterCoachPin = vi.mocked(registerCoachPin);
 
-vi.mock('react-hot-toast', () => ({
-  default: { error: vi.fn(), success: vi.fn() },
-}));
+vi.mock('react-hot-toast', () => {
+  const toastFn = vi.fn();
+  return {
+    default: Object.assign(toastFn, {
+      error: vi.fn(),
+      success: vi.fn(),
+    }),
+  };
+});
 
 const defaultProps = {
   open: true,

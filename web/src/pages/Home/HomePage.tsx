@@ -12,8 +12,8 @@
  */
 import React, { useState } from 'react';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import PersonIcon from '@mui/icons-material/Person';
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import SportsMmaIcon from '@mui/icons-material/SportsMma';
+import SportsMartialArtsIcon from '@mui/icons-material/SportsMartialArts';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
@@ -94,13 +94,13 @@ export function HomePage({ onGoTrainee, onGoCoach, onGoAdmin, coachPassword, adm
 
         <Stack spacing={3}>
           <RoleCard
-            icon={<PersonIcon fontSize="large" />}
+            icon={<SportsMmaIcon fontSize="large" />}
             title={t('mainView.trainees')}
             description={t('mainView.traineesDescription')}
             onClick={onGoTrainee}
           />
           <RoleCard
-            icon={<SupervisorAccountIcon fontSize="large" />}
+            icon={<SportsMartialArtsIcon fontSize="large" />}
             title={t('mainView.coaches')}
             description={t('mainView.coachesDescription')}
             onClick={() => setCoachDialogOpen(true)}
