@@ -124,7 +124,8 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
                 <Item>
                   <DatePicker
                     label={t('coachQuickRegistration.date')}
-                    views={['day', 'month', 'year']}
+                    openTo="day"
+                    views={['year', 'month', 'day']}
                     value={date}
                     onChange={setDate}
                   />

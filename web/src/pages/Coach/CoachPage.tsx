@@ -15,7 +15,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import SportsMartialArtsIcon from '@mui/icons-material/SportsMartialArts';
+import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 import Alert from '@mui/material/Alert';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -206,7 +206,7 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
       <Button
         variant="contained"
-        startIcon={<SportsMartialArtsIcon />}
+        startIcon={<SportsKabaddiIcon />}
         onClick={() => {
           setSparringDialogData(coachData ? { firstname: coachData.firstname, lastname: coachData.lastname } : undefined);
           setSparringDialogOpen(true);
