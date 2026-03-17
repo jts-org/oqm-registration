@@ -9,6 +9,7 @@
  *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
  *  - POST { route: "registerCoachForSession", payload: { firstname, lastname, session_type, date, start_time?, end_time? } } — register coach for a session (OQM-0008/OQM-0011); returns overlapping_session|date|start|end for time conflicts
  *  - POST { route: "removeCoachFromSession", payload: { firstname, lastname, session_type, date } } — remove coach from a session (OQM-0009)
+ *  - POST { route: "registerTraineeForSession", payload: { first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time, end_time } } — register trainee for a session (OQM-0014)
  * Internal helpers (not exposed as routes):
  *  - updateCoachLastActivity_(coachId) — sets last_activity in coach_login (OQM-0011)
  */
@@ -94,6 +95,19 @@ function doPost(e) {
       }
       if (result.sessionAvailable) {
         return json_({ ok: false, error: 'session_available' });
+      }
+      return json_({ ok: true, data: { id: result.id } });
+    }
+    if (route === 'registerTraineeForSession') {
+      const result = registerTraineeForSession_(payload);
+      if (result.validationFailedAge) {
+        return json_({ ok: false, error: 'validation_failed_age' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.alreadyRegistered) {
+        return json_({ ok: false, error: 'already_registered' });
       }
       return json_({ ok: true, data: { id: result.id } });
     }
@@ -707,6 +721,84 @@ function removeCoachFromSession_(payload) {
     const registrationId = String(data[matchRowIndex][0]);
     logToSheet(`removeCoachFromSession_ - updated row ${sheetRow}, id: ${registrationId}`);
     return { id: registrationId };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Register a trainee for a specific session (OQM-0014).
+ * Validates required payload fields and checks for duplicate registrations on the same date.
+ * Acquires a script lock to prevent concurrent operations.
+ * On success, appends a new row to trainee_registrations with realized=true and returns the new row id.
+ * Returns { validationFailedAge: true } if age_group is 'underage' but underage_age is missing.
+ * Returns { concurrentRequest: true } if the script lock cannot be acquired.
+ * Returns { alreadyRegistered: true } if a matching registration already exists for the same date.
+ * Schema: id, first_name, last_name, age_group, underage_age, session_type, camp_session_id, date, start_time, end_time, realized, created_at, updated_at (cols A–M)
+ * See SKILL.sheet-schema.md for full schema definition.
+ * See SKILL.wire-react-to-gas.md for API contract (OQM-0014).
+ */
+function registerTraineeForSession_(payload) {
+  const required = ['first_name', 'last_name', 'age_group', 'session_type', 'date', 'start_time', 'end_time'];
+  const missing = required.filter(field => !payload || !payload[field]);
+  if (missing.length > 0) {
+    throw new Error('Missing required fields: ' + missing.join(', '));
+  }
+
+  if (payload.age_group === 'underage' && (payload.underage_age === undefined || payload.underage_age === null || payload.underage_age === '')) {
+    return { validationFailedAge: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const tz = Session.getScriptTimeZone();
+    const traineeRegRows = getSheetData('trainee_registrations');
+
+    // Check for duplicate registration: same date + all payload fields (excludes id, realized, created_at, updated_at)
+    const alreadyRegistered = traineeRegRows.some(row => {
+      const rowDate = timeToStr(row[7], tz, 'yyyy-MM-dd');
+      if (rowDate !== payload.date) return false;
+      return (
+        String(row[1] || '') === String(payload.first_name) &&
+        String(row[2] || '') === String(payload.last_name) &&
+        String(row[3] || '') === String(payload.age_group) &&
+        String(row[4] || '') === String(payload.underage_age !== undefined && payload.underage_age !== null ? payload.underage_age : '') &&
+        String(row[5] || '') === String(payload.session_type) &&
+        String(row[6] || '') === String(payload.camp_session_id || '') &&
+        String(row[8] || '') === String(payload.start_time) &&
+        String(row[9] || '') === String(payload.end_time)
+      );
+    });
+
+    if (alreadyRegistered) {
+      return { alreadyRegistered: true };
+    }
+
+    const sh = getSheetByName('trainee_registrations');
+    const id = Utilities.getUuid();
+    const now = new Date().toISOString();
+    sh.appendRow([
+      id,
+      payload.first_name,
+      payload.last_name,
+      payload.age_group,
+      payload.age_group === 'underage' ? payload.underage_age : '',
+      payload.session_type,
+      payload.camp_session_id || '',
+      payload.date,
+      payload.start_time,
+      payload.end_time,
+      true,
+      now,
+      now
+    ]);
+
+    logToSheet(`registerTraineeForSession_ - appended row id: ${id}`);
+    return { id };
   } finally {
     lock.releaseLock();
   }

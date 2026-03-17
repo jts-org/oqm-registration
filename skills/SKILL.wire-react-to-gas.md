@@ -9,6 +9,7 @@
 - POST `{ route: "verifyCoachPin", payload, token }` → verify coach PIN, return coach data (OQM-0004)
 - POST `{ route: "registerCoachForSession", payload, token }` → register coach for a session (OQM-0008)
 - POST `{ route: "removeCoachFromSession", payload, token }` → remove coach from a session (OQM-0009)
+- POST `{ route: "registerTraineeForSession", payload, token }` → register trainee for a session (OQM-0014)
 - Response JSON shape: `{ ok: true, data } | { ok: false, error }`
 
 ## Settings parameters used by the frontend
@@ -503,3 +504,95 @@ Returns an array of `SessionItem` objects sorted by date and start_time, coverin
 |----------------|--------------------------------------|
 | `Unauthorized` | Invalid or missing API token         |
 | `Sheet not found: sessions` | Required sheet missing  |
+
+## registerTraineeForSession (OQM-0014)
+
+### Request
+```json
+{
+  "route": "registerTraineeForSession",
+  "payload": {
+    "first_name":       "string (required)",
+    "last_name":        "string (required)",
+    "age_group":        "'adult' | 'underage' (required)",
+    "underage_age":     "number (required when age_group is 'underage')",
+    "session_type":     "string (required)",
+    "camp_session_id":  "string (optional — id from camp_schedules sheet)",
+    "date":             "string (required, YYYY-MM-DD)",
+    "start_time":       "string (required, HH:MM)",
+    "end_time":         "string (required, HH:MM)"
+  },
+  "token": "string"
+}
+```
+
+### Response (success)
+```json
+{ "ok": true, "data": { "id": "uuid" } }
+```
+
+### Response (error)
+```json
+{ "ok": false, "error": "validation_failed_age | validation_failed | concurrent_request | already_registered" }
+```
+
+### Error cases
+| Error                   | Meaning                                                                     |
+|-------------------------|-----------------------------------------------------------------------------|
+| `validation_failed_age` | `age_group` is 'underage' but `underage_age` is missing                     |
+| `validation_failed`     | Required fields are missing or invalid                                      |
+| `concurrent_request`    | Script lock could not be acquired — another operation is in progress        |
+| `already_registered`    | A matching registration already exists for the same trainee and date        |
+| `Unauthorized`          | Invalid or missing API token                                                |
+
+### Frontend API function
+```ts
+/**
+ * Payload for registering a trainee for a specific session (OQM-0014).
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+type RegisterTraineeForSessionPayload = {
+  first_name: string;
+  last_name: string;
+  /** 'adult' or 'underage' */
+  age_group: 'adult' | 'underage';
+  /** Required when age_group is 'underage'. */
+  underage_age?: number;
+  session_type: string;
+  /** ID from camp_schedules sheet; omit for non-camp sessions. */
+  camp_session_id?: string;
+  /** Date in 'YYYY-MM-DD' format */
+  date: string;
+  /** Start time in 'HH:MM' format */
+  start_time: string;
+  /** End time in 'HH:MM' format */
+  end_time: string;
+};
+
+/**
+ * Register a trainee for a specific session.
+ * POST { route: "registerTraineeForSession", payload: RegisterTraineeForSessionPayload, token }
+ * Returns the new row id on success.
+ * Throws Error('already_registered') if the trainee is already registered for the same session and date.
+ * Throws Error('concurrent_request') if a concurrent script lock is held.
+ * Throws Error('validation_failed') if required fields are missing or invalid.
+ * Throws Error('validation_failed_age') if age_group is 'underage' but underage_age is missing.
+ * Throws other Errors on network/service failures.
+ */
+export async function registerTraineeForSession(
+  payload: RegisterTraineeForSessionPayload
+): Promise<string> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'registerTraineeForSession', payload, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data.id as string;
+}
+```

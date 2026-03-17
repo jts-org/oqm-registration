@@ -119,11 +119,37 @@ Sheet: `camp_schedules` (new OQM-0007)
 - B: foreign key referencing `camps.id`
 - D: date in 'YYYY-MM-DD' format
 
+Sheet: `trainee_registrations` (new OQM-0014)
+
+| Column | Name            | Type     |
+|--------|-----------------|----------|
+| A      | id              | string   |
+| B      | first_name      | string   |
+| C      | last_name       | string   |
+| D      | age_group       | string   |
+| E      | underage_age    | number   |
+| F      | session_type    | string   |
+| G      | camp_session_id | string   |
+| H      | date            | ISO-8601 |
+| I      | start_time      | time     |
+| J      | end_time        | time     |
+| K      | realized        | boolean  |
+| L      | created_at      | ISO-8601 |
+| M      | updated_at      | ISO-8601 |
+
+- D: 'adult' | 'underage'
+- E: trainee's age; only set when age_group is 'underage', otherwise empty
+- G: foreign key referencing `camp_schedules.id`; empty for non-camp sessions
+- H: date in 'YYYY-MM-DD' format
+- I/J: time in 'HH:MM' format
+- K: defaults to true on creation
+
 ## Changelog
 Track all schema changes here with date and reason.
 
-| Date       | Sheet              | Change                                      | Reason    |
-|------------|--------------------|---------------------------------------------|-----------|
+| Date       | Sheet                  | Change                                      | Reason    |
+|------------|------------------------|---------------------------------------------|-----------|
+| 2026-03-17 | trainee_registrations  | New sheet                                   | OQM-0014  |
 | 2026-03-09 | sessions           | Added session_type_alias, created_at, updated_at; renamed course→session_type | OQM-0007  |
 | 2026-03-09 | weekly_schedule    | Renamed session→session_type, weekday→weekdays_available (now comma-sep); added created_at, updated_at | OQM-0007  |
 | 2026-03-09 | coach_registrations | New sheet                                  | OQM-0007  |
