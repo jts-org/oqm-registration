@@ -175,13 +175,19 @@ export async function verifyCoachPin(pin: string): Promise<CoachData> {
 { "ok": false, "error": "pin_reserved" }
 ```
 
+### Response (name already registered)
+```json
+{ "ok": false, "error": "name_already_exists" }
+```
+
 ### Error cases
-| Error           | Meaning                                          |
-|-----------------|--------------------------------------------------|
-| `pin_reserved`      | PIN exists in `coach_login` or `trainee_login`   |
-| `concurrent_request`| Script lock could not be acquired; retry         |
-| `Unauthorized`      | Invalid or missing API token                     |
-| `Missing required fields: ...` | Payload validation failure        |
+| Error                  | Meaning                                                          |
+|------------------------|------------------------------------------------------------------|
+| `pin_reserved`         | PIN exists in `coach_login` or `trainee_login`                   |
+| `name_already_exists`  | Trainee with same firstname+lastname already in `trainee_login`  |
+| `concurrent_request`   | Script lock could not be acquired; retry                         |
+| `Unauthorized`         | Invalid or missing API token                                     |
+| `Missing required fields: ...` | Payload validation failure                             |
 
 ### Frontend API function
 ```ts

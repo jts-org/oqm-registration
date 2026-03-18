@@ -110,6 +110,9 @@ function doPost(e) {
       if (result.concurrentRequest) {
         return json_({ ok: false, error: 'concurrent_request' });
       }
+      if (result.nameAlreadyExists) {
+        return json_({ ok: false, error: 'name_already_exists' });
+      }
       if (result.pinReserved) {
         return json_({ ok: false, error: 'pin_reserved' });
       }
@@ -318,12 +321,20 @@ function registerTraineePin_(payload) {
       .map(r => String(r[4]));
 
     // Check PIN is not already in use in trainee_login (column E, index 4)
-    const traineePins = getSheetData('trainee_login')
-      .filter(r => r[4])
-      .map(r => String(r[4]));
+    const traineeRows = getSheetData('trainee_login').filter(r => r[0]);
+    const traineePins = traineeRows.filter(r => r[4]).map(r => String(r[4]));
 
     if (coachPins.includes(payload.pin) || traineePins.includes(payload.pin)) {
       return { pinReserved: true };
+    }
+
+    // Check no trainee with the same firstname and lastname already exists (columns B=index 1, C=index 2)
+    const nameExists = traineeRows.some(
+      r => String(r[1]).toLowerCase() === payload.firstname.toLowerCase() &&
+           String(r[2]).toLowerCase() === payload.lastname.toLowerCase()
+    );
+    if (nameExists) {
+      return { nameAlreadyExists: true };
     }
 
     const sh = getSheetByName('trainee_login');
