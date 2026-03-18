@@ -4,6 +4,7 @@
  *  - GET  ?route=listItems       — list items from Data sheet
  *  - GET  ?route=getSettings     — list rows from settings sheet (QCM-0001)
  *  - GET  ?route=getCoachSessions — fetch 21-day session window (OQM-0007)
+ *  - GET  ?route=getTraineeSessions — fetch trainee-facing 21-day session window (OQM-0015)
  *  - POST { route: "createItem", payload: { name, email } }
  *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin } } — register a new coach PIN code (OQM-0003)
  *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
@@ -34,6 +35,10 @@ function doGet(e) {
     }
     if (route === 'getCoachSessions') {
       const data = getCoachSessions_();
+      return json_({ ok: true, data });
+    }
+    if (route === 'getTraineeSessions') {
+      const data = getTraineeSessions_();
       return json_({ ok: true, data });
     }
     return json_({ ok: false, error: 'Unknown route' });
@@ -100,6 +105,9 @@ function doPost(e) {
     }
     if (route === 'registerTraineeForSession') {
       const result = registerTraineeForSession_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
       if (result.validationFailedAge) {
         return json_({ ok: false, error: 'validation_failed_age' });
       }
@@ -383,6 +391,59 @@ function timeToStr(rawTime, format) {
     timeStr = String(rawTime || '');
   }
   return timeStr;
+}
+
+/**
+ * Normalize mixed sheet/date values to 'YYYY-MM-DD' for stable comparisons.
+ * Accepts Date objects, ISO-like strings, and plain 'YYYY-MM-DD'.
+ */
+function normalizeDateYmd_(value, tz) {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, tz, 'yyyy-MM-dd');
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return '';
+
+  const directYmdMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (directYmdMatch) {
+    return directYmdMatch[1];
+  }
+
+  const parsed = new Date(raw);
+  if (!isNaN(parsed.getTime())) {
+    return Utilities.formatDate(parsed, tz, 'yyyy-MM-dd');
+  }
+
+  return raw;
+}
+
+/**
+ * Normalize mixed time values to 'HH:mm' for stable comparisons.
+ * Accepts Date objects and string representations.
+ */
+function normalizeTimeHm_(value, tz) {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, tz, 'HH:mm');
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return '';
+
+  const directHmMatch = raw.match(/^(\d{1,2}):(\d{2})/);
+  if (directHmMatch) {
+    const hh = String(Number(directHmMatch[1])).padStart(2, '0');
+    return `${hh}:${directHmMatch[2]}`;
+  }
+
+  const parsed = new Date(raw);
+  if (!isNaN(parsed.getTime())) {
+    return Utilities.formatDate(parsed, tz, 'HH:mm');
+  }
+
+  return raw;
 }
 
 /**
@@ -742,7 +803,11 @@ function registerTraineeForSession_(payload) {
   const required = ['first_name', 'last_name', 'age_group', 'session_type', 'date', 'start_time', 'end_time'];
   const missing = required.filter(field => !payload || !payload[field]);
   if (missing.length > 0) {
-    throw new Error('Missing required fields: ' + missing.join(', '));
+    return { validationFailed: true };
+  }
+
+  if (payload.age_group !== 'adult' && payload.age_group !== 'underage') {
+    return { validationFailed: true };
   }
 
   if (payload.age_group === 'underage' && (payload.underage_age === undefined || payload.underage_age === null || payload.underage_age === '')) {
@@ -757,20 +822,32 @@ function registerTraineeForSession_(payload) {
   try {
     const tz = Session.getScriptTimeZone();
     const traineeRegRows = getSheetData('trainee_registrations');
+    const payloadDate = normalizeDateYmd_(payload.date, tz);
+    const payloadFirstName = String(payload.first_name || '').trim().toLowerCase();
+    const payloadLastName = String(payload.last_name || '').trim().toLowerCase();
+    const payloadAgeGroup = String(payload.age_group || '').trim().toLowerCase();
+    const payloadUnderageAge = String(
+      payload.underage_age !== undefined && payload.underage_age !== null ? payload.underage_age : ''
+    ).trim();
+    const payloadSessionType = String(payload.session_type || '').trim().toLowerCase();
+    const payloadCampSessionId = String(payload.camp_session_id || '').trim();
+    const payloadStartTime = normalizeTimeHm_(payload.start_time, tz);
+    const payloadEndTime = normalizeTimeHm_(payload.end_time, tz);
 
     // Check for duplicate registration: same date + all payload fields (excludes id, realized, created_at, updated_at)
     const alreadyRegistered = traineeRegRows.some(row => {
-      const rowDate = timeToStr(row[7], tz, 'yyyy-MM-dd');
-      if (rowDate !== payload.date) return false;
+      const rowDate = normalizeDateYmd_(row[7], tz);
+      if (rowDate !== payloadDate) return false;
+
       return (
-        String(row[1] || '') === String(payload.first_name) &&
-        String(row[2] || '') === String(payload.last_name) &&
-        String(row[3] || '') === String(payload.age_group) &&
-        String(row[4] || '') === String(payload.underage_age !== undefined && payload.underage_age !== null ? payload.underage_age : '') &&
-        String(row[5] || '') === String(payload.session_type) &&
-        String(row[6] || '') === String(payload.camp_session_id || '') &&
-        String(row[8] || '') === String(payload.start_time) &&
-        String(row[9] || '') === String(payload.end_time)
+        String(row[1] || '').trim().toLowerCase() === payloadFirstName &&
+        String(row[2] || '').trim().toLowerCase() === payloadLastName &&
+        String(row[3] || '').trim().toLowerCase() === payloadAgeGroup &&
+        String(row[4] || '').trim() === payloadUnderageAge &&
+        String(row[5] || '').trim().toLowerCase() === payloadSessionType &&
+        String(row[6] || '').trim() === payloadCampSessionId &&
+        normalizeTimeHm_(row[8], tz) === payloadStartTime &&
+        normalizeTimeHm_(row[9], tz) === payloadEndTime
       );
     });
 
@@ -814,4 +891,198 @@ function logToSheet(message) {
   if (String(loggingEnabled).trim() === "log_enabled") {
     sheet.appendRow([new Date(), message]);
   }
+}
+
+/**
+ * Fetch trainee sessions for a 21-day window (7 days before current week's Monday through next 2 weeks).
+ * Includes regular active sessions, realized free/sparring coach sessions, and camp session replacements.
+ * Returns trainee-facing session objects sorted by date and start_time.
+ * @returns {Array}
+ */
+function getTraineeSessions_() {
+  const sessionsRows = getSheetData('sessions');
+  const weeklyScheduleRows = getSheetData('weekly_schedule');
+  const coachRegistrationsRows = getSheetData('coach_registrations');
+  const campsRows = getSheetData('camps');
+  const campSchedulesRows = getSheetData('camp_schedules');
+
+  const tz = Session.getScriptTimeZone();
+
+  // Build 21-day window: previous Monday through next 2 weeks.
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var dayOfWeek = today.getDay();
+  var daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  var currentMonday = new Date(today);
+  currentMonday.setDate(today.getDate() - daysToMonday);
+  currentMonday.setHours(0, 0, 0, 0);
+  var prevMonday = new Date(currentMonday);
+  prevMonday.setDate(currentMonday.getDate() - 7);
+
+  var sessionDates = [];
+  var sessionDateStrs = [];
+  var sessionDateSet = {};
+  for (var i = 0; i < 21; i++) {
+    var d = new Date(prevMonday);
+    d.setDate(prevMonday.getDate() + i);
+    sessionDates.push(d);
+    var ds = Utilities.formatDate(d, tz, 'yyyy-MM-dd');
+    sessionDateStrs.push(ds);
+    sessionDateSet[ds] = true;
+  }
+
+  // Sessions schema: [id, session_type, session_type_alias, start_date, end_date]
+  const sessionMetaByType = {};
+  sessionsRows.forEach(row => {
+    const sessionType = String(row[1] || '').trim();
+    if (!sessionType) return;
+    const key = sessionType.toUpperCase();
+    sessionMetaByType[key] = {
+      sessionType: sessionType,
+      sessionTypeAlias: String(row[2] || '').trim() || sessionType,
+      start: row[3] instanceof Date ? row[3] : new Date(row[3]),
+      end: row[4] instanceof Date ? row[4] : new Date(row[4]),
+    };
+  });
+
+  // Weekly schedule schema: [id, session_type, weekdays_available, start_time, end_time, location, active]
+  const parsedSchedules = [];
+  weeklyScheduleRows.forEach(row => {
+    if (!getBooleanValue(row[6])) return;
+    const weekdaySet = {};
+    String(row[2] || '')
+      .split(',')
+      .map(part => Number(part.trim()))
+      .filter(val => Number.isFinite(val))
+      .forEach(val => {
+        weekdaySet[val] = true;
+      });
+
+    parsedSchedules.push({
+      id: String(row[0] || ''),
+      sessionType: String(row[1] || '').trim(),
+      sessionTypeUpper: String(row[1] || '').trim().toUpperCase(),
+      weekdaySet: weekdaySet,
+      startTime: timeToStr(row[3], tz, 'HH:mm'),
+      endTime: timeToStr(row[4], tz, 'HH:mm'),
+      location: String(row[5] || ''),
+    });
+  });
+
+  const sessions = [];
+
+  // Build regular sessions from weekly schedule x date window.
+  for (var di = 0; di < sessionDates.length; di++) {
+    var sessionDate = sessionDates[di];
+    var dateStr = sessionDateStrs[di];
+    var weekday = sessionDate.getDay() === 0 ? 6 : sessionDate.getDay() - 1;
+
+    for (var si = 0; si < parsedSchedules.length; si++) {
+      var sched = parsedSchedules[si];
+      if (!sched.weekdaySet[weekday]) continue;
+
+      var activePeriod = sessionMetaByType[sched.sessionTypeUpper];
+      if (activePeriod && (sessionDate < activePeriod.start || sessionDate > activePeriod.end)) {
+        continue;
+      }
+
+      sessions.push({
+        id: sched.id + '_' + dateStr,
+        session_type: sched.sessionType,
+        session_type_alias: activePeriod ? activePeriod.sessionTypeAlias : sched.sessionType,
+        date: dateStr,
+        start_time: sched.startTime,
+        end_time: sched.endTime,
+        location: sched.location,
+        coach_firstname: '',
+        coach_lastname: '',
+        camp_instructor_name: '',
+        is_free_sparring: false,
+      });
+    }
+  }
+
+  // Add realized free/sparring sessions from coach_registrations.
+  coachRegistrationsRows.forEach(row => {
+    if (row.length >= 6 && !getBooleanValue(row[5])) return;
+
+    const sessionType = String(row[3] || '').trim();
+    if (sessionType.toUpperCase() !== 'FREE/SPARRING') return;
+
+    const dateStr = timeToStr(row[4], tz, 'yyyy-MM-dd');
+    if (!sessionDateSet[dateStr]) return;
+
+    const sparringMeta = sessionMetaByType['FREE/SPARRING'];
+
+    sessions.push({
+      id: 'sparring_' + String(row[0] || '') + '_' + dateStr,
+      session_type: 'free/sparring',
+      session_type_alias: sparringMeta ? sparringMeta.sessionTypeAlias : 'free/sparring',
+      date: dateStr,
+      start_time: timeToStr(row[6], tz, 'HH:mm'),
+      end_time: timeToStr(row[7], tz, 'HH:mm'),
+      location: '',
+      coach_firstname: String(row[1] || '').trim(),
+      coach_lastname: String(row[2] || '').trim(),
+      camp_instructor_name: '',
+      is_free_sparring: true,
+    });
+  });
+
+  // Build active camps index for the same 21-day window.
+  const windowStart = sessionDateStrs[0];
+  const windowEnd = sessionDateStrs[sessionDateStrs.length - 1];
+  const campMap = {};
+  campsRows.forEach(row => {
+    const campId = String(row[0] || '');
+    if (!campId) return;
+    const startDate = timeToStr(row[4], tz, 'yyyy-MM-dd');
+    const endDate = timeToStr(row[5], tz, 'yyyy-MM-dd');
+    if (endDate < windowStart || startDate > windowEnd) return;
+    campMap[campId] = {
+      instructor: String(row[3] || '').trim(),
+    };
+  });
+
+  const campDatesToReplace = {};
+  const campSessions = [];
+  campSchedulesRows.forEach(row => {
+    const campId = String(row[1] || '');
+    const camp = campMap[campId];
+    if (!camp) return;
+
+    const dateStr = timeToStr(row[3], tz, 'yyyy-MM-dd');
+    if (!sessionDateSet[dateStr]) return;
+
+    const sessionName = String(row[2] || '').trim();
+    campDatesToReplace[dateStr] = true;
+
+    campSessions.push({
+      id: 'camp_' + String(row[0] || '') + '_' + dateStr,
+      session_type: sessionName,
+      session_type_alias: sessionName,
+      date: dateStr,
+      start_time: timeToStr(row[4], tz, 'HH:mm'),
+      end_time: timeToStr(row[5], tz, 'HH:mm'),
+      location: '',
+      coach_firstname: '',
+      coach_lastname: '',
+      camp_instructor_name: camp.instructor,
+      is_free_sparring: false,
+    });
+  });
+
+  // Replace regular sessions with camp sessions for camp dates, but keep free/sparring sessions.
+  const filtered = sessions.filter(session => {
+    return session.is_free_sparring || !campDatesToReplace[session.date];
+  });
+
+  const merged = filtered.concat(campSessions);
+  merged.sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.start_time.localeCompare(b.start_time);
+  });
+
+  logToSheet('getTraineeSessions_() - returned ' + merged.length + ' sessions');
+  return merged;
 }

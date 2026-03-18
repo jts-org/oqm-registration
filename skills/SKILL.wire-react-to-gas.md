@@ -4,6 +4,7 @@
 - GET  `?route=listItems&token=...` → list rows from `Data` sheet
 - GET  `?route=getSettings&token=...` → list rows from `settings` sheet (QCM-0001)
 - GET  `?route=getCoachSessions&token=...` → fetch 21-day session window (OQM-0007)
+- GET  `?route=getTraineeSessions&token=...` → fetch trainee-facing 21-day session window (OQM-0015)
 - POST `{ route: "createItem", payload, token }` → append row
 - POST `{ route: "registerCoachPin", payload, token }` → register coach PIN (OQM-0003)
 - POST `{ route: "verifyCoachPin", payload, token }` → verify coach PIN, return coach data (OQM-0004)
@@ -243,6 +244,39 @@ export async function createItem(payload: {name: string; email: string}) {
   if (!data.ok) throw new Error(data.error || "Unknown error");
   return data.data;
 }
+```
+
+## getTraineeSessions (OQM-0015)
+
+### Request
+- Method: `GET`
+- URL: `?route=getTraineeSessions&token=...`
+
+### Response (success)
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "ws_1_2026-03-17 | sparring_<registrationId>_<date> | camp_<campScheduleId>_<date>",
+      "session_type": "advanced | fitness | basic | free/sparring | <camp session name>",
+      "session_type_alias": "localized alias or camp session name",
+      "date": "YYYY-MM-DD",
+      "start_time": "HH:MM",
+      "end_time": "HH:MM",
+      "location": "string",
+      "coach_firstname": "string (free/sparring only)",
+      "coach_lastname": "string (free/sparring only)",
+      "camp_instructor_name": "string (camp sessions only)",
+      "is_free_sparring": true
+    }
+  ]
+}
+```
+
+### Response (error)
+```json
+{ "ok": false, "error": "Unauthorized | Unknown route | ..." }
 ```
 
 **Why `redirect: "follow"` and `text/plain`?** Apps Script web apps may `302` and stricter JSON preflights can fail; this pattern avoids common CORS issues.

@@ -35,7 +35,7 @@ describe('HomePage', () => {
     expect(screen.getByRole('img', { name: 'OQM compact logo' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'React logo' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Vite logo' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'OQM Registration' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Training Session Management and Registration System' })).toBeInTheDocument();
     expect(screen.getByText('Select your role to continue')).toBeInTheDocument();
     expect(screen.getByText('Powered by React + Vite')).toBeInTheDocument();
     expect(screen.getByText(/Overclocked Quantum Moose/i)).toBeInTheDocument();

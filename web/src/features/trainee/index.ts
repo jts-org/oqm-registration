@@ -8,4 +8,9 @@
  * @description Public exports for the trainee feature (OQM-0014).
  */
 export { registerTraineeForSession } from './api/trainee.api';
-export type { RegisterTraineeForSessionPayload } from './types';
+export { getTraineeSessions } from './api/trainee.api';
+export type {
+	RegisterTraineeForSessionPayload,
+	TraineeSessionItem,
+	PendingTraineeData,
+} from './types';
