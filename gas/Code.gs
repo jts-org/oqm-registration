@@ -10,6 +10,8 @@
  *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
  *  - POST { route: "registerCoachForSession", payload: { firstname, lastname, session_type, date, start_time?, end_time? } } — register coach for a session (OQM-0008/OQM-0011); returns overlapping_session|date|start|end for time conflicts
  *  - POST { route: "removeCoachFromSession", payload: { firstname, lastname, session_type, date } } — remove coach from a session (OQM-0009)
+ *  - POST { route: "registerTraineePin", payload: { firstname, lastname, age, pin } } — register a new trainee PIN code (OQM-0016)
+ *  - POST { route: "verifyTraineePin", payload: { pin } } — verify a trainee PIN against trainee_login sheet (OQM-0016)
  *  - POST { route: "registerTraineeForSession", payload: { first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time, end_time } } — register trainee for a session (OQM-0014)
  * Internal helpers (not exposed as routes):
  *  - updateCoachLastActivity_(coachId) — sets last_activity in coach_login (OQM-0011)
@@ -102,6 +104,23 @@ function doPost(e) {
         return json_({ ok: false, error: 'session_available' });
       }
       return json_({ ok: true, data: { id: result.id } });
+    }
+    if (route === 'registerTraineePin') {
+      const result = registerTraineePin_(payload);
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.pinReserved) {
+        return json_({ ok: false, error: 'pin_reserved' });
+      }
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'verifyTraineePin') {
+      const traineeData = verifyTraineePin_(payload);
+      if (!traineeData) {
+        return json_({ ok: false, error: 'no_match_found' });
+      }
+      return json_({ ok: true, data: traineeData });
     }
     if (route === 'registerTraineeForSession') {
       const result = registerTraineeForSession_(payload);
@@ -267,6 +286,82 @@ function verifyCoachPin_(payload) {
     firstname: String(row[1]),
     lastname: String(row[2]),
     alias: String(row[3]),
+    pin: String(row[4]),
+    created_at: String(row[5]),
+    last_activity: String(row[6])
+  };
+}
+
+/**
+ * Register a new trainee PIN code.
+ * Checks that the PIN does not exist in coach_login or trainee_login sheets.
+ * If the PIN is already taken, returns { pinReserved: true }.
+ * Otherwise appends a new row to trainee_login and returns the created record.
+ * Schema: id, firstname, lastname, age, pin, created_at, last_activity (columns A–G)
+ * See SKILL.sheet-schema.md for full schema definition.
+ * See SKILL.wire-react-to-gas.md for API contract (OQM-0016).
+ */
+function registerTraineePin_(payload) {
+  if (!payload || !payload.firstname || !payload.lastname || !payload.age || !payload.pin) {
+    throw new Error('Missing required fields: firstname, lastname, age, pin');
+  }
+
+  // Acquire lock to prevent concurrent writes to trainee_login
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+  try {
+    // Check PIN is not already in use in coach_login (column E, index 4)
+    const coachPins = getSheetData('coach_login')
+      .filter(r => r[4])
+      .map(r => String(r[4]));
+
+    // Check PIN is not already in use in trainee_login (column E, index 4)
+    const traineePins = getSheetData('trainee_login')
+      .filter(r => r[4])
+      .map(r => String(r[4]));
+
+    if (coachPins.includes(payload.pin) || traineePins.includes(payload.pin)) {
+      return { pinReserved: true };
+    }
+
+    const sh = getSheetByName('trainee_login');
+    const id = Utilities.getUuid();
+    const now = new Date().toISOString();
+    sh.appendRow([id, payload.firstname, payload.lastname, payload.age, payload.pin, now, '']);
+    return {
+      id,
+      firstname: payload.firstname,
+      lastname: payload.lastname,
+      age: payload.age,
+      pin: payload.pin,
+      created_at: now
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Verify a trainee PIN code against the trainee_login sheet.
+ * Returns the matching trainee's row data or null if no match found.
+ * Schema: id, firstname, lastname, age, pin, created_at, last_activity (columns A–G)
+ * See SKILL.sheet-schema.md for full schema definition.
+ * See SKILL.wire-react-to-gas.md for API contract (OQM-0016).
+ */
+function verifyTraineePin_(payload) {
+  if (!payload || !payload.pin) {
+    throw new Error('Missing required fields: pin');
+  }
+  const rows = getSheetData('trainee_login');
+  const row = rows.find(r => r[4] && String(r[4]) === String(payload.pin));
+  if (!row) return null;
+  return {
+    id: String(row[0]),
+    firstname: String(row[1]),
+    lastname: String(row[2]),
+    age: String(row[3]),
     pin: String(row[4]),
     created_at: String(row[5]),
     last_activity: String(row[6])
