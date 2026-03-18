@@ -35,3 +35,44 @@ export interface RegisterTraineeForSessionPayload {
   /** End time in 'HH:MM' format (required). */
   end_time: string;
 }
+
+/**
+ * Session item returned for trainee registration page.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export interface TraineeSessionItem {
+  /** Unique identifier based on source row + date. */
+  id: string;
+  /** English session type key/name. */
+  session_type: string;
+  /** Localized display name for session type. */
+  session_type_alias: string;
+  /** Date in 'YYYY-MM-DD' format. */
+  date: string;
+  /** Start time in 'HH:MM' format. */
+  start_time: string;
+  /** End time in 'HH:MM' format. */
+  end_time: string;
+  /** Session location, empty string when unknown. */
+  location: string;
+  /** Coach first name for free/sparring sessions, otherwise empty. */
+  coach_firstname: string;
+  /** Coach last name for free/sparring sessions, otherwise empty. */
+  coach_lastname: string;
+  /** Camp instructor name for camp sessions, otherwise empty. */
+  camp_instructor_name: string;
+  /** True when session_type is free/sparring. */
+  is_free_sparring: boolean;
+  /** Frontend-only flag for visualizing registered sessions. */
+  trainee_registered?: boolean;
+}
+
+/**
+ * Pending trainee profile data persisted on Trainee page after a successful registration.
+ */
+export interface PendingTraineeData {
+  first_name: string;
+  last_name: string;
+  age_group: 'adult' | 'underage';
+  underage_age?: number;
+}

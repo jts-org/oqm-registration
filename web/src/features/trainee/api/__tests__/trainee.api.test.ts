@@ -10,7 +10,7 @@
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerTraineeForSession } from '../trainee.api';
+import { getTraineeSessions, registerTraineeForSession } from '../trainee.api';
 import type { RegisterTraineeForSessionPayload } from '../../types';
 
 const mockFetch = vi.fn();
@@ -156,5 +156,62 @@ describe('registerTraineeForSession', () => {
     await registerTraineeForSession(payload);
     const bodyArg = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(bodyArg.payload.camp_session_id).toBe('camp-session-abc');
+  });
+});
+
+describe('getTraineeSessions', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    vi.stubEnv('VITE_API_TOKEN', TOKEN);
+    mockFetch.mockReset();
+  });
+
+  it('throws when VITE_GAS_BASE_URL is not configured', async () => {
+    vi.stubEnv('VITE_GAS_BASE_URL', '');
+    await expect(getTraineeSessions()).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
+  });
+
+  it('sends a GET request with route=getTraineeSessions and token', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: true, data: [] }),
+    });
+
+    await getTraineeSessions();
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE}?route=getTraineeSessions&token=${encodeURIComponent(TOKEN)}`,
+      expect.objectContaining({ method: 'GET', redirect: 'follow' })
+    );
+  });
+
+  it('returns session list when backend returns ok true', async () => {
+    const sessions = [
+      {
+        id: 'session-1',
+        session_type: 'basic',
+        session_type_alias: 'Basic',
+        date: '2026-03-18',
+        start_time: '18:00',
+        end_time: '19:00',
+        location: '',
+        coach_firstname: '',
+        coach_lastname: '',
+        camp_instructor_name: '',
+        is_free_sparring: false,
+      },
+    ];
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: true, data: sessions }),
+    });
+
+    await expect(getTraineeSessions()).resolves.toEqual(sessions);
+  });
+
+  it('throws backend error code when backend returns ok false', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'Unauthorized' }),
+    });
+
+    await expect(getTraineeSessions()).rejects.toThrow('Unauthorized');
   });
 });

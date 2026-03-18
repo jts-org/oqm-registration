@@ -77,7 +77,7 @@ export function AdminLoginDialog({ open, adminPassword, onLoginSuccess, onCancel
           }}
           error={!!error}
           helperText={error || ' '}
-          slotProps={{ input: { 'aria-label': t('adminLogin.enterPassword') } }}
+          inputProps={{ 'aria-label': t('adminLogin.enterPassword') }}
           fullWidth
           margin="dense"
           autoComplete="current-password"

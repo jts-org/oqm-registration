@@ -10,7 +10,24 @@
  *   Env vars are read inside each function so vi.stubEnv works correctly in tests.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
-import type { RegisterTraineeForSessionPayload } from '../types';
+import type { RegisterTraineeForSessionPayload, TraineeSessionItem } from '../types';
+
+/**
+ * Fetch all trainee sessions for the active 21-day registration window.
+ * GET ?route=getTraineeSessions&token=...
+ * Returns array of TraineeSessionItem sorted by date and start_time.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export async function getTraineeSessions(): Promise<TraineeSessionItem[]> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const url = `${base}?route=getTraineeSessions&token=${encodeURIComponent(token || '')}`;
+  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to fetch sessions');
+  return json.data as TraineeSessionItem[];
+}
 
 /**
  * Register a trainee for a specific session by posting to the GAS backend.
