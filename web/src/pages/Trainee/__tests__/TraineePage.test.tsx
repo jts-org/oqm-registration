@@ -16,12 +16,14 @@ import '../../../lib/i18n';
 import { TraineePage } from '../TraineePage';
 import { getTraineeSessions } from '../../../features/trainee/api/trainee.api';
 import { registerTraineeForSession } from '../../../features/trainee/api/trainee.api';
+import { registerTraineePin } from '../../../features/trainee/api/trainee.api';
 import type { TraineeSessionItem } from '../../../features/trainee/types';
 import toast from 'react-hot-toast';
 
 vi.mock('../../../features/trainee/api/trainee.api', () => ({
   getTraineeSessions: vi.fn(),
   registerTraineeForSession: vi.fn(),
+  registerTraineePin: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => {
@@ -34,6 +36,7 @@ vi.mock('react-hot-toast', () => {
 
 const mockGetTraineeSessions = vi.mocked(getTraineeSessions);
 const mockRegisterTraineeForSession = vi.mocked(registerTraineeForSession);
+const mockRegisterTraineePin = vi.mocked(registerTraineePin);
 const mockToast = vi.mocked(toast);
 
 const mockSession: TraineeSessionItem = {
@@ -55,6 +58,15 @@ describe('TraineePage', () => {
     vi.clearAllMocks();
     mockGetTraineeSessions.mockResolvedValue([mockSession]);
     mockRegisterTraineeForSession.mockResolvedValue('reg-1');
+    mockRegisterTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1',
+      firstname: 'Jane',
+      lastname: 'Doe',
+      age: '0',
+      pin: '1234',
+      created_at: '2026-01-01T00:00:00Z',
+      last_activity: '',
+    });
   });
 
   it('shows warning alert when trainee is not logged in and has login/register pin buttons', async () => {
@@ -159,5 +171,224 @@ describe('TraineePage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Back to main' }));
     expect(onBack).toHaveBeenCalledOnce();
+  });
+});
+
+/** Helper: fill the RegisterPinDialog with valid data for Jane Doe. */
+async function fillRegisterPinForm(firstname = 'Jane', pin = '1234') {
+  await userEvent.type(screen.getByLabelText('Firstname'), firstname);
+  await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
+  await userEvent.type(screen.getByLabelText('Enter new PIN code'), pin);
+  await userEvent.type(screen.getByLabelText('Enter PIN again'), pin);
+}
+
+describe('OQM-0019 — trainee PIN registration from TraineePage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetTraineeSessions.mockResolvedValue([mockSession]);
+    mockRegisterTraineeForSession.mockResolvedValue('reg-1');
+    mockRegisterTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1',
+      firstname: 'Jane',
+      lastname: 'Doe',
+      age: '0',
+      pin: '1234',
+      created_at: '2026-01-01T00:00:00Z',
+      last_activity: '',
+    });
+  });
+
+  it('opens RegisterPinDialog when Register PIN button is clicked', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+
+    expect(screen.getByRole('dialog', { name: 'Register new PIN code' })).toBeInTheDocument();
+  });
+
+  it('Alias field is not shown in RegisterPinDialog opened from TraineePage', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+
+    expect(screen.queryByLabelText('Alias')).not.toBeInTheDocument();
+  });
+
+  it('clicking Cancel closes RegisterPinDialog without changing trainee state', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Register new PIN code' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('You are not logged in.')).toBeInTheDocument();
+  });
+
+  it('calls registerTraineePin with correct payload on Register submit', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+
+    await fillRegisterPinForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(mockRegisterTraineePin).toHaveBeenCalledWith({
+        firstname: 'Jane',
+        lastname: 'Doe',
+        age: '0',
+        pin: '1234',
+      });
+    });
+  });
+
+  it('shows progress toast while registration request is pending', async () => {
+    let resolveRegister!: () => void;
+    mockRegisterTraineePin.mockReturnValue(
+      new Promise(resolve => { resolveRegister = () => resolve({ id: 't1', firstname: 'Jane', lastname: 'Doe', age: '0', pin: '1234', created_at: '', last_activity: '' }); })
+    );
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+    await fillRegisterPinForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith('Registration ongoing. Please wait.');
+    });
+
+    resolveRegister();
+  });
+
+  it('shows loading overlay while registration request is pending', async () => {
+    let resolveRegister!: () => void;
+    mockRegisterTraineePin.mockReturnValue(
+      new Promise(resolve => { resolveRegister = () => resolve({ id: 't1', firstname: 'Jane', lastname: 'Doe', age: '0', pin: '1234', created_at: '', last_activity: '' }); })
+    );
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+    await fillRegisterPinForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('status', { name: 'Loading' })).toBeInTheDocument();
+    });
+
+    resolveRegister();
+  });
+
+  it('successful registration closes dialog, updates login state, and disables Register PIN and Login buttons', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+    await fillRegisterPinForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Register new PIN code' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Logged in: Jane Doe.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Register PIN' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Login' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Log out' })).not.toBeDisabled();
+  });
+
+  it('concurrent_request error keeps dialog open with correct message', async () => {
+    mockRegisterTraineePin.mockRejectedValue(new Error('concurrent_request'));
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+    await fillRegisterPinForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Concurrent operation ongoing. Please try again.')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('dialog', { name: 'Register new PIN code', hidden: true })).toBeInTheDocument();
+  });
+
+  it('pin_reserved error keeps dialog open with correct message', async () => {
+    mockRegisterTraineePin.mockRejectedValue(new Error('pin_reserved'));
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+    await fillRegisterPinForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('PIN code reserved. Choose different PIN code.')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('dialog', { name: 'Register new PIN code', hidden: true })).toBeInTheDocument();
+  });
+
+  it('name_already_exists error keeps dialog open with correct message', async () => {
+    mockRegisterTraineePin.mockRejectedValue(new Error('name_already_exists'));
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+    await fillRegisterPinForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Trainee with the same name already exists/)).toBeInTheDocument();
+    });
+    expect(screen.getByRole('dialog', { name: 'Register new PIN code', hidden: true })).toBeInTheDocument();
+  });
+
+  it('Logout clears trainee state and re-enables Login and Register PIN buttons', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+
+    // Register a PIN to log in
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+    await fillRegisterPinForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Register new PIN code' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Logged in: Jane Doe.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Log out' }));
+
+    expect(screen.getByText('You are not logged in.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Login' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Register PIN' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Log out' })).toBeDisabled();
+  });
+
+  it('prefills first and last name from pendingTraineeData when opening Register PIN dialog', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+
+    // Register for a session (sets pendingTraineeData) — Register PIN remains enabled
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+    await userEvent.type(screen.getByLabelText('First name:'), 'Jane');
+    await userEvent.type(screen.getByLabelText('Last name:'), 'Doe');
+    await userEvent.click(screen.getByRole('button', { name: 'Ok' }));
+    const confirmDialog = await screen.findByRole('dialog', { name: 'Confirm Registration' });
+    await userEvent.click(within(confirmDialog).getByRole('button', { name: 'Ok' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Confirm Registration' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Logged in: Jane Doe.')).toBeInTheDocument();
+
+    // Register PIN should still be enabled (only disabled after PIN registration success)
+    expect(screen.getByRole('button', { name: 'Register PIN' })).not.toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Register PIN' }));
+    await screen.findByRole('dialog', { name: 'Register new PIN code' });
+
+    expect(screen.getByLabelText('Firstname')).toHaveValue('Jane');
+    expect(screen.getByLabelText('Lastname')).toHaveValue('Doe');
   });
 });

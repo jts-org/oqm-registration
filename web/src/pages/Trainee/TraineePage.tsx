@@ -8,9 +8,11 @@
  * @description Trainee registration page with available session listing and registration dialogs (OQM-0015).
  *   Fetches trainee sessions from GAS, supports manual data entry and confirmation,
  *   and stores pending trainee profile for repeated registrations.
+ *   Supports PIN registration via RegisterPinDialog (OQM-0019).
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRef } from 'react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -27,11 +29,15 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { getTraineeSessions } from '../../features/trainee/api/trainee.api';
+import { registerTraineePin } from '../../features/trainee/api/trainee.api';
 import { ConfirmTraineeRegistrationDialog } from '../../features/trainee/components/ConfirmTraineeRegistrationDialog';
 import { ManualTraineeRegistrationDialog } from '../../features/trainee/components/ManualTraineeRegistrationDialog';
 import { TraineeSessionCard } from '../../features/trainee/components/TraineeSessionCard';
 import type { PendingTraineeData, TraineeSessionItem } from '../../features/trainee/types';
+import type { RegisterTraineePinData } from '../../features/trainee/types';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay/LoadingOverlay';
+import { RegisterPinDialog } from '../../shared/components/RegisterPinDialog/RegisterPinDialog';
+import type { RegisterPinData } from '../../shared/components/RegisterPinDialog/RegisterPinDialog';
 
 export interface TraineePageProps {
   /** Navigates back to the main view. */
@@ -57,6 +63,11 @@ export function TraineePage({ onBack }: TraineePageProps) {
   const [selectedSession, setSelectedSession] = useState<TraineeSessionItem | null>(null);
   const [confirmTraineeData, setConfirmTraineeData] = useState<PendingTraineeData | undefined>(undefined);
   const [pendingTraineeData, setPendingTraineeData] = useState<PendingTraineeData | undefined>(undefined);
+  const [registerPinDialogOpen, setRegisterPinDialogOpen] = useState(false);
+  /** True after a successful PIN registration; resets to false on logout. */
+  const [traineePinRegistered, setTraineePinRegistered] = useState(false);
+  /** Captures the submitted RegisterPinData so onSuccess can build PendingTraineeData. */
+  const pendingRegisterPinDataRef = useRef<RegisterPinData | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -144,6 +155,40 @@ export function TraineePage({ onBack }: TraineePageProps) {
 
   function handleLogout() {
     setPendingTraineeData(undefined);
+    setTraineePinRegistered(false);
+  }
+
+  function handleOpenRegisterPin() {
+    setRegisterPinDialogOpen(true);
+  }
+
+  async function handleRegisterPinRegister(data: RegisterPinData): Promise<void> {
+    pendingRegisterPinDataRef.current = data;
+    const payload: RegisterTraineePinData = {
+      firstname: data.firstname,
+      lastname: data.lastname,
+      age: data.isUnderage && data.age !== undefined ? String(data.age) : '0',
+      pin: data.pin,
+    };
+    await registerTraineePin(payload);
+  }
+
+  function handleRegisterPinSuccess(_pin: string): void {
+    const data = pendingRegisterPinDataRef.current;
+    setRegisterPinDialogOpen(false);
+    setTraineePinRegistered(true);
+    if (data) {
+      setPendingTraineeData({
+        first_name: data.firstname,
+        last_name: data.lastname,
+        age_group: data.isUnderage ? 'underage' : 'adult',
+        underage_age: data.isUnderage && data.age !== undefined ? data.age : undefined,
+      });
+    }
+  }
+
+  function handleRegisterPinCancel(): void {
+    setRegisterPinDialogOpen(false);
   }
 
   return (
@@ -172,18 +217,33 @@ export function TraineePage({ onBack }: TraineePageProps) {
       <Card sx={{ mb: 3, borderRadius: 3 }}>
         <CardContent>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            {pendingTraineeData ? (
-              <Button variant="contained" startIcon={<LogoutIcon />} onClick={handleLogout} sx={{ flex: 1 }}>
-                {t('traineeRegistration.logout')}
-              </Button>
-            ) : (
-              <Button variant="contained" startIcon={<LoginIcon />} sx={{ flex: 1 }}>
-                {t('traineeRegistration.login')}
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              startIcon={<LoginIcon />}
+              disabled={!!pendingTraineeData}
+              sx={{ flex: 1 }}
+            >
+              {t('traineeRegistration.login')}
+            </Button>
 
-            <Button variant="outlined" startIcon={<PinIcon />} sx={{ flex: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<PinIcon />}
+              disabled={traineePinRegistered}
+              onClick={handleOpenRegisterPin}
+              sx={{ flex: 1 }}
+            >
               {t('traineeRegistration.registerPin')}
+            </Button>
+
+            <Button
+              variant="contained"
+              startIcon={<LogoutIcon />}
+              disabled={!pendingTraineeData}
+              onClick={handleLogout}
+              sx={{ flex: 1 }}
+            >
+              {t('traineeRegistration.logout')}
             </Button>
 
             <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchSessions} sx={{ flex: 1 }} disabled={loading}>
@@ -254,6 +314,18 @@ export function TraineePage({ onBack }: TraineePageProps) {
         onSuccess={handleConfirmSuccess}
         onAlreadyRegistered={handleAlreadyRegistered}
         onCancel={handleConfirmCancel}
+      />
+
+      <RegisterPinDialog
+        open={registerPinDialogOpen}
+        showAlias={false}
+        initialFirstname={pendingTraineeData?.first_name ?? ''}
+        initialLastname={pendingTraineeData?.last_name ?? ''}
+        initialIsUnderage={pendingTraineeData?.underage_age !== undefined}
+        initialAge={pendingTraineeData?.underage_age}
+        onRegister={handleRegisterPinRegister}
+        onSuccess={handleRegisterPinSuccess}
+        onCancel={handleRegisterPinCancel}
       />
 
     </Container>
