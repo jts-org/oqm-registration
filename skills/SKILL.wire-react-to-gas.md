@@ -8,6 +8,8 @@
 - POST `{ route: "createItem", payload, token }` → append row
 - POST `{ route: "registerCoachPin", payload, token }` → register coach PIN (OQM-0003)
 - POST `{ route: "verifyCoachPin", payload, token }` → verify coach PIN, return coach data (OQM-0004)
+- POST `{ route: "registerTraineePin", payload, token }` → register trainee PIN (OQM-0016)
+- POST `{ route: "verifyTraineePin", payload, token }` → verify trainee PIN, return trainee data (OQM-0016)
 - POST `{ route: "registerCoachForSession", payload, token }` → register coach for a session (OQM-0008)
 - POST `{ route: "removeCoachFromSession", payload, token }` → remove coach from a session (OQM-0009)
 - POST `{ route: "registerTraineeForSession", payload, token }` → register trainee for a session (OQM-0014)
@@ -144,6 +146,141 @@ export async function verifyCoachPin(pin: string): Promise<CoachData> {
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Verification failed');
   return json.data as CoachData;
+}
+```
+
+## registerTraineePin (OQM-0016)
+
+### Request
+```json
+{
+  "route": "registerTraineePin",
+  "payload": {
+    "firstname": "string (required, 1–30 letters/spaces/hyphens)",
+    "lastname":  "string (required, 1–30 letters/spaces/hyphens)",
+    "age":       "string (required, positive integer as string)",
+    "pin":       "string (required, 4–6 digits)"
+  },
+  "token": "string"
+}
+```
+
+### Response (success)
+```json
+{ "ok": true, "data": { "id": "uuid", "firstname": "...", "lastname": "...", "age": "...", "pin": "...", "created_at": "ISO-8601" } }
+```
+
+### Response (PIN already taken)
+```json
+{ "ok": false, "error": "pin_reserved" }
+```
+
+### Response (name already registered)
+```json
+{ "ok": false, "error": "name_already_exists" }
+```
+
+### Error cases
+| Error                  | Meaning                                                          |
+|------------------------|------------------------------------------------------------------|
+| `pin_reserved`         | PIN exists in `coach_login` or `trainee_login`                   |
+| `name_already_exists`  | Trainee with same firstname+lastname already in `trainee_login`  |
+| `concurrent_request`   | Script lock could not be acquired; retry                         |
+| `Unauthorized`         | Invalid or missing API token                                     |
+| `Missing required fields: ...` | Payload validation failure                             |
+
+### Frontend API function
+```ts
+/** Shape of registration data collected by trainee RegisterPinDialog. */
+type RegisterTraineePinData = {
+  firstname: string;
+  lastname: string;
+  age: string;
+  pin: string;
+};
+
+/** Trainee data returned from the backend on successful PIN registration. */
+type TraineeData = {
+  id: string;
+  firstname: string;
+  lastname: string;
+  age: string;
+  pin: string;
+  created_at: string;
+  last_activity: string;
+};
+
+/**
+ * Register a new trainee PIN code.
+ * Returns the newly created TraineeData on success.
+ * Throws Error('pin_reserved') if PIN is taken.
+ * Throws other Errors on network/service failures.
+ */
+export async function registerTraineePin(data: RegisterTraineePinData): Promise<TraineeData> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'registerTraineePin', payload: data, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data as TraineeData;
+}
+```
+
+## verifyTraineePin (OQM-0016)
+
+### Request
+```json
+{
+  "route": "verifyTraineePin",
+  "payload": { "pin": "string (required, 4–6 digits)" },
+  "token": "string"
+}
+```
+
+### Response (success)
+```json
+{ "ok": true, "data": { "id": "uuid", "firstname": "...", "lastname": "...", "age": "...", "pin": "...", "created_at": "ISO-8601", "last_activity": "ISO-8601" } }
+```
+
+### Response (PIN not found)
+```json
+{ "ok": false, "error": "no_match_found" }
+```
+
+### Error cases
+| Error            | Meaning                                      |
+|------------------|----------------------------------------------|
+| `no_match_found` | PIN not found in `trainee_login` sheet       |
+| `Unauthorized`   | Invalid or missing API token                 |
+| `Missing required fields: pin` | Payload validation failure     |
+
+### Frontend API function
+```ts
+/**
+ * Verify a trainee PIN code against the GAS backend.
+ * Returns TraineeData on success.
+ * Throws Error('no_match_found') if PIN does not match any trainee.
+ * Throws other Errors on network/service failures.
+ */
+export async function verifyTraineePin(pin: string): Promise<TraineeData> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'verifyTraineePin', payload: { pin }, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Verification failed');
+  return json.data as TraineeData;
 }
 ```
 
