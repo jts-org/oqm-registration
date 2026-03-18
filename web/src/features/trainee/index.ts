@@ -7,10 +7,13 @@
 /**
  * @description Public exports for the trainee feature (OQM-0014).
  */
+export { registerTraineePin } from './api/trainee.api';
 export { registerTraineeForSession } from './api/trainee.api';
 export { getTraineeSessions } from './api/trainee.api';
 export type {
+	RegisterTraineePinData,
 	RegisterTraineeForSessionPayload,
+	TraineeData,
 	TraineeSessionItem,
 	PendingTraineeData,
 } from './types';

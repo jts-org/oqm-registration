@@ -5,12 +5,12 @@
  */
 
 /**
- * @description Tests for trainee API — registerTraineeForSession function (OQM-0014).
+ * @description Tests for trainee API functions.
  *   Written before implementation (TDD).
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getTraineeSessions, registerTraineeForSession } from '../trainee.api';
+import { getTraineeSessions, registerTraineeForSession, registerTraineePin } from '../trainee.api';
 import type { RegisterTraineeForSessionPayload } from '../../types';
 
 const mockFetch = vi.fn();
@@ -39,6 +39,130 @@ const validUnderagePayload: RegisterTraineeForSessionPayload = {
   start_time: '10:00',
   end_time: '11:00',
 };
+
+describe('registerTraineePin', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    vi.stubEnv('VITE_API_TOKEN', TOKEN);
+    mockFetch.mockReset();
+  });
+
+  it('throws when VITE_GAS_BASE_URL is not configured', async () => {
+    vi.stubEnv('VITE_GAS_BASE_URL', '');
+
+    await expect(
+      registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' })
+    ).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
+  });
+
+  it('sends a POST request with correct shape', async () => {
+    const traineeData = {
+      id: 'trainee-1',
+      firstname: 'Jane',
+      lastname: 'Doe',
+      age: '12',
+      pin: '1234',
+      created_at: '2026-01-01T00:00:00Z',
+      last_activity: '',
+    };
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: true, data: traineeData }),
+    });
+
+    await registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      BASE,
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          route: 'registerTraineePin',
+          payload: { firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' },
+          token: TOKEN,
+        }),
+      })
+    );
+  });
+
+  it('returns trainee data when backend returns ok: true', async () => {
+    const traineeData = {
+      id: 'trainee-1',
+      firstname: 'Jane',
+      lastname: 'Doe',
+      age: '12',
+      pin: '1234',
+      created_at: '2026-01-01T00:00:00Z',
+      last_activity: '',
+    };
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: true, data: traineeData }),
+    });
+
+    await expect(
+      registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' })
+    ).resolves.toEqual(traineeData);
+  });
+
+  it('throws "pin_reserved" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'pin_reserved' }),
+    });
+
+    await expect(
+      registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' })
+    ).rejects.toThrow('pin_reserved');
+  });
+
+  it('throws "name_already_exists" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'name_already_exists' }),
+    });
+
+    await expect(
+      registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' })
+    ).rejects.toThrow('name_already_exists');
+  });
+
+  it('throws "concurrent_request" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'concurrent_request' }),
+    });
+
+    await expect(
+      registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' })
+    ).rejects.toThrow('concurrent_request');
+  });
+
+  it('throws backend error message on unauthorized responses', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'Unauthorized' }),
+    });
+
+    await expect(
+      registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' })
+    ).rejects.toThrow('Unauthorized');
+  });
+
+  it('throws fallback error when backend returns ok false without error string', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false }),
+    });
+
+    await expect(
+      registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' })
+    ).rejects.toThrow('Registration failed');
+  });
+
+  it('propagates network failures', async () => {
+    mockFetch.mockRejectedValue(new Error('network down'));
+
+    await expect(
+      registerTraineePin({ firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' })
+    ).rejects.toThrow('network down');
+  });
+});
 
 describe('registerTraineeForSession', () => {
   beforeEach(() => {

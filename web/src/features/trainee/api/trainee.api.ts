@@ -10,7 +10,37 @@
  *   Env vars are read inside each function so vi.stubEnv works correctly in tests.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
-import type { RegisterTraineeForSessionPayload, TraineeSessionItem } from '../types';
+import type {
+  RegisterTraineeForSessionPayload,
+  RegisterTraineePinData,
+  TraineeData,
+  TraineeSessionItem,
+} from '../types';
+
+/**
+ * Register a new trainee PIN code by posting to the GAS backend.
+ * POST { route: "registerTraineePin", payload: RegisterTraineePinData, token }
+ * Returns the newly created TraineeData on success.
+ * Throws Error('pin_reserved') if the PIN already exists in coach_login or trainee_login.
+ * Throws Error('name_already_exists') if a trainee with the same name already exists.
+ * Throws Error('concurrent_request') if the backend script lock cannot be acquired.
+ * Throws other Errors for network/service failures.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export async function registerTraineePin(data: RegisterTraineePinData): Promise<TraineeData> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'registerTraineePin', payload: data, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data as TraineeData;
+}
 
 /**
  * Fetch all trainee sessions for the active 21-day registration window.
