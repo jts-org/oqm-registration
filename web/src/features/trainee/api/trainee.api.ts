@@ -43,6 +43,29 @@ export async function registerTraineePin(data: RegisterTraineePinData): Promise<
 }
 
 /**
+ * Verify a trainee PIN code against the GAS backend.
+ * POST { route: "verifyTraineePin", payload: { pin }, token }
+ * Returns trainee data on success.
+ * Throws Error('no_match_found') if the PIN does not match any trainee.
+ * Throws other Errors for network/service failures.
+ * @see skills/SKILL.wire-react-to-gas.md
+ */
+export async function verifyTraineePin(pin: string): Promise<TraineeData> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  const token = import.meta.env.VITE_API_TOKEN as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'verifyTraineePin', payload: { pin }, token }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Verification failed');
+  return json.data as TraineeData;
+}
+
+/**
  * Fetch all trainee sessions for the active 21-day registration window.
  * GET ?route=getTraineeSessions&token=...
  * Returns array of TraineeSessionItem sorted by date and start_time.
