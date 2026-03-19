@@ -52,6 +52,19 @@ You are collaborating on a React (Vite) + Google Apps Script + Google Sheets sys
 - For each issue, create a dedicated branch named after the issue (e.g., feature/issue-123-description). Implement the feature or fix in this branch. Open a PR to merge into main/master only after review and CI checks pass.
 - Remove unused imports and variables before committing changes into the repository to keep code clean and maintainable.
 
+## User Manuals Maintenance (user-visible features)
+- If a feature changes anything a user can see or do in the UI (new page, dialog, button behavior, labels/messages, flows, error handling), create or update manuals in `user_manuals/` as part of the same task.
+- Maintain both languages when applicable:
+	- English manuals: `*.en.md`
+	- Finnish manuals: `*.fi.md`
+- Keep manuals user-focused and non-technical:
+	- Describe what the user clicks, enters, and sees.
+	- Include expected outcomes and error recovery steps.
+	- Do not include backend/API/sheet/deployment details.
+- Keep terminology aligned with current UI localization text.
+- When behavior is intentionally not yet implemented, state it clearly in manuals (for example: "not yet available").
+- In each PR that changes user-visible behavior, include a short "Manual impact" note listing which manual files were created/updated.
+
 ## Output Expectations
 - When generating code, include a brief rationale and a test outline in PRs and comments.
 - Reference the relevant SKILL doc in code comments, PRs, and documentation updates.
