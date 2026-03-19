@@ -9,6 +9,7 @@
  *   Fetches trainee sessions from GAS, supports manual data entry and confirmation,
  *   and stores pending trainee profile for repeated registrations.
  *   Supports PIN registration via RegisterPinDialog (OQM-0019).
+ *   Supports PIN-based login via TraineeLoginDialog (OQM-0020).
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -30,10 +31,12 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { getTraineeSessions } from '../../features/trainee/api/trainee.api';
 import { registerTraineePin } from '../../features/trainee/api/trainee.api';
+import { verifyTraineePin } from '../../features/trainee/api/trainee.api';
 import { ConfirmTraineeRegistrationDialog } from '../../features/trainee/components/ConfirmTraineeRegistrationDialog';
 import { ManualTraineeRegistrationDialog } from '../../features/trainee/components/ManualTraineeRegistrationDialog';
+import { TraineeLoginDialog } from '../../features/trainee/components/TraineeLoginDialog';
 import { TraineeSessionCard } from '../../features/trainee/components/TraineeSessionCard';
-import type { PendingTraineeData, TraineeSessionItem } from '../../features/trainee/types';
+import type { PendingTraineeData, TraineeData, TraineeSessionItem } from '../../features/trainee/types';
 import type { RegisterTraineePinData } from '../../features/trainee/types';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay/LoadingOverlay';
 import { RegisterPinDialog } from '../../shared/components/RegisterPinDialog/RegisterPinDialog';
@@ -64,6 +67,7 @@ export function TraineePage({ onBack }: TraineePageProps) {
   const [confirmTraineeData, setConfirmTraineeData] = useState<PendingTraineeData | undefined>(undefined);
   const [pendingTraineeData, setPendingTraineeData] = useState<PendingTraineeData | undefined>(undefined);
   const [registerPinDialogOpen, setRegisterPinDialogOpen] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   /** True after a successful PIN registration; resets to false on logout. */
   const [traineePinRegistered, setTraineePinRegistered] = useState(false);
   /** Captures the submitted RegisterPinData so onSuccess can build PendingTraineeData. */
@@ -156,6 +160,25 @@ export function TraineePage({ onBack }: TraineePageProps) {
   function handleLogout() {
     setPendingTraineeData(undefined);
     setTraineePinRegistered(false);
+    fetchSessions();
+  }
+
+  function handleOpenLogin() {
+    setLoginDialogOpen(true);
+  }
+
+  function handleLoginSuccess(trainee: TraineeData) {
+    setLoginDialogOpen(false);
+    setTraineePinRegistered(true);
+    setPendingTraineeData({
+      first_name: trainee.firstname,
+      last_name: trainee.lastname,
+      age_group: 'adult',
+    });
+  }
+
+  function handleLoginCancel() {
+    setLoginDialogOpen(false);
   }
 
   function handleOpenRegisterPin() {
@@ -221,6 +244,7 @@ export function TraineePage({ onBack }: TraineePageProps) {
               variant="contained"
               startIcon={<LoginIcon />}
               disabled={!!pendingTraineeData}
+              onClick={handleOpenLogin}
               sx={{ flex: 1 }}
             >
               {t('traineeRegistration.login')}
@@ -326,6 +350,12 @@ export function TraineePage({ onBack }: TraineePageProps) {
         onRegister={handleRegisterPinRegister}
         onSuccess={handleRegisterPinSuccess}
         onCancel={handleRegisterPinCancel}
+      />
+
+      <TraineeLoginDialog
+        open={loginDialogOpen}
+        onLoginSuccess={handleLoginSuccess}
+        onCancel={handleLoginCancel}
       />
 
     </Container>

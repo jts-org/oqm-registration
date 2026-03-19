@@ -9,7 +9,7 @@
 - POST `{ route: "registerCoachPin", payload, token }` → register coach PIN (OQM-0003)
 - POST `{ route: "verifyCoachPin", payload, token }` → verify coach PIN, return coach data (OQM-0004)
 - POST `{ route: "registerTraineePin", payload, token }` → register trainee PIN (OQM-0016)
-- POST `{ route: "verifyTraineePin", payload, token }` → verify trainee PIN, return trainee data (OQM-0016)
+- POST `{ route: "verifyTraineePin", payload, token }` → verify trainee PIN, return trainee data (OQM-0016, UI wired in OQM-0020)
 - POST `{ route: "registerCoachForSession", payload, token }` → register coach for a session (OQM-0008)
 - POST `{ route: "removeCoachFromSession", payload, token }` → remove coach from a session (OQM-0009)
 - POST `{ route: "registerTraineeForSession", payload, token }` → register trainee for a session (OQM-0014)

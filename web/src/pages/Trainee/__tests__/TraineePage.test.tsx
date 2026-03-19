@@ -17,6 +17,7 @@ import { TraineePage } from '../TraineePage';
 import { getTraineeSessions } from '../../../features/trainee/api/trainee.api';
 import { registerTraineeForSession } from '../../../features/trainee/api/trainee.api';
 import { registerTraineePin } from '../../../features/trainee/api/trainee.api';
+import { verifyTraineePin } from '../../../features/trainee/api/trainee.api';
 import type { TraineeSessionItem } from '../../../features/trainee/types';
 import toast from 'react-hot-toast';
 
@@ -24,6 +25,7 @@ vi.mock('../../../features/trainee/api/trainee.api', () => ({
   getTraineeSessions: vi.fn(),
   registerTraineeForSession: vi.fn(),
   registerTraineePin: vi.fn(),
+  verifyTraineePin: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => {
@@ -37,6 +39,7 @@ vi.mock('react-hot-toast', () => {
 const mockGetTraineeSessions = vi.mocked(getTraineeSessions);
 const mockRegisterTraineeForSession = vi.mocked(registerTraineeForSession);
 const mockRegisterTraineePin = vi.mocked(registerTraineePin);
+const mockVerifyTraineePin = vi.mocked(verifyTraineePin);
 const mockToast = vi.mocked(toast);
 
 const mockSession: TraineeSessionItem = {
@@ -58,6 +61,15 @@ describe('TraineePage', () => {
     vi.clearAllMocks();
     mockGetTraineeSessions.mockResolvedValue([mockSession]);
     mockRegisterTraineeForSession.mockResolvedValue('reg-1');
+    mockVerifyTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1',
+      firstname: 'Jane',
+      lastname: 'Doe',
+      age: '25',
+      pin: '1234',
+      created_at: '2026-01-01T00:00:00Z',
+      last_activity: '',
+    });
     mockRegisterTraineePin.mockResolvedValue({
       id: 'trainee-pin-1',
       firstname: 'Jane',
@@ -187,6 +199,15 @@ describe('OQM-0019 — trainee PIN registration from TraineePage', () => {
     vi.clearAllMocks();
     mockGetTraineeSessions.mockResolvedValue([mockSession]);
     mockRegisterTraineeForSession.mockResolvedValue('reg-1');
+    mockVerifyTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1',
+      firstname: 'Jane',
+      lastname: 'Doe',
+      age: '25',
+      pin: '1234',
+      created_at: '2026-01-01T00:00:00Z',
+      last_activity: '',
+    });
     mockRegisterTraineePin.mockResolvedValue({
       id: 'trainee-pin-1',
       firstname: 'Jane',
@@ -390,5 +411,239 @@ describe('OQM-0019 — trainee PIN registration from TraineePage', () => {
 
     expect(screen.getByLabelText('Firstname')).toHaveValue('Jane');
     expect(screen.getByLabelText('Lastname')).toHaveValue('Doe');
+  });
+});
+
+describe('OQM-0020 — trainee PIN login from TraineePage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetTraineeSessions.mockResolvedValue([mockSession]);
+    mockRegisterTraineeForSession.mockResolvedValue('reg-1');
+    mockRegisterTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1',
+      firstname: 'Jane',
+      lastname: 'Doe',
+      age: '25',
+      pin: '1234',
+      created_at: '2026-01-01T00:00:00Z',
+      last_activity: '',
+    });
+    mockVerifyTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1',
+      firstname: 'Jane',
+      lastname: 'Doe',
+      age: '25',
+      pin: '1234',
+      created_at: '2026-01-01T00:00:00Z',
+      last_activity: '',
+    });
+  });
+
+  it('opens TraineeLoginDialog when Login button is clicked', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    expect(screen.getByRole('dialog', { name: 'Trainee login' })).toBeInTheDocument();
+  });
+
+  it('Verify button is disabled when PIN has fewer than 4 digits', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '123');
+
+    expect(within(dialog).getByRole('button', { name: 'Verify' })).toBeDisabled();
+  });
+
+  it('Verify button is enabled after 4 digits are entered', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+
+    expect(within(dialog).getByRole('button', { name: 'Verify' })).not.toBeDisabled();
+  });
+
+  it('Verify button becomes disabled again when digits are cleared below 4', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    const pinInput = within(dialog).getByLabelText('Enter PIN code');
+    await userEvent.type(pinInput, '1234');
+    await userEvent.clear(pinInput);
+    await userEvent.type(pinInput, '12');
+
+    expect(within(dialog).getByRole('button', { name: 'Verify' })).toBeDisabled();
+  });
+
+  it('shows progress toast while verification is pending', async () => {
+    let resolve!: () => void;
+    mockVerifyTraineePin.mockReturnValue(
+      new Promise(res => { resolve = () => res({ id: 't1', firstname: 'Jane', lastname: 'Doe', age: '25', pin: '1234', created_at: '', last_activity: '' }); })
+    );
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith('PIN verification ongoing. Please wait.');
+    });
+
+    resolve();
+  });
+
+  it('shows loading overlay while verification is pending', async () => {
+    let resolve!: () => void;
+    mockVerifyTraineePin.mockReturnValue(
+      new Promise(res => { resolve = () => res({ id: 't1', firstname: 'Jane', lastname: 'Doe', age: '25', pin: '1234', created_at: '', last_activity: '' }); })
+    );
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('status', { name: 'Loading' })).toBeInTheDocument();
+    });
+
+    resolve();
+  });
+
+  it('successful verification closes dialog, sets trainee state, disables Login and Register PIN, enables Logout', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Trainee login' })).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Logged in: Jane Doe.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Login' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Register PIN' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Log out' })).not.toBeDisabled();
+  });
+
+  it('successful verification shows success toast', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(mockToast.success).toHaveBeenCalledWith('PIN verified succesfully.');
+    });
+  });
+
+  it('no_match_found keeps dialog open and shows error message', async () => {
+    mockVerifyTraineePin.mockRejectedValue(new Error('no_match_found'));
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Invalid PIN. Try again.')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('dialog', { name: 'Trainee login' })).toBeInTheDocument();
+    expect(screen.getByText('You are not logged in.')).toBeInTheDocument();
+  });
+
+  it('Cancel closes TraineeLoginDialog without changing trainee state', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Trainee login' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('You are not logged in.')).toBeInTheDocument();
+  });
+
+  it('Cancel shows cancellation toast', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith('Verification cancelled.');
+    });
+  });
+
+  it('Logout after PIN login clears trainee state and re-enables Login and Register PIN', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Trainee login' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Logged in: Jane Doe.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Log out' }));
+
+    expect(screen.getByText('You are not logged in.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Login' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Register PIN' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Log out' })).toBeDisabled();
+  });
+
+  it('Logout after PIN login calls getTraineeSessions to refresh', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Trainee login' })).not.toBeInTheDocument();
+    });
+
+    const callsBefore = mockGetTraineeSessions.mock.calls.length;
+    await userEvent.click(screen.getByRole('button', { name: 'Log out' }));
+
+    await waitFor(() => {
+      expect(mockGetTraineeSessions.mock.calls.length).toBeGreaterThan(callsBefore);
+    });
   });
 });
