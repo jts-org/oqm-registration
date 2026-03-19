@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react';
 // In CI, we set VITE_BASE to `/<repo>/`. Locally it's undefined and defaults to '/'.
 export default defineConfig({
   base: process.env.VITE_BASE || '/',
+  // Serve root-level user manuals as static assets so the app can fetch markdown files directly.
+  publicDir: '../user_manuals',
   plugins: [react()],
   test: {
     environment: 'happy-dom',

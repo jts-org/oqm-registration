@@ -27,6 +27,7 @@ import { HomePage } from './pages/Home/HomePage'
 import { TraineePage } from './pages/Trainee/TraineePage'
 import { CoachPage } from './pages/Coach/CoachPage'
 import { AdminPage } from './pages/Admin/AdminPage'
+import { ManualsPage } from './pages/Manuals/ManualsPage'
 import type { CoachData } from './features/coach/types'
 
 const customTheme = getTheme('kickboxing'); // Change to your desired theme
@@ -63,6 +64,7 @@ function HomeRoute({ coachPassword, adminPassword, onCoachVerified, onAdminAuthe
   return (
     <HomePage
       onGoTrainee={() => navigate('/trainee')}
+      onGoManuals={() => navigate('/manuals')}
       onGoCoach={(coachData) => {
         onCoachAuthenticated();
         onCoachVerified(coachData);
@@ -82,6 +84,12 @@ function TraineeRoute() {
   const navigate = useNavigate();
 
   return <TraineePage onBack={() => navigate('/')} />;
+}
+
+function ManualsRoute() {
+  const navigate = useNavigate();
+
+  return <ManualsPage onBack={() => navigate('/')} />;
 }
 
 interface CoachRouteProps {
@@ -186,6 +194,7 @@ export default function App() {
             )}
           />
           <Route path="/trainee" element={<TraineeRoute />} />
+          <Route path="/manuals" element={<ManualsRoute />} />
           <Route
             path="/coach"
             element={(
