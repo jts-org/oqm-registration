@@ -14,6 +14,8 @@
   "mainView.viteLogoAlt": "Vite-logo",
   "mainView.trainees": "Harjoittelijat",
   "mainView.traineesDescription": "Luo harjoittelijan profiilisi ja ilmoittaudu harjoituksiin.",
+  "mainView.manuals": "Käyttöohjeet",
+  "mainView.manualsDescription": "Lue harrastajan ja valmentajan käyttöohjeet.",
   "mainView.coaches": "Valmentajat",
   "mainView.coachesDescription": "Luo valmentajan profiilisi, ilmoittaudu vet\u00e4j\u00e4ksi ja seuraa edistymist\u00e4si.",
   "mainView.admin": "Yll\u00e4pit\u00e4j\u00e4",
@@ -166,5 +168,14 @@
   "manualCoachRegistration.pinHint": "Henkil\u00f6kohtaisella PIN-koodilla nopeutat ja yksinkertaistat ilmoittautumistasi.",
   "manualCoachRegistration.registerPinLink": "Rekister\u00f6i PIN-koodi",
   "manualCoachRegistration.ok": "Ok",
-  "manualCoachRegistration.cancel": "Peruuta"
+  "manualCoachRegistration.cancel": "Peruuta",
+  "manuals.title": "Käyttöohjeet",
+  "manuals.subtitle": "Avaa harrastajan ja valmentajan ohjeet sovelluksessa.",
+  "manuals.traineeManual": "Harrastajan ohje",
+  "manuals.coachManual": "Valmentajan ohje",
+  "manuals.english": "Englanti",
+  "manuals.finnish": "Suomi",
+  "manuals.loading": "Ladataan ohjetta...",
+  "manuals.loadError": "Ohjeen lataus epäonnistui. Yritä uudelleen.",
+  "manuals.backToMain": "Takaisin etusivulle"
 }

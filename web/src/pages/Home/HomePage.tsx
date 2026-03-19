@@ -12,6 +12,7 @@
  */
 import React, { useState } from 'react';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import SportsMmaIcon from '@mui/icons-material/SportsMma';
 import SportsMartialArtsIcon from '@mui/icons-material/SportsMartialArts';
 import Box from '@mui/material/Box';
@@ -33,6 +34,8 @@ import { RoleCard } from './RoleCard';
 export interface HomePageProps {
   /** Navigates to the trainee registration page. */
   onGoTrainee: () => void;
+  /** Navigates to the manuals page. */
+  onGoManuals: () => void;
   /** Navigates to the coach page after successful login, passing verified coach data. */
   onGoCoach: (coachData?: CoachData) => void;
   /** Navigates to the admin page after successful login. */
@@ -44,7 +47,7 @@ export interface HomePageProps {
 }
 
 /** Main view with three role-selection cards. */
-export function HomePage({ onGoTrainee, onGoCoach, onGoAdmin, coachPassword, adminPassword }: HomePageProps) {
+export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin, coachPassword, adminPassword }: HomePageProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const [coachDialogOpen, setCoachDialogOpen] = useState(false);
@@ -110,6 +113,12 @@ export function HomePage({ onGoTrainee, onGoCoach, onGoAdmin, coachPassword, adm
             title={t('mainView.admin')}
             description={t('mainView.adminDescription')}
             onClick={() => setAdminDialogOpen(true)}
+          />
+          <RoleCard
+            icon={<MenuBookIcon fontSize="large" />}
+            title={t('mainView.manuals')}
+            description={t('mainView.manualsDescription')}
+            onClick={onGoManuals}
           />
         </Stack>
       </Container>

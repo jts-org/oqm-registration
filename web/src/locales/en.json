@@ -14,6 +14,8 @@
   "mainView.viteLogoAlt": "Vite logo",
   "mainView.trainees": "Trainees",
   "mainView.traineesDescription": "Create a trainee profile and register for training sessions.",
+  "mainView.manuals": "User manuals",
+  "mainView.manualsDescription": "Read usage instructions for trainees and coaches.",
   "mainView.coaches": "Coaches",
   "mainView.coachesDescription": "Create a coach profile, register as a coach, and track your progress.",
   "mainView.admin": "Admin",
@@ -166,5 +168,14 @@
   "manualCoachRegistration.pinHint": "With personal PIN code, you speed up and simplify your registration.",
   "manualCoachRegistration.registerPinLink": "Register PIN code",
   "manualCoachRegistration.ok": "Ok",
-  "manualCoachRegistration.cancel": "Cancel"
+  "manualCoachRegistration.cancel": "Cancel",
+  "manuals.title": "User manuals",
+  "manuals.subtitle": "Open trainee and coach manuals inside the application.",
+  "manuals.traineeManual": "Trainee manual",
+  "manuals.coachManual": "Coach manual",
+  "manuals.english": "English",
+  "manuals.finnish": "Finnish",
+  "manuals.loading": "Loading manual...",
+  "manuals.loadError": "Failed to load manual. Please try again.",
+  "manuals.backToMain": "Back to main"
 }
