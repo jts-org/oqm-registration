@@ -61,6 +61,16 @@ Odotettu tulos:
 - Päivitä tiedot: lataa harjoituslista uudelleen.
 - Takaisin etusivulle: poistu valmentajasivulta.
 
+## Ilmoittaudu harrastajaksi valmentajan PIN-koodilla
+1. Palaa etusivulle ja valitse Harrastajat.
+2. Valitse Kirjaudu.
+3. Syötä valmentajan PIN-koodisi ja valitse Tarkista.
+4. Ilmoittaudu harrastajapuolen harjoitukseen normaalisti.
+
+Odotettu tulos:
+- Valmentajan PIN hyväksytään harrastajakirjautumisessa.
+- Voit jatkaa harrastajapuolen ilmoittautumista ilman erillistä harrastajan PIN-koodia.
+
 ## Virheet ja toipuminen
 - Virheellinen PIN-koodi. Yritä uudelleen.
   - Syötä PIN uudelleen ja tarkista.

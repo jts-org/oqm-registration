@@ -30,6 +30,9 @@ Odotettu tulos:
 2. Syötä PIN-koodi (4-6 numeroa).
 3. Valitse Tarkista.
 
+Huom:
+- Valmentaja voi käyttää tässä samassa kirjautumisessa myös omaa valmentajan PIN-koodiaan, kun hän ilmoittautuu harrastajana.
+
 Odotettu tulos:
 - Näet onnistumisviestin PIN-koodin tarkistuksesta.
 - Olet kirjautuneena.

@@ -61,6 +61,16 @@ Expected result:
 - Refresh data: reloads the current session list.
 - Back to main: exits coach page.
 
+## Register Yourself as a Trainee (Using Coach PIN)
+1. Return to the main view and select Trainees.
+2. Select Login.
+3. Enter your coach PIN and select Verify.
+4. Register for a trainee-side session normally.
+
+Expected result:
+- Coach PIN is accepted in trainee login.
+- You can proceed with trainee-side session registration without creating a separate trainee PIN.
+
 ## Error and Recovery
 - Invalid PIN. Try again.
   - Re-enter PIN and verify.
