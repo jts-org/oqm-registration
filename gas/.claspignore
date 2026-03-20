@@ -1,0 +1,6 @@
+# Exclude local test sources from Apps Script deployment
+**/__tests__/**
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts

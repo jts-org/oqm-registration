@@ -8,6 +8,20 @@ Tämä ohje auttaa harrastajaa kirjautumaan ja ilmoittautumaan harjoituksiin.
 - Tiedät omat nimitietosi.
 - Jos sinulla on PIN-koodi, pidä se valmiina.
 
+## Vaihda käyttöliittymän kieli
+1. Siirry sovelluksen etusivulle (HomePage).
+2. Käytä otsikon yläpuolella olevia kielipainikkeita:
+   - English
+   - Suomi
+3. Valitse haluamasi kieli.
+
+Odotettu tulos:
+- Käyttöliittymän tekstit vaihtuvat heti valittuun kieleen.
+- Valinta säilyy nykyisen selainvälilehden/istunnon ajan.
+- Jos kieltä ei ole valittu nykyisessä istunnossa, sovellus käyttää selaimen oletuskieltä:
+  - Suomi, jos kieliasetus alkaa fi
+  - English kaikissa muissa tapauksissa
+
 ## Pääpolku: Ilmoittaudu harjoitukseen
 1. Avaa sovelluksen etusivu.
 2. Valitse Harrastajat.

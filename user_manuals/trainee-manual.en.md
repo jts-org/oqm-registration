@@ -8,6 +8,20 @@ This manual helps trainees use the application to log in and register for traini
 - You know your name details.
 - If you already have a PIN, keep it available.
 
+## Change UI Language
+1. Go to the application main view (HomePage).
+2. Use the language buttons above the title:
+   - English
+   - Suomi
+3. Select your preferred language.
+
+Expected result:
+- The visible UI texts change immediately to the selected language.
+- Your choice is kept while using the current browser tab/session.
+- If no language was selected in the current session, the app uses browser locale by default:
+  - Finnish for locales starting with fi
+  - English for all other locales
+
 ## Main Flow: Register for a Session
 1. Open the app main view.
 2. Select Trainees.

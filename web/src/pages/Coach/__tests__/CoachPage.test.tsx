@@ -126,7 +126,7 @@ describe('CoachPage', () => {
     mockGetCoachSessions.mockResolvedValue([mockSession]);
     render(<CoachPage onBack={vi.fn()} />);
     await waitFor(() => {
-      expect(screen.getByText('Nyrkkeilyharjoitus')).toBeInTheDocument();
+      expect(screen.getByText('Kickboxing')).toBeInTheDocument();
     });
   });
 

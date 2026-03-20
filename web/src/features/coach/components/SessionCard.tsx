@@ -30,7 +30,7 @@ export interface SessionCardProps {
 
 /** MUI Card for one session — shows type, time, location, coach and action button. */
 export function SessionCard({ session, onRegister, onRemove, cardStyle }: SessionCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
 
   const hasCoach = Boolean(session.coach_alias || session.coach_firstname);
@@ -39,7 +39,9 @@ export function SessionCard({ session, onRegister, onRemove, cardStyle }: Sessio
     ? theme.palette.success.main
     : theme.palette.secondary.main;
 
-  const displayName = session.session_type_alias || session.session_type;
+  const displayName = i18n.resolvedLanguage?.startsWith('en')
+    ? session.session_type
+    : session.session_type_alias || session.session_type;
 
   /** Register button is disabled for free/sparring sessions that have no coach assigned. */
   const isRegisterDisabled = !hasCoach && session.is_free_sparring;

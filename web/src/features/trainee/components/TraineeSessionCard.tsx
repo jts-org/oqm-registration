@@ -30,8 +30,11 @@ export interface TraineeSessionCardProps {
 /** Display one trainee session with registration action and metadata labels. */
 export function TraineeSessionCard({ session, onRegister }: TraineeSessionCardProps) {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isRegistered = Boolean(session.trainee_registered);
+  const displayName = i18n.resolvedLanguage?.startsWith('en')
+    ? session.session_type
+    : session.session_type_alias || session.session_type;
 
   return (
     <Card
@@ -55,7 +58,7 @@ export function TraineeSessionCard({ session, onRegister }: TraineeSessionCardPr
       <Box sx={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
         <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', pb: 0 }}>
           <Typography variant="subtitle1" fontWeight="bold">
-            {session.session_type_alias || session.session_type}
+            {displayName}
           </Typography>
           <Typography variant="body2">
             {session.start_time} - {session.end_time}
