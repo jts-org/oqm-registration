@@ -4,15 +4,17 @@
  *   Written before implementation (TDD).
  */
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import '../../../lib/i18n';
+import { i18n } from '../../../lib/i18n';
 import { HomePage } from '../HomePage';
 
 const defaultProps = {
   onGoTrainee: vi.fn(),
+  onGoManuals: vi.fn(),
   onGoCoach: vi.fn(),
   onGoAdmin: vi.fn(),
   coachPassword: 'secret123',
@@ -20,6 +22,11 @@ const defaultProps = {
 };
 
 describe('HomePage', () => {
+  beforeEach(async () => {
+    window.sessionStorage.clear();
+    await i18n.changeLanguage('en');
+  });
+
   const getRoleCardButton = (title: string) => {
     const cardTitle = screen.getByText(title);
     const button = cardTitle.closest('button');
@@ -52,6 +59,30 @@ describe('HomePage', () => {
     render(<HomePage {...defaultProps} />);
     expect(screen.getByText('Create a coach profile, register as a coach, and track your progress.')).toBeInTheDocument();
     expect(within(getRoleCardButton('Coaches')).getByText('Coaches')).toBeInTheDocument();
+  });
+
+  it('renders language switch buttons', () => {
+    render(<HomePage {...defaultProps} />);
+    expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Suomi' })).toBeInTheDocument();
+  });
+
+  it('switches language to Finnish and stores selection in session', async () => {
+    const user = userEvent.setup();
+    render(<HomePage {...defaultProps} />);
+
+    await user.click(screen.getByRole('button', { name: 'Suomi' }));
+
+    expect(window.sessionStorage.getItem('oqm_language')).toBe('fi');
+    expect(await screen.findByRole('heading', { name: 'Treenien hallinta- ja ilmoittautumisjärjestelmä' })).toBeInTheDocument();
+  });
+
+  it('applies language from session storage on render', async () => {
+    window.sessionStorage.setItem('oqm_language', 'fi');
+
+    render(<HomePage {...defaultProps} />);
+
+    expect(await screen.findByRole('heading', { name: 'Treenien hallinta- ja ilmoittautumisjärjestelmä' })).toBeInTheDocument();
   });
 
   it('renders admin role card', () => {

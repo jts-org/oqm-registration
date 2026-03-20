@@ -9,12 +9,13 @@
  *   Written before implementation (TDD).
  */
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material';
 
 import '../../../../lib/i18n';
+import { i18n } from '../../../../lib/i18n';
 import { SessionCard } from '../SessionCard';
 import type { SessionItem } from '../../types';
 
@@ -52,7 +53,17 @@ function renderCard(session: SessionItem, onRegister = vi.fn(), onRemove = vi.fn
 }
 
 describe('SessionCard', () => {
-  it('renders session type alias', () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en');
+  });
+
+  it('renders session type when selected language is English', () => {
+    renderCard(baseSession);
+    expect(screen.getByText('Kickboxing')).toBeInTheDocument();
+  });
+
+  it('renders session type alias when selected language is Finnish', async () => {
+    await i18n.changeLanguage('fi');
     renderCard(baseSession);
     expect(screen.getByText('Nyrkkeilyharjoitus')).toBeInTheDocument();
   });

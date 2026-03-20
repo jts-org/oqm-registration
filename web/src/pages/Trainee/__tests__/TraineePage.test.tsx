@@ -44,7 +44,7 @@ const mockToast = vi.mocked(toast);
 
 const mockSession: TraineeSessionItem = {
   id: 'ws-1_2026-03-17',
-  session_type: 'basic',
+  session_type: 'Basic',
   session_type_alias: 'Basic',
   date: '2026-03-17',
   start_time: '18:00',

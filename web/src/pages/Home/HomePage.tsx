@@ -16,6 +16,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import SportsMmaIcon from '@mui/icons-material/SportsMma';
 import SportsMartialArtsIcon from '@mui/icons-material/SportsMartialArts';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -30,6 +31,14 @@ import reactLogo from '../../assets/logo.svg';
 import okbLogo from '../../assets/okb_logo_transparent.png';
 import viteLogo from '../../assets/500px-Vitejs-logo.svg.png';
 import { RoleCard } from './RoleCard';
+
+const LANGUAGE_SESSION_KEY = 'oqm_language';
+
+type SupportedLanguage = 'en' | 'fi';
+
+function normalizeLanguage(language: string | undefined): SupportedLanguage {
+  return language?.toLowerCase().startsWith('fi') ? 'fi' : 'en';
+}
 
 export interface HomePageProps {
   /** Navigates to the trainee registration page. */
@@ -48,11 +57,32 @@ export interface HomePageProps {
 
 /** Main view with three role-selection cards. */
 export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin, coachPassword, adminPassword }: HomePageProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const [coachDialogOpen, setCoachDialogOpen] = useState(false);
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>(() => normalizeLanguage(i18n.language));
   const currentYear = new Date().getFullYear();
+
+  React.useEffect(() => {
+    const storedLanguage = window.sessionStorage.getItem(LANGUAGE_SESSION_KEY);
+
+    if (storedLanguage === 'fi' || storedLanguage === 'en') {
+      setSelectedLanguage(storedLanguage);
+      if (normalizeLanguage(i18n.language) !== storedLanguage) {
+        void i18n.changeLanguage(storedLanguage);
+      }
+      return;
+    }
+
+    setSelectedLanguage(normalizeLanguage(i18n.language));
+  }, [i18n]);
+
+  const handleLanguageChange = (language: SupportedLanguage) => {
+    setSelectedLanguage(language);
+    window.sessionStorage.setItem(LANGUAGE_SESSION_KEY, language);
+    void i18n.changeLanguage(language);
+  };
 
   return (
     <Box
@@ -87,6 +117,22 @@ export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin, coach
         </Paper>
 
         <Box textAlign="center" mt={2} mb={5}>
+          <Stack direction="row" spacing={1} justifyContent="center" mb={2} aria-label={t('mainView.languageSwitcherLabel')}>
+            <Button
+              size="small"
+              variant={selectedLanguage === 'en' ? 'contained' : 'outlined'}
+              onClick={() => handleLanguageChange('en')}
+            >
+              {t('mainView.languageEnglish')}
+            </Button>
+            <Button
+              size="small"
+              variant={selectedLanguage === 'fi' ? 'contained' : 'outlined'}
+              onClick={() => handleLanguageChange('fi')}
+            >
+              {t('mainView.languageFinnish')}
+            </Button>
+          </Stack>
           <Typography variant="h3" gutterBottom>
             {t('app.title')}
           </Typography>

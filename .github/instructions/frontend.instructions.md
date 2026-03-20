@@ -10,6 +10,9 @@
 - Follow ARIA guidelines for modals, forms, and interactive elements.
 - Use CSS modules or CSS-in-JS for styling.
 - Localize all user-facing text using `web/src/lib/i18n.ts` and `web/src/locales/` instead of hardcoded text. By default, use English keys and provide Finnish and English translations.
+- Default UI language must follow browser locale: use Finnish when `navigator.language` starts with `fi`, otherwise use English.
+- Place the UI language switch on HomePage only unless a specific issue explicitly expands the scope.
+- When adding new locale strings, write Finnish characters using JSON unicode escapes: `ä` as `\u00e4` and `ö` as `\u00f6`.
 - When presenting tittles, buttons, links, etc. in issue descriptions, use of: `Button label: 'Label text' (use translation key)` indicates that the text should be stored as a translation key for localization purposes.
 - During API operations, block user interactions with the UI using dimmed overlay with a centered loader. This ensures that users are aware that an operation is in progress and prevents unintended actions while waiting for a response.
 
