@@ -355,27 +355,44 @@ function registerTraineePin_(payload) {
 }
 
 /**
- * Verify a trainee PIN code against the trainee_login sheet.
- * Returns the matching trainee's row data or null if no match found.
+ * Verify a trainee PIN code against trainee_login first, then coach_login as fallback.
+ * Returns trainee-shaped data from trainee_login when matched.
+ * If no trainee match exists but coach PIN matches, maps coach row to trainee shape
+ * (age is an empty string and alias is not included).
+ * Returns null if no match is found in either sheet.
  * Schema: id, firstname, lastname, age, pin, created_at, last_activity (columns A–G)
  * See SKILL.sheet-schema.md for full schema definition.
- * See SKILL.wire-react-to-gas.md for API contract (OQM-0016).
+ * See SKILL.wire-react-to-gas.md for API contract (OQM-0016, OQM-0023).
  */
 function verifyTraineePin_(payload) {
   if (!payload || !payload.pin) {
     throw new Error('Missing required fields: pin');
   }
-  const rows = getSheetData('trainee_login');
-  const row = rows.find(r => r[4] && String(r[4]) === String(payload.pin));
-  if (!row) return null;
+  const traineeRows = getSheetData('trainee_login');
+  const traineeRow = traineeRows.find(r => r[4] && String(r[4]) === String(payload.pin));
+  if (traineeRow) {
+    return {
+      id: String(traineeRow[0]),
+      firstname: String(traineeRow[1]),
+      lastname: String(traineeRow[2]),
+      age: String(traineeRow[3]),
+      pin: String(traineeRow[4]),
+      created_at: String(traineeRow[5]),
+      last_activity: String(traineeRow[6])
+    };
+  }
+
+  const coachRows = getSheetData('coach_login');
+  const coachRow = coachRows.find(r => r[4] && String(r[4]) === String(payload.pin));
+  if (!coachRow) return null;
   return {
-    id: String(row[0]),
-    firstname: String(row[1]),
-    lastname: String(row[2]),
-    age: String(row[3]),
-    pin: String(row[4]),
-    created_at: String(row[5]),
-    last_activity: String(row[6])
+    id: String(coachRow[0]),
+    firstname: String(coachRow[1]),
+    lastname: String(coachRow[2]),
+    age: '',
+    pin: String(coachRow[4]),
+    created_at: String(coachRow[5]),
+    last_activity: String(coachRow[6])
   };
 }
 

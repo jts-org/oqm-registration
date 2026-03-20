@@ -45,8 +45,9 @@ export async function registerTraineePin(data: RegisterTraineePinData): Promise<
 /**
  * Verify a trainee PIN code against the GAS backend.
  * POST { route: "verifyTraineePin", payload: { pin }, token }
- * Returns trainee data on success.
- * Throws Error('no_match_found') if the PIN does not match any trainee.
+ * Returns trainee-shaped data on success.
+ * Backend checks trainee_login first and then coach_login as fallback (OQM-0023).
+ * Throws Error('no_match_found') if the PIN does not match any trainee or coach.
  * Throws other Errors for network/service failures.
  * @see skills/SKILL.wire-react-to-gas.md
  */

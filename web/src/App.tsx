@@ -179,7 +179,7 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Toaster position="top-center" />
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_relativeSplatPath: true }}>
         <Routes>
           <Route
             path="/"

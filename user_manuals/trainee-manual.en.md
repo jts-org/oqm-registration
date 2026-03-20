@@ -30,6 +30,9 @@ Expected result:
 2. Enter your PIN code (4 to 6 digits).
 3. Select Verify.
 
+Note:
+- Coaches can also use their existing coach PIN in this same login flow when registering as a trainee.
+
 Expected result:
 - You see PIN verified succesfully.
 - You are shown as logged in.

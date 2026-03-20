@@ -253,10 +253,23 @@ export async function registerTraineePin(data: RegisterTraineePinData): Promise<
 { "ok": false, "error": "no_match_found" }
 ```
 
+### Fallback behavior (OQM-0023)
+- Backend checks `trainee_login` first.
+- If no trainee match exists, backend checks `coach_login`.
+- If coach PIN matches, backend returns trainee-shaped `data` for compatibility:
+  - `id <- coach_login.id`
+  - `firstname <- coach_login.firstname`
+  - `lastname <- coach_login.lastname`
+  - `age <- ""` (empty string)
+  - `pin <- coach_login.pin`
+  - `created_at <- coach_login.created_at`
+  - `last_activity <- coach_login.last_activity`
+- `alias` is intentionally not included in `verifyTraineePin` response.
+
 ### Error cases
 | Error            | Meaning                                      |
 |------------------|----------------------------------------------|
-| `no_match_found` | PIN not found in `trainee_login` sheet       |
+| `no_match_found` | PIN not found in either `trainee_login` or `coach_login` |
 | `Unauthorized`   | Invalid or missing API token                 |
 | `Missing required fields: pin` | Payload validation failure     |
 
@@ -264,8 +277,9 @@ export async function registerTraineePin(data: RegisterTraineePinData): Promise<
 ```ts
 /**
  * Verify a trainee PIN code against the GAS backend.
- * Returns TraineeData on success.
- * Throws Error('no_match_found') if PIN does not match any trainee.
+ * Returns trainee-shaped TraineeData on success.
+ * Backend checks trainee_login first and then coach_login as fallback (OQM-0023).
+ * Throws Error('no_match_found') if PIN does not match any trainee or coach.
  * Throws other Errors on network/service failures.
  */
 export async function verifyTraineePin(pin: string): Promise<TraineeData> {
