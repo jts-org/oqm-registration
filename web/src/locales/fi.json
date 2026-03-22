@@ -54,6 +54,8 @@
   "traineeRegistration.validationFailedAge": "Validointi ep\u00e4onnistui. Alaik\u00e4isen ik\u00e4 puuttuu.",
   "traineeRegistration.cancel": "Peruuta",
   "traineeRegistration.registeredIconLabel": "Ilmoittautunut harjoitukseen",
+  "traineeRegistration.weekTabLabel": "Viikko {{start}} - {{end}}",
+  "traineeRegistration.weekTabsAriaLabel": "Harrastajan harjoitusviikot",
   "manualTraineeRegistration.title": "T\u00e4yt\u00e4 tietosi",
   "manualTraineeRegistration.firstName": "Etunimi:",
   "manualTraineeRegistration.firstNamePlaceholder": "Oma etunimesi",

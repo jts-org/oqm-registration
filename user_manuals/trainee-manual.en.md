@@ -26,13 +26,15 @@ Expected result:
 1. Open the app main view.
 2. Select Trainees.
 3. Wait until sessions are loaded.
-4. Choose a session card and select Register.
-5. If you are not logged in yet, fill your first name and last name in the form.
-6. If you are under 18, enable the underage checkbox and set your age.
-7. Select Ok.
-8. Review your registration details in the confirmation dialog.
-9. Select Ok to confirm registration.
-10. Wait for the result message.
+4. Review the week tabs above the session list.
+5. The current week opens by default. Select another week tab if you want to see sessions from a different week.
+6. Choose a session card and select Register.
+7. If you are not logged in yet, fill your first name and last name in the form.
+8. If you are under 18, enable the underage checkbox and set your age.
+9. Select Ok.
+10. Review your registration details in the confirmation dialog.
+11. Select Ok to confirm registration.
+12. Wait for the result message.
 
 Expected result:
 - You see Registration successfull.
@@ -78,6 +80,8 @@ Expected result:
   - Refresh data and retry.
 
 ## Notes About Session Cards
+- Session cards are grouped by day inside the selected week tab.
+- The current calendar week is shown first when it exists in the loaded session data.
 - Session cards show session name and time.
 - Coach name is shown only for free/sparring sessions.
 - Camp instructor is shown for camp sessions.

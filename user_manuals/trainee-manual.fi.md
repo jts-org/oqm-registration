@@ -26,13 +26,15 @@ Odotettu tulos:
 1. Avaa sovelluksen etusivu.
 2. Valitse Harrastajat.
 3. Odota, että harjoituslista latautuu.
-4. Valitse harjoituskortilta Ilmoittaudu.
-5. Jos et ole kirjautunut, täytä etu- ja sukunimi.
-6. Jos olet alle 18-vuotias, valitse alaikäinen ja aseta ikä.
-7. Valitse Ok.
-8. Tarkista tiedot vahvistusikkunassa.
-9. Valitse Ok vahvistaaksesi ilmoittautumisen.
-10. Odota tulosviesti.
+4. Tarkista harjoituslistan yläpuolella näkyvät viikkovälilehdet.
+5. Nykyinen viikko avautuu oletuksena. Valitse toinen viikkovälilehti, jos haluat nähdä toisen viikon harjoitukset.
+6. Valitse harjoituskortilta Ilmoittaudu.
+7. Jos et ole kirjautunut, täytä etu- ja sukunimi.
+8. Jos olet alle 18-vuotias, valitse alaikäinen ja aseta ikä.
+9. Valitse Ok.
+10. Tarkista tiedot vahvistusikkunassa.
+11. Valitse Ok vahvistaaksesi ilmoittautumisen.
+12. Odota tulosviesti.
 
 Odotettu tulos:
 - Näet viestin Ilmoittautuminen onnistui.
@@ -78,6 +80,8 @@ Odotettu tulos:
   - Päivitä tiedot ja yritä uudelleen.
 
 ## Huomiot harjoituskorteista
+- Harjoituskortit on ryhmitelty päivän mukaan valitun viikkovälilehden sisällä.
+- Nykyinen kalenteriviikko näytetään ensin, jos se löytyy ladatuista harjoituksista.
 - Kortti näyttää harjoituksen nimen ja ajan.
 - Valmentajan nimi näkyy vain vapaa/sparraus-harjoituksissa.
 - Leirin ohjaaja näkyy leiriharjoituksissa.

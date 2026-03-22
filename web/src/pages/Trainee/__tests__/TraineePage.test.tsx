@@ -56,6 +56,51 @@ const mockSession: TraineeSessionItem = {
   is_free_sparring: false,
 };
 
+function toYmd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function getMonday(date: Date): Date {
+  const copy = new Date(date);
+  const day = copy.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  copy.setDate(copy.getDate() + diff);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function addDays(date: Date, days: number): Date {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function buildMultiWeekSessions(): [TraineeSessionItem, TraineeSessionItem] {
+  const monday = getMonday(new Date());
+  const currentWeekDate = toYmd(addDays(monday, 2));
+  const nextWeekDate = toYmd(addDays(monday, 8));
+
+  return [
+    {
+      ...mockSession,
+      id: 'trainee-current-week',
+      session_type: 'Current Week Session',
+      session_type_alias: 'Current Week Session',
+      date: currentWeekDate,
+    },
+    {
+      ...mockSession,
+      id: 'trainee-next-week',
+      session_type: 'Next Week Session',
+      session_type_alias: 'Next Week Session',
+      date: nextWeekDate,
+    },
+  ];
+}
+
 describe('TraineePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -99,6 +144,61 @@ describe('TraineePage', () => {
 
     expect(await screen.findByText('Basic')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument();
+  });
+
+  it('renders week tabs when sessions span multiple calendar weeks', async () => {
+    const [currentWeekSession, nextWeekSession] = buildMultiWeekSessions();
+    mockGetTraineeSessions.mockResolvedValue([currentWeekSession, nextWeekSession]);
+
+    render(<TraineePage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('tab')).toHaveLength(2);
+    });
+  });
+
+  it('selects current week tab by default', async () => {
+    const [currentWeekSession, nextWeekSession] = buildMultiWeekSessions();
+    mockGetTraineeSessions.mockResolvedValue([currentWeekSession, nextWeekSession]);
+
+    render(<TraineePage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Current Week Session')).toBeInTheDocument();
+      expect(screen.queryByText('Next Week Session')).not.toBeInTheDocument();
+    });
+  });
+
+  it('switches visible sessions when another week tab is selected', async () => {
+    const [currentWeekSession, nextWeekSession] = buildMultiWeekSessions();
+    const user = userEvent.setup();
+    mockGetTraineeSessions.mockResolvedValue([currentWeekSession, nextWeekSession]);
+
+    render(<TraineePage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Current Week Session')).toBeInTheDocument();
+      expect(screen.queryByText('Next Week Session')).not.toBeInTheDocument();
+    });
+
+    const tabs = screen.getAllByRole('tab');
+    await user.click(tabs[1]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Next Week Session')).toBeInTheDocument();
+      expect(screen.queryByText('Current Week Session')).not.toBeInTheDocument();
+    });
+  });
+
+  it('does not render week tabs when no sessions are available', async () => {
+    mockGetTraineeSessions.mockResolvedValue([]);
+
+    render(<TraineePage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No sessions found')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
   });
 
   it('opens manual dialog on Register and confirm dialog after pressing Ok', async () => {
