@@ -54,6 +54,8 @@
   "traineeRegistration.validationFailedAge": "Validation failed. Age is missing for underage trainee.",
   "traineeRegistration.cancel": "Cancel",
   "traineeRegistration.registeredIconLabel": "Registered session",
+  "traineeRegistration.weekTabLabel": "Week {{start}} - {{end}}",
+  "traineeRegistration.weekTabsAriaLabel": "Trainee session weeks",
   "manualTraineeRegistration.title": "Fill your information",
   "manualTraineeRegistration.firstName": "First name:",
   "manualTraineeRegistration.firstNamePlaceholder": "Your first name",
