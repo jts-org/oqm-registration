@@ -72,6 +72,33 @@ describe('registerCoachPin', () => {
     ).rejects.toThrow('pin_reserved');
   });
 
+  it('throws "mismatching_aliases" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'mismatching_aliases' }),
+    });
+    await expect(
+      registerCoachPin({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234' })
+    ).rejects.toThrow('mismatching_aliases');
+  });
+
+  it('throws "already_registered" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'already_registered' }),
+    });
+    await expect(
+      registerCoachPin({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234' })
+    ).rejects.toThrow('already_registered');
+  });
+
+  it('throws "pins_do_not_match" when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'pins_do_not_match' }),
+    });
+    await expect(
+      registerCoachPin({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234' })
+    ).rejects.toThrow('pins_do_not_match');
+  });
+
   it('throws with backend error message on other errors', async () => {
     mockFetch.mockResolvedValue({
       json: async () => ({ ok: false, error: 'Unauthorized' }),

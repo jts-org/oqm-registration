@@ -71,6 +71,14 @@ Odotettu tulos:
 3. Valitse Rekisteröi.
 4. Palaa kirjautumiseen ja tarkista uusi PIN.
 
+Mahdolliset rekisteröintikonfliktiviestit:
+- Samalla nimellä oleva valmentaja on jo rekisteröity, mutta alias ei täsmää.
+  - Tarkista aliasin kirjoitusasu ja käytä aiemmin käytettyä aliasta.
+- Olet jo rekisteröitynyt.
+  - Käytä olemassa olevaa PIN-koodiasi valmentajakirjautumisessa.
+- Samalla nimellä oleva valmentaja on jo rekisteröity, mutta PIN-koodi ei täsmää.
+  - Tarkista PIN-koodi tai ota yhteys ylläpitoon, jos et tiedä alkuperäistä PIN-koodia.
+
 ## Muut hyödylliset toiminnot
 - Päivitä tiedot: lataa harjoituslista uudelleen.
 - Takaisin etusivulle: poistu valmentajasivulta.

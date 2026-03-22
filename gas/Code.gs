@@ -67,6 +67,15 @@ function doPost(e) {
       if (result.pinReserved) {
         return json_({ ok: false, error: 'pin_reserved' });
       }
+      if (result.mismatchingAliases) {
+        return json_({ ok: false, error: 'mismatching_aliases' });
+      }
+      if (result.alreadyRegistered) {
+        return json_({ ok: false, error: 'already_registered' });
+      }
+      if (result.pinsDoNotMatch) {
+        return json_({ ok: false, error: 'pins_do_not_match' });
+      }
       return json_({ ok: true, data: result });
     }
     if (route === 'verifyCoachPin') {
@@ -242,8 +251,74 @@ function registerCoachPin_(payload) {
     throw new Error('Missing required fields: firstname, lastname, pin');
   }
 
+  const payloadFirstname = String(payload.firstname).trim();
+  const payloadLastname = String(payload.lastname).trim();
+  const payloadAlias = String(payload.alias || '').trim();
+  const payloadPin = String(payload.pin);
+  const payloadFirstnameLower = payloadFirstname.toLowerCase();
+  const payloadLastnameLower = payloadLastname.toLowerCase();
+
+  const coachRows = getSheetData('coach_login');
+  const matchingCoachIndex = coachRows.findIndex(r =>
+    String(r[1] || '').trim().toLowerCase() === payloadFirstnameLower &&
+    String(r[2] || '').trim().toLowerCase() === payloadLastnameLower
+  );
+
+  // Same-name row handling for OQM-0025.
+  if (matchingCoachIndex !== -1) {
+    const row = coachRows[matchingCoachIndex];
+    const rowId = String(row[0] || '');
+    const rowAlias = String(row[3] || '').trim();
+    const rowAliasLower = rowAlias.toLowerCase();
+    const payloadAliasLower = payloadAlias.toLowerCase();
+    const rowPin = String(row[4] || '').trim();
+    const rowCreatedAt = String(row[5] || '');
+
+    if (
+      (rowAlias && payloadAlias && rowAliasLower !== payloadAliasLower) ||
+      (rowAlias && !payloadAlias)
+    ) {
+      return { mismatchingAliases: true };
+    }
+
+    if (rowPin) {
+      if (rowPin === payloadPin) {
+        return { alreadyRegistered: true };
+      }
+      return { pinsDoNotMatch: true };
+    }
+
+    // Existing name row has no PIN: keep uniqueness check against all other rows and trainee rows.
+    const coachPinTakenElsewhere = coachRows.some((r, index) =>
+      index !== matchingCoachIndex && r[4] && String(r[4]) === payloadPin
+    );
+    const traineePinTaken = getSheetData('trainee_login')
+      .some(r => r[4] && String(r[4]) === payloadPin);
+    if (coachPinTakenElsewhere || traineePinTaken) {
+      return { pinReserved: true };
+    }
+
+    const sh = getSheetByName('coach_login');
+    const now = new Date().toISOString();
+    const sheetRow = matchingCoachIndex + 2; // +1 for header row, +1 for 1-based index.
+    if (!rowAlias && payloadAlias) {
+      sh.getRange(sheetRow, 4).setValue(payloadAlias); // Column D: alias
+    }
+    sh.getRange(sheetRow, 5).setValue(payloadPin); // Column E: pin
+    sh.getRange(sheetRow, 7).setValue(now); // Column G: last_activity
+
+    return {
+      id: rowId,
+      firstname: payloadFirstname,
+      lastname: payloadLastname,
+      alias: payloadAlias,
+      pin: payloadPin,
+      created_at: rowCreatedAt || now
+    };
+  }
+
   // Check PIN is not already in use in coach_login (column E, index 4)
-  const coachPins = getSheetData('coach_login')
+  const coachPins = coachRows
     .filter(r => r[4])
     .map(r => String(r[4]));
 
@@ -259,13 +334,13 @@ function registerCoachPin_(payload) {
   const sh = getSheetByName('coach_login');
   const id = Utilities.getUuid();
   const now = new Date().toISOString();
-  sh.appendRow([id, payload.firstname, payload.lastname, payload.alias || '', payload.pin, now, '']);
+  sh.appendRow([id, payloadFirstname, payloadLastname, payloadAlias, payloadPin, now, '']);
   return {
     id,
-    firstname: payload.firstname,
-    lastname: payload.lastname,
-    alias: payload.alias || '',
-    pin: payload.pin,
+    firstname: payloadFirstname,
+    lastname: payloadLastname,
+    alias: payloadAlias,
+    pin: payloadPin,
     created_at: now
   };
 }
@@ -371,7 +446,7 @@ function verifyTraineePin_(payload) {
   const traineeRows = getSheetData('trainee_login');
   const traineeRow = traineeRows.find(r => r[4] && String(r[4]) === String(payload.pin));
   if (traineeRow) {
-    return {
+  return {
       id: String(traineeRow[0]),
       firstname: String(traineeRow[1]),
       lastname: String(traineeRow[2]),
@@ -471,7 +546,7 @@ function registerCoachForSession_(payload) {
     const now = new Date().toISOString();
     const startTime = payload.start_time || '';
     const endTime = payload.end_time || '';
-    sh.appendRow([id, payload.firstname, payload.lastname, payload.session_type, payload.date, true, startTime, endTime, now, now]);
+    sh.appendRow([id, payload.firstname, payload.lastname, String(payload.session_type).toLowerCase(), payload.date, true, startTime, endTime, now, now]);
 
     return { id };
   } finally {

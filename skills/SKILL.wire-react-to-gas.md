@@ -47,11 +47,29 @@
 { "ok": false, "error": "pin_reserved" }
 ```
 
+### Response (alias mismatch for same-name coach)
+```json
+{ "ok": false, "error": "mismatching_aliases" }
+```
+
+### Response (already registered for same-name coach)
+```json
+{ "ok": false, "error": "already_registered" }
+```
+
+### Response (same-name coach PIN mismatch)
+```json
+{ "ok": false, "error": "pins_do_not_match" }
+```
+
 ### Error cases
-| Error           | Meaning                                         |
-|-----------------|-------------------------------------------------|
-| `pin_reserved`  | PIN exists in `coach_login` or `trainee_login`  |
-| `Unauthorized`  | Invalid or missing API token                    |
+| Error               | Meaning                                                                 |
+|---------------------|-------------------------------------------------------------------------|
+| `pin_reserved`      | PIN exists in `coach_login` or `trainee_login`                          |
+| `mismatching_aliases` | Same firstname+lastname exists, but aliases differ or payload alias is missing |
+| `already_registered` | Same firstname+lastname exists and PIN already matches                 |
+| `pins_do_not_match` | Same firstname+lastname exists, but stored PIN differs from payload PIN |
+| `Unauthorized`      | Invalid or missing API token                                            |
 | `Missing required fields: ...` | Payload validation failure       |
 
 ### Frontend API function
@@ -68,6 +86,9 @@ type RegisterPinData = {
  * Register a new coach PIN code.
  * Returns the newly created CoachData on success (OQM-0010: used to pre-fill ConfirmCoachRegistrationDialog).
  * Throws Error('pin_reserved') if PIN is taken.
+ * Throws Error('mismatching_aliases') when same-name coach aliases differ.
+ * Throws Error('already_registered') when same-name coach is already registered with the same PIN.
+ * Throws Error('pins_do_not_match') when same-name coach has a different PIN.
  * Throws other Errors on network/service failures.
  */
 export async function registerCoachPin(data: RegisterPinData): Promise<CoachData> {
@@ -503,6 +524,9 @@ API must accept a language parameter and return localized responses where applic
 | `unknown_coach`  | Coach (firstname + lastname) not found in `coach_login` sheet   |
 | `Unauthorized`   | Invalid or missing API token                                    |
 | `Missing required fields: ...` | Payload validation failure                    |
+
+### Persistence note
+- Backend stores `session_type` in lowercase when appending a new row to `coach_registrations`.
 
 ### Frontend API function
 ```ts
