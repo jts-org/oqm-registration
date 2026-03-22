@@ -14,6 +14,13 @@ export interface CoachData {
   last_activity: string;
 }
 
+/** Session token returned by coach login routes. */
+export interface CoachSession {
+  sessionToken: string;
+  role: string;
+  expiresInSeconds: number;
+}
+
 /**
  * A single session instance returned from the GAS backend for the 21-day window.
  * Used by CoachQuickRegistrationPage to build session cards.
@@ -78,10 +85,8 @@ export interface RemoveCoachFromSessionPayload {
 export interface CoachLoginDialogProps {
   /** Whether the dialog is visible. */
   open: boolean;
-  /** The coach password from settings (coach_pwd). */
-  coachPassword: string;
   /** Called when login succeeds. PIN login passes CoachData; password login passes undefined. */
-  onLoginSuccess: (coachData?: CoachData) => void;
+  onLoginSuccess: (result: { sessionToken: string; coachData?: CoachData }) => void;
   /** Called when the user clicks Cancel. */
   onCancel: () => void;
 }

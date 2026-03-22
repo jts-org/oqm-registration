@@ -6,9 +6,9 @@
 
 /**
  * @description Modal dialog for coach login via PIN code or password.
- *   PIN must be 4–6 digits. Password is compared to the coach_pwd setting.
+ *   PIN must be 4–6 digits. Password verification is done server-side.
  *   Opens a RegisterPinDialog when the user wants to register a new PIN.
- *   PIN verification calls the GAS backend (verifyCoachPin route).
+ *   Login calls the GAS backend (coachLogin route).
  *   Uses MUI Dialog, TextField, and Button for accessible and consistent UI.
  *   @see skills/SKILL.wire-react-to-gas.md
  */
@@ -30,7 +30,7 @@ import Typography from '@mui/material/Typography';
 import { RegisterPinDialog } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
-import { registerCoachPin, verifyCoachPin } from '../api/coach.api';
+import { coachLoginWithPassword, coachLoginWithPin, registerCoachPin } from '../api/coach.api';
 import type { CoachLoginDialogProps } from '../types';
 
 const PIN_PATTERN = /^\d{4,6}$/;
@@ -39,7 +39,7 @@ const PIN_PATTERN = /^\d{4,6}$/;
  * Modal dialog asking the coach to authenticate via PIN code or password.
  * Opens a RegisterPinDialog when the user wants to register a new PIN.
  */
-export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel }: CoachLoginDialogProps) {
+export function CoachLoginDialog({ open, onLoginSuccess, onCancel }: CoachLoginDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const [pin, setPin] = useState('');
@@ -56,9 +56,9 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
     if (!pinValid || isVerifying) return;
     setIsVerifying(true);
     try {
-      const coachData = await verifyCoachPin(pin);
+      const { session, coachData } = await coachLoginWithPin(pin);
       toast.success(t('coachLogin.loginSuccess'));
-      onLoginSuccess(coachData);
+      onLoginSuccess({ sessionToken: session.sessionToken, coachData });
     } catch (err) {
       setPinError(t('coachLogin.invalidPin'));
       setPin('');
@@ -68,11 +68,18 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
     }
   }
 
-  function handleLogin() {
-    if (password === coachPassword) {
-      onLoginSuccess();
-    } else {
+  async function handleLogin() {
+    if (!loginEnabled || isVerifying) return;
+    setIsVerifying(true);
+    try {
+      const { session } = await coachLoginWithPassword(password);
+      toast.success(t('coachLogin.loginSuccess'));
+      onLoginSuccess({ sessionToken: session.sessionToken });
+    } catch (_err) {
       setPasswordError(t('coachLogin.wrongPassword'));
+      setPassword('');
+    } finally {
+      setIsVerifying(false);
     }
   }
 
@@ -181,7 +188,7 @@ export function CoachLoginDialog({ open, coachPassword, onLoginSuccess, onCancel
                 />
                 <Button
                   onClick={handleLogin}
-                  disabled={!loginEnabled}
+                  disabled={!loginEnabled || isVerifying}
                   variant="contained"
                   sx={{ mt: { xs: 0.5, sm: 1 }, minWidth: 120, whiteSpace: 'nowrap' }}
                 >

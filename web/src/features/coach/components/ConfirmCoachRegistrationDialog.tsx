@@ -31,6 +31,8 @@ export interface ConfirmCoachRegistrationDialogProps {
   session: SessionItem | null;
   /** The authenticated coach; undefined when logged in via password only. */
   coachData?: CoachData;
+  /** Session token from coach login route. */
+  sessionToken?: string;
   /** Called with the new registration id after a successful registration. */
   onSuccess: (registrationId: string) => void;
   /** Called when the user clicks Cancel. */
@@ -48,6 +50,7 @@ export function ConfirmCoachRegistrationDialog({
   open,
   session,
   coachData,
+  sessionToken,
   onSuccess,
   onCancel,
 }: ConfirmCoachRegistrationDialogProps) {
@@ -69,7 +72,7 @@ export function ConfirmCoachRegistrationDialog({
           end_time: session.end_time,
         }),
       };
-      const registrationId = await registerCoachForSession(payload);
+      const registrationId = await registerCoachForSession(payload, sessionToken);
       toast.success(t('coachQuickRegistration.registrationSuccess'));
       onSuccess(registrationId);
     } catch (err) {

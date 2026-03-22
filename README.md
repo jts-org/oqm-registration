@@ -8,7 +8,8 @@ A ready-to-commit starter that uses a **React (Vite)** frontend with a **Google 
 - Follow `skills/SKILL.setup-gas-webapp.md` to create and deploy a Web App; copy the `/exec` URL.
 - In Apps Script **Project Settings → Script properties**, set:
   - `SHEET_ID` (Spreadsheet ID)
-  - `API_TOKEN` (shared token)
+  - `COACH_PASSWORD` (coach password used by `coachLogin` password mode)
+  - `ADMIN_PASSWORD` (admin password used by `adminLogin`)
 
 ### 2) Spreadsheet
 - Create a Sheet with a tab named `Data` and headers: `id, name, email, created_at` (see `skills/SKILL.sheet-schema.md`).
@@ -18,7 +19,6 @@ A ready-to-commit starter that uses a **React (Vite)** frontend with a **Google 
 - Create `web/.env.local`:
   ```env
   VITE_GAS_BASE_URL=https://script.google.com/macros/s/…/exec
-  VITE_API_TOKEN=replace-with-your-token
   ```
 - Run the app: `cd web && npm run dev`.
 
@@ -34,7 +34,12 @@ A ready-to-commit starter that uses a **React (Vite)** frontend with a **Google 
 See `AGENTS.md` and `skills/` for the working method.
 ## Environment Variables
 - VITE_GAS_BASE_URL: GAS web app endpoint
-- VITE_API_TOKEN: Shared secret for API access
+
+## Authentication Model (Current)
+- Trainee routes are public (no PIN/password required).
+- Coach and admin routes require a short-lived session token from:
+  - `coachLogin` (PIN or password mode)
+  - `adminLogin` (password mode)
 
 ## Documentation Links
 - [AGENTS.md](AGENTS.md)

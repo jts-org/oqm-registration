@@ -53,6 +53,7 @@ const defaultProps = {
   open: true,
   session: mockSession,
   coachData: mockCoachData,
+  sessionToken: 'coach-session-token',
   onSuccess: vi.fn(),
   onCancel: vi.fn(),
 };
@@ -128,7 +129,7 @@ describe('ConfirmCoachRegistrationDialog', () => {
       lastname: 'Doe',
       session_type: 'Kickboxing',
       date: '2026-03-09',
-    });
+    }, 'coach-session-token');
   });
 
   it('calls onSuccess with registrationId after successful registration', async () => {
@@ -145,7 +146,8 @@ describe('ConfirmCoachRegistrationDialog', () => {
     render(<ConfirmCoachRegistrationDialog {...defaultProps} session={freeSession} />);
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     expect(mockRegisterCoachForSession).toHaveBeenCalledWith(
-      expect.objectContaining({ start_time: '10:00', end_time: '11:30' })
+      expect.objectContaining({ start_time: '10:00', end_time: '11:30' }),
+      'coach-session-token'
     );
   });
 

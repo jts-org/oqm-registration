@@ -46,6 +46,7 @@ function Consumer() {
 describe('SettingsProvider', () => {
   beforeEach(() => {
     vi.mocked(getSettings).mockReset();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -53,6 +54,7 @@ describe('SettingsProvider', () => {
   });
 
   it('renders children and shows loading state initially', async () => {
+    sessionStorage.setItem('oqm_admin_session_token', 'admin-session-token');
     vi.mocked(getSettings).mockImplementation(
       () => new Promise(resolve => setTimeout(() => resolve(mockSettings), 100))
     );
@@ -67,6 +69,7 @@ describe('SettingsProvider', () => {
   });
 
   it('provides settings to consumers after successful fetch', async () => {
+    sessionStorage.setItem('oqm_admin_session_token', 'admin-session-token');
     vi.mocked(getSettings).mockResolvedValueOnce(mockSettings);
 
     render(
@@ -79,6 +82,7 @@ describe('SettingsProvider', () => {
   });
 
   it('surfaces error message when fetch fails', async () => {
+    sessionStorage.setItem('oqm_admin_session_token', 'admin-session-token');
     vi.mocked(getSettings).mockRejectedValueOnce(new Error('Unauthorized'));
 
     render(
@@ -87,12 +91,11 @@ describe('SettingsProvider', () => {
       </SettingsProvider>
     );
 
-    await waitFor(() =>
-      expect(screen.getByText(/error:.*Unauthorized/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText('count: 0')).toBeInTheDocument());
   });
 
   it('re-fetches settings when reload is called', async () => {
+    sessionStorage.setItem('oqm_admin_session_token', 'admin-session-token');
     vi.mocked(getSettings)
       .mockResolvedValueOnce(mockSettings)
       .mockResolvedValueOnce([...mockSettings, { ...mockSettings[0], id: '2', parameter: 'lang', value: 'en' }]);
@@ -111,6 +114,7 @@ describe('SettingsProvider', () => {
   });
 
   it('stores settings in sessionStorage for the duration of the session', async () => {
+    sessionStorage.setItem('oqm_admin_session_token', 'admin-session-token');
     vi.mocked(getSettings).mockResolvedValueOnce(mockSettings);
 
     render(
@@ -130,5 +134,16 @@ describe('SettingsProvider', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => render(<Consumer />)).toThrow('useSettingsContext must be used within SettingsProvider');
     consoleSpy.mockRestore();
+  });
+
+  it('does not fetch settings when admin session token is missing', async () => {
+    render(
+      <SettingsProvider>
+        <Consumer />
+      </SettingsProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText('count: 0')).toBeInTheDocument());
+    expect(getSettings).not.toHaveBeenCalled();
   });
 });

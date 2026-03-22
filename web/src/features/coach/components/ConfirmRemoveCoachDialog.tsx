@@ -30,6 +30,8 @@ export interface ConfirmRemoveCoachDialogProps {
   open: boolean;
   /** The session the coach wants to be removed from. */
   session: SessionItem | null;
+  /** Session token from coach login route. */
+  sessionToken?: string;
   /** Called with the updated registration id after a successful removal. */
   onSuccess: (registrationId: string) => void;
   /** Called when the user clicks Cancel. */
@@ -46,6 +48,7 @@ function formatDate(dateStr: string): string {
 export function ConfirmRemoveCoachDialog({
   open,
   session,
+  sessionToken,
   onSuccess,
   onCancel,
 }: ConfirmRemoveCoachDialogProps) {
@@ -62,7 +65,7 @@ export function ConfirmRemoveCoachDialog({
         lastname: session.coach_lastname,
         session_type: session.session_type,
         date: session.date,
-      });
+      }, sessionToken);
       toast.success(t('coachQuickRegistration.removalSuccess'));
       onSuccess(registrationId);
     } catch (err) {

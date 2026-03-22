@@ -22,7 +22,6 @@ const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 const BASE = 'https://script.google.com/test';
-const TOKEN = 'test-token';
 
 const validAdultPayload: RegisterTraineeForSessionPayload = {
   first_name: 'Jane',
@@ -48,7 +47,6 @@ const validUnderagePayload: RegisterTraineeForSessionPayload = {
 describe('registerTraineePin', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
   });
 
@@ -85,7 +83,6 @@ describe('registerTraineePin', () => {
         body: JSON.stringify({
           route: 'registerTraineePin',
           payload: { firstname: 'Jane', lastname: 'Doe', age: '12', pin: '1234' },
-          token: TOKEN,
         }),
       })
     );
@@ -172,7 +169,6 @@ describe('registerTraineePin', () => {
 describe('verifyTraineePin', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
   });
 
@@ -207,7 +203,6 @@ describe('verifyTraineePin', () => {
         body: JSON.stringify({
           route: 'verifyTraineePin',
           payload: { pin: '1234' },
-          token: TOKEN,
         }),
       })
     );
@@ -264,7 +259,6 @@ describe('verifyTraineePin', () => {
 describe('registerTraineeForSession', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
   });
 
@@ -291,7 +285,6 @@ describe('registerTraineeForSession', () => {
         body: JSON.stringify({
           route: 'registerTraineeForSession',
           payload: validAdultPayload,
-          token: TOKEN,
         }),
       })
     );
@@ -383,7 +376,6 @@ describe('registerTraineeForSession', () => {
 describe('getTraineeSessions', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
   });
 
@@ -392,7 +384,7 @@ describe('getTraineeSessions', () => {
     await expect(getTraineeSessions()).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
   });
 
-  it('sends a GET request with route=getTraineeSessions and token', async () => {
+  it('sends a GET request with route=getTraineeSessions', async () => {
     mockFetch.mockResolvedValue({
       json: async () => ({ ok: true, data: [] }),
     });
@@ -400,7 +392,7 @@ describe('getTraineeSessions', () => {
     await getTraineeSessions();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      `${BASE}?route=getTraineeSessions&token=${encodeURIComponent(TOKEN)}`,
+      `${BASE}?route=getTraineeSessions`,
       expect.objectContaining({ method: 'GET', redirect: 'follow' })
     );
   });

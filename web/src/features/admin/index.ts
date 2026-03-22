@@ -3,4 +3,5 @@
  * @description Public exports for the admin feature.
  */
 export { AdminLoginDialog } from './components/AdminLoginDialog';
+export { adminLogin } from './api/admin.api';
 export type { AdminLoginDialogProps } from './types';

@@ -46,17 +46,13 @@ export interface HomePageProps {
   /** Navigates to the manuals page. */
   onGoManuals: () => void;
   /** Navigates to the coach page after successful login, passing verified coach data. */
-  onGoCoach: (coachData?: CoachData) => void;
+  onGoCoach: (result: { sessionToken: string; coachData?: CoachData }) => void;
   /** Navigates to the admin page after successful login. */
-  onGoAdmin: () => void;
-  /** Coach password from settings (coach_pwd). */
-  coachPassword: string;
-  /** Admin password from settings (admin_pwd). */
-  adminPassword: string;
+  onGoAdmin: (sessionToken: string) => void;
 }
 
 /** Main view with three role-selection cards. */
-export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin, coachPassword, adminPassword }: HomePageProps) {
+export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin }: HomePageProps) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const [coachDialogOpen, setCoachDialogOpen] = useState(false);
@@ -226,20 +222,18 @@ export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin, coach
 
       <CoachLoginDialog
         open={coachDialogOpen}
-        coachPassword={coachPassword}
-        onLoginSuccess={(coachData) => {
+        onLoginSuccess={(result) => {
           setCoachDialogOpen(false);
-          onGoCoach(coachData);
+          onGoCoach(result);
         }}
         onCancel={() => setCoachDialogOpen(false)}
       />
 
       <AdminLoginDialog
         open={adminDialogOpen}
-        adminPassword={adminPassword}
-        onLoginSuccess={() => {
+        onLoginSuccess={(sessionToken) => {
           setAdminDialogOpen(false);
-          onGoAdmin();
+          onGoAdmin(sessionToken);
         }}
         onCancel={() => setAdminDialogOpen(false)}
       />
