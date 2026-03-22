@@ -141,6 +141,8 @@
   "coachQuickRegistration.sessionDateLabel": "P\u00e4iv\u00e4m\u00e4\u00e4r\u00e4",
   "coachQuickRegistration.sessionTimeLabel": "Aika",
   "coachQuickRegistration.coachNameLabel": "Valmentaja",
+  "coachQuickRegistration.weekTabLabel": "Viikko {{start}} - {{end}}",
+  "coachQuickRegistration.weekTabsAriaLabel": "Harjoitusviikot",
   "coachQuickRegistration.registrationOngoing": "Ilmoittautuminen k\u00e4ynniss\u00e4. Odota.",
   "coachQuickRegistration.registrationSuccess": "Ilmoittautuminen onnistui!",
   "coachQuickRegistration.registrationFailed": "Ilmoittautuminen ep\u00e4onnistui. Yrit\u00e4 uudelleen.",

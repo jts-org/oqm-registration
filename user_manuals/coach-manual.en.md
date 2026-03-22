@@ -32,7 +32,17 @@ Expected result:
 
 Expected result:
 - You enter Coach Quick Registration.
-- Session cards are shown in date groups.
+- Session cards are shown under week tabs.
+
+## Browse Sessions by Week Tabs
+1. Open Coach Quick Registration.
+2. Use the week tabs above the session list.
+3. By default, the current calendar week tab is selected.
+4. Select another week tab to view that week's sessions.
+
+Expected result:
+- Only sessions from the selected week are shown.
+- Sessions remain grouped by day inside the selected week.
 
 ## Register as Coach for a Session
 1. On Coach Quick Registration, find a session card.

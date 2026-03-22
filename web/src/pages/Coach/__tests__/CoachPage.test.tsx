@@ -64,6 +64,49 @@ const mockSession: SessionItem = {
   is_free_sparring: false,
 };
 
+function toYmd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function getMonday(date: Date): Date {
+  const copy = new Date(date);
+  const day = copy.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  copy.setDate(copy.getDate() + diff);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function addDays(date: Date, days: number): Date {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function buildMultiWeekSessions(): [SessionItem, SessionItem] {
+  const monday = getMonday(new Date());
+  const currentWeekDate = toYmd(addDays(monday, 2));
+  const nextWeekDate = toYmd(addDays(monday, 8));
+
+  return [
+    {
+      ...mockSession,
+      id: 'ws-current-week',
+      session_type: 'Current Week Session',
+      date: currentWeekDate,
+    },
+    {
+      ...mockSession,
+      id: 'ws-next-week',
+      session_type: 'Next Week Session',
+      date: nextWeekDate,
+    },
+  ];
+}
+
 describe('CoachPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -127,6 +170,48 @@ describe('CoachPage', () => {
     render(<CoachPage onBack={vi.fn()} />);
     await waitFor(() => {
       expect(screen.getByText('Kickboxing')).toBeInTheDocument();
+    });
+  });
+
+  it('renders week tabs when sessions span multiple calendar weeks', async () => {
+    const [currentWeekSession, nextWeekSession] = buildMultiWeekSessions();
+    mockGetCoachSessions.mockResolvedValue([currentWeekSession, nextWeekSession]);
+    render(<CoachPage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      const tabs = screen.getAllByRole('tab');
+      expect(tabs).toHaveLength(2);
+    });
+  });
+
+  it('selects current week tab by default', async () => {
+    const [currentWeekSession, nextWeekSession] = buildMultiWeekSessions();
+    mockGetCoachSessions.mockResolvedValue([currentWeekSession, nextWeekSession]);
+    render(<CoachPage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Current Week Session')).toBeInTheDocument();
+      expect(screen.queryByText('Next Week Session')).not.toBeInTheDocument();
+    });
+  });
+
+  it('switches visible sessions when another week tab is selected', async () => {
+    const [currentWeekSession, nextWeekSession] = buildMultiWeekSessions();
+    const user = userEvent.setup();
+    mockGetCoachSessions.mockResolvedValue([currentWeekSession, nextWeekSession]);
+    render(<CoachPage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Current Week Session')).toBeInTheDocument();
+      expect(screen.queryByText('Next Week Session')).not.toBeInTheDocument();
+    });
+
+    const tabs = screen.getAllByRole('tab');
+    await user.click(tabs[1]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Next Week Session')).toBeInTheDocument();
+      expect(screen.queryByText('Current Week Session')).not.toBeInTheDocument();
     });
   });
 

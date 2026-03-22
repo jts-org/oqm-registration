@@ -141,6 +141,8 @@
   "coachQuickRegistration.sessionDateLabel": "Date",
   "coachQuickRegistration.sessionTimeLabel": "Time",
   "coachQuickRegistration.coachNameLabel": "Coach",
+  "coachQuickRegistration.weekTabLabel": "Week {{start}} - {{end}}",
+  "coachQuickRegistration.weekTabsAriaLabel": "Session weeks",
   "coachQuickRegistration.registrationOngoing": "Registration ongoing. Please wait.",
   "coachQuickRegistration.registrationSuccess": "Registration successful!",
   "coachQuickRegistration.registrationFailed": "Registration failed. Please try again.",
