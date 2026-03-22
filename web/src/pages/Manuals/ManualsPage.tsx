@@ -47,7 +47,10 @@ export function ManualsPage({ onBack }: ManualsPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const manualPath = useMemo(() => `/${audience}-manual.${language}.md`, [audience, language]);
+  const manualPath = useMemo(
+    () => `${import.meta.env.BASE_URL}${audience}-manual.${language}.md`,
+    [audience, language],
+  );
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
