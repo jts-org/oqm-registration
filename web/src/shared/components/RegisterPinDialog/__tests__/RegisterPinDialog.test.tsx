@@ -457,6 +457,47 @@ describe('RegisterPinDialog', () => {
     expect(screen.getByLabelText('Lastname')).toHaveValue('Doe');
   });
 
+  it('shows mismatching_aliases message when onRegister throws "mismatching_aliases"', async () => {
+    defaultProps.onRegister.mockRejectedValue(new Error('mismatching_aliases'));
+    render(<RegisterPinDialog {...defaultProps} />);
+
+    await fillValidForm();
+    await userEvent.type(screen.getByLabelText('Alias'), 'JD');
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Coach with same name already registered but aliases differ.')
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('shows already_registered message when onRegister throws "already_registered"', async () => {
+    defaultProps.onRegister.mockRejectedValue(new Error('already_registered'));
+    render(<RegisterPinDialog {...defaultProps} />);
+
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('You are already registered.')).toBeInTheDocument();
+    });
+  });
+
+  it('shows pins_do_not_match message when onRegister throws "pins_do_not_match"', async () => {
+    defaultProps.onRegister.mockRejectedValue(new Error('pins_do_not_match'));
+    render(<RegisterPinDialog {...defaultProps} />);
+
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Coach with the same name already registered but pins unmatch.')
+      ).toBeInTheDocument();
+    });
+  });
+
   it('dismissing pin_reserved modal clears PIN fields but keeps name fields', async () => {
     defaultProps.onRegister.mockRejectedValue(new Error('pin_reserved'));
     render(<RegisterPinDialog {...defaultProps} />);

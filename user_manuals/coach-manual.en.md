@@ -71,6 +71,14 @@ Expected result:
 3. Select Register.
 4. Return to login and verify with the new PIN.
 
+Possible registration conflict messages:
+- Coach with same name already registered but aliases differ.
+  - Verify alias spelling and use the same alias that was previously used.
+- You are already registered.
+  - Use your existing PIN in Coach login.
+- Coach with the same name already registered but pins unmatch.
+  - Verify your PIN or contact an administrator if you do not know the original PIN.
+
 ## Other Useful Actions
 - Refresh data: reloads the current session list.
 - Back to main: exits coach page.

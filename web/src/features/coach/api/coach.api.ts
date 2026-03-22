@@ -18,6 +18,9 @@ import type { CoachData, SessionItem, RegisterCoachForSessionPayload, RemoveCoac
  * POST { route: "registerCoachPin", payload: RegisterPinData, token }
  * Returns the newly created CoachData on success (OQM-0010: used to pre-fill ConfirmCoachRegistrationDialog).
  * Throws Error('pin_reserved') if the PIN already exists in coach_login or trainee_login.
+ * Throws Error('mismatching_aliases') when same-name coach aliases differ.
+ * Throws Error('already_registered') when same-name coach is already registered with the same PIN.
+ * Throws Error('pins_do_not_match') when same-name coach has a different PIN.
  * Throws other Errors for network/service failures.
  */
 export async function registerCoachPin(data: RegisterPinData): Promise<CoachData> {

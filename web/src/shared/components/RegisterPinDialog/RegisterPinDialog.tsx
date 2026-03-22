@@ -44,7 +44,13 @@ const NAME_PATTERN = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[- ][A-Za-zÀ-ÖØ-öø-ÿ]+)*
 /** First name additionally allows a dot to support values like 'John J.'. */
 const FIRSTNAME_PATTERN = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ .-][A-Za-zÀ-ÖØ-öø-ÿ]+)*\.?$/;
 
-type BusinessErrorCode = 'pin_reserved' | 'concurrent_request' | 'name_already_exists';
+type BusinessErrorCode =
+  | 'pin_reserved'
+  | 'concurrent_request'
+  | 'name_already_exists'
+  | 'mismatching_aliases'
+  | 'already_registered'
+  | 'pins_do_not_match';
 
 function isValidName(value: string, pattern = NAME_PATTERN): boolean {
   if (!value || value.trim().length === 0) return false;
@@ -319,7 +325,10 @@ export function RegisterPinDialog({
       if (
         code === 'pin_reserved' ||
         code === 'concurrent_request' ||
-        code === 'name_already_exists'
+        code === 'name_already_exists' ||
+        code === 'mismatching_aliases' ||
+        code === 'already_registered' ||
+        code === 'pins_do_not_match'
       ) {
         setBusinessErrorCode(code);
       } else {
@@ -348,6 +357,12 @@ export function RegisterPinDialog({
         return t('registerPin.concurrentRequest');
       case 'name_already_exists':
         return t('registerPin.nameAlreadyExists');
+      case 'mismatching_aliases':
+        return t('registerPin.mismatchingAliases');
+      case 'already_registered':
+        return t('registerPin.alreadyRegistered');
+      case 'pins_do_not_match':
+        return t('registerPin.pinsDoNotMatch');
       default:
         return '';
     }
