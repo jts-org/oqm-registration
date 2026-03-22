@@ -40,6 +40,8 @@ export interface CoachPageProps {
   onBack: () => void;
   /** Verified coach data returned from the backend on successful PIN login; undefined for password login. */
   coachData?: CoachData;
+  /** Session token returned by coach login route. */
+  sessionToken?: string;
 }
 
 /** Format date string 'YYYY-MM-DD' as 'Mo DD.MM.YYYY' using locale-aware weekday abbreviation. */
@@ -51,7 +53,7 @@ function formatDateLabel(dateStr: string, locale: string): string {
 }
 
 /** Coach Quick Registration page displaying a 21-day window of sessions grouped by date. */
-export function CoachPage({ onBack, coachData }: CoachPageProps) {
+export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
   const { t, i18n } = useTranslation();
 
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -70,7 +72,7 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
     setLoading(true);
     setError(null);
     try {
-      const data = await getCoachSessions();
+      const data = await getCoachSessions(sessionToken);
       setSessions(data);
     } catch {
       setError(t('coachQuickRegistration.loadError'));
@@ -298,10 +300,11 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
         </Card>
       ))}
 
-      <ConfirmCoachRegistrationDialog
+        <ConfirmCoachRegistrationDialog
         open={confirmRegisterOpen}
         session={selectedSession}
         coachData={coachData ?? pendingCoachData}
+          sessionToken={sessionToken}
         onSuccess={handleRegisterSuccess}
         onCancel={handleRegisterCancel}
       />
@@ -353,9 +356,10 @@ export function CoachPage({ onBack, coachData }: CoachPageProps) {
         }}
       />
 
-      <ConfirmRemoveCoachDialog
+        <ConfirmRemoveCoachDialog
         open={confirmRemoveOpen}
         session={selectedSession}
+          sessionToken={sessionToken}
         onSuccess={handleRemoveSuccess}
         onCancel={handleRemoveCancel}
       />

@@ -19,7 +19,7 @@ import type {
 
 /**
  * Register a new trainee PIN code by posting to the GAS backend.
- * POST { route: "registerTraineePin", payload: RegisterTraineePinData, token }
+ * POST { route: "registerTraineePin", payload: RegisterTraineePinData }
  * Returns the newly created TraineeData on success.
  * Throws Error('pin_reserved') if the PIN already exists in coach_login or trainee_login.
  * Throws Error('name_already_exists') if a trainee with the same name already exists.
@@ -29,13 +29,12 @@ import type {
  */
 export async function registerTraineePin(data: RegisterTraineePinData): Promise<TraineeData> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
-  const token = import.meta.env.VITE_API_TOKEN as string;
   if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
   const res = await fetch(base, {
     method: 'POST',
     redirect: 'follow',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ route: 'registerTraineePin', payload: data, token }),
+    body: JSON.stringify({ route: 'registerTraineePin', payload: data }),
   });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Registration failed');
@@ -44,7 +43,7 @@ export async function registerTraineePin(data: RegisterTraineePinData): Promise<
 
 /**
  * Verify a trainee PIN code against the GAS backend.
- * POST { route: "verifyTraineePin", payload: { pin }, token }
+ * POST { route: "verifyTraineePin", payload: { pin } }
  * Returns trainee-shaped data on success.
  * Backend checks trainee_login first and then coach_login as fallback (OQM-0023).
  * Throws Error('no_match_found') if the PIN does not match any trainee or coach.
@@ -53,13 +52,12 @@ export async function registerTraineePin(data: RegisterTraineePinData): Promise<
  */
 export async function verifyTraineePin(pin: string): Promise<TraineeData> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
-  const token = import.meta.env.VITE_API_TOKEN as string;
   if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
   const res = await fetch(base, {
     method: 'POST',
     redirect: 'follow',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ route: 'verifyTraineePin', payload: { pin }, token }),
+    body: JSON.stringify({ route: 'verifyTraineePin', payload: { pin } }),
   });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Verification failed');
@@ -68,15 +66,14 @@ export async function verifyTraineePin(pin: string): Promise<TraineeData> {
 
 /**
  * Fetch all trainee sessions for the active 21-day registration window.
- * GET ?route=getTraineeSessions&token=...
+ * GET ?route=getTraineeSessions
  * Returns array of TraineeSessionItem sorted by date and start_time.
  * @see skills/SKILL.wire-react-to-gas.md
  */
 export async function getTraineeSessions(): Promise<TraineeSessionItem[]> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
-  const token = import.meta.env.VITE_API_TOKEN as string;
   if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
-  const url = `${base}?route=getTraineeSessions&token=${encodeURIComponent(token || '')}`;
+  const url = `${base}?route=getTraineeSessions`;
   const res = await fetch(url, { method: 'GET', redirect: 'follow' });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Failed to fetch sessions');
@@ -85,7 +82,7 @@ export async function getTraineeSessions(): Promise<TraineeSessionItem[]> {
 
 /**
  * Register a trainee for a specific session by posting to the GAS backend.
- * POST { route: "registerTraineeForSession", payload: RegisterTraineeForSessionPayload, token }
+ * POST { route: "registerTraineeForSession", payload: RegisterTraineeForSessionPayload }
  * Returns the new row id (string) on success.
  * Throws Error('already_registered') if the trainee is already registered for the same session and date.
  * Throws Error('concurrent_request') if the script lock could not be acquired.
@@ -98,13 +95,12 @@ export async function registerTraineeForSession(
   payload: RegisterTraineeForSessionPayload
 ): Promise<string> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
-  const token = import.meta.env.VITE_API_TOKEN as string;
   if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
   const res = await fetch(base, {
     method: 'POST',
     redirect: 'follow',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ route: 'registerTraineeForSession', payload, token }),
+    body: JSON.stringify({ route: 'registerTraineeForSession', payload }),
   });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Registration failed');

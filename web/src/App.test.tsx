@@ -30,12 +30,20 @@ vi.mock('./app/providers/SettingsProvider', () => ({
 }));
 
 vi.mock('./pages/Home/HomePage', () => ({
-  HomePage: ({ onGoTrainee, onGoCoach, onGoAdmin }: { onGoTrainee: () => void; onGoCoach: (coachData?: { alias?: string }) => void; onGoAdmin: () => void }) => (
+  HomePage: ({
+    onGoTrainee,
+    onGoCoach,
+    onGoAdmin,
+  }: {
+    onGoTrainee: () => void;
+    onGoCoach: (result: { sessionToken: string; coachData?: { alias?: string } }) => void;
+    onGoAdmin: (sessionToken: string) => void;
+  }) => (
     <div>
       <h1>Home page</h1>
       <button type="button" onClick={onGoTrainee}>Go trainee</button>
-      <button type="button" onClick={() => onGoCoach({ alias: 'Coach Alias' })}>Go coach</button>
-      <button type="button" onClick={onGoAdmin}>Go admin</button>
+      <button type="button" onClick={() => onGoCoach({ sessionToken: 'coach-session', coachData: { alias: 'Coach Alias' } })}>Go coach</button>
+      <button type="button" onClick={() => onGoAdmin('admin-session')}>Go admin</button>
     </div>
   ),
 }));

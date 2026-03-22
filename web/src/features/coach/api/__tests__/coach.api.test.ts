@@ -10,18 +10,25 @@
  *   @see skills/SKILL.wire-react-to-gas.md
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerCoachPin } from '../coach.api';
+import {
+  coachLoginWithPassword,
+  coachLoginWithPin,
+  getCoachSessions,
+  registerCoachForSession,
+  registerCoachPin,
+  removeCoachFromSession,
+  verifyCoachPin,
+} from '../coach.api';
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 const BASE = 'https://script.google.com/test';
-const TOKEN = 'test-token';
+const SESSION_TOKEN = 'coach-session-token';
 
 describe('registerCoachPin', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
   });
 
@@ -47,7 +54,6 @@ describe('registerCoachPin', () => {
         body: JSON.stringify({
           route: 'registerCoachPin',
           payload: { firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234' },
-          token: TOKEN,
         }),
       })
     );
@@ -109,12 +115,9 @@ describe('registerCoachPin', () => {
   });
 });
 
-import { verifyCoachPin } from '../coach.api';
-
 describe('verifyCoachPin', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
   });
 
@@ -134,14 +137,14 @@ describe('verifyCoachPin', () => {
         method: 'POST',
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ route: 'verifyCoachPin', payload: { pin: '1234' }, token: TOKEN }),
+        body: JSON.stringify({ route: 'coachLogin', payload: { mode: 'pin', pin: '1234' } }),
       })
     );
   });
 
   it('returns coach data when backend returns ok: true', async () => {
     const coachData = { id: '1', firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', created_at: '2026-01-01T00:00:00Z', last_activity: '' };
-    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: coachData }) });
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { session: { sessionToken: SESSION_TOKEN, role: 'coach', expiresInSeconds: 60 }, coachData } }) });
     await expect(verifyCoachPin('1234')).resolves.toEqual(coachData);
   });
 
@@ -156,7 +159,44 @@ describe('verifyCoachPin', () => {
   });
 });
 
-import { getCoachSessions } from '../coach.api';
+describe('coachLoginWithPin', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    mockFetch.mockReset();
+  });
+
+  it('returns session and coach data from coachLogin route', async () => {
+    const payload = {
+      session: { sessionToken: SESSION_TOKEN, role: 'coach', expiresInSeconds: 120 },
+      coachData: { id: '1', firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', created_at: '2026-01-01T00:00:00Z', last_activity: '' },
+    };
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: payload }) });
+
+    await expect(coachLoginWithPin('1234')).resolves.toEqual(payload);
+  });
+});
+
+describe('coachLoginWithPassword', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    mockFetch.mockReset();
+  });
+
+  it('sends password mode to coachLogin route', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: true, data: { session: { sessionToken: SESSION_TOKEN, role: 'coach', expiresInSeconds: 120 }, coachData: null } }),
+    });
+
+    await coachLoginWithPassword('secret');
+    expect(mockFetch).toHaveBeenCalledWith(
+      BASE,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ route: 'coachLogin', payload: { mode: 'password', password: 'secret' } }),
+      })
+    );
+  });
+});
 
 const mockSessionItem = {
   id: 'ws-1_2026-03-09',
@@ -176,8 +216,11 @@ const mockSessionItem = {
 describe('getCoachSessions', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
+  });
+
+  it('throws Unauthorized when session token is missing', async () => {
+    await expect(getCoachSessions()).rejects.toThrow('Unauthorized');
   });
 
   it('throws when VITE_GAS_BASE_URL is not configured', async () => {
@@ -185,13 +228,13 @@ describe('getCoachSessions', () => {
     await expect(getCoachSessions()).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
   });
 
-  it('sends a GET request with route=getCoachSessions and token', async () => {
+  it('sends a GET request with route=getCoachSessions and sessionToken', async () => {
     mockFetch.mockResolvedValue({
       json: async () => ({ ok: true, data: [] }),
     });
-    await getCoachSessions();
+    await getCoachSessions(SESSION_TOKEN);
     expect(mockFetch).toHaveBeenCalledWith(
-      `${BASE}?route=getCoachSessions&token=${encodeURIComponent(TOKEN)}`,
+      `${BASE}?route=getCoachSessions&sessionToken=${encodeURIComponent(SESSION_TOKEN)}`,
       expect.objectContaining({ method: 'GET', redirect: 'follow' })
     );
   });
@@ -200,7 +243,7 @@ describe('getCoachSessions', () => {
     mockFetch.mockResolvedValue({
       json: async () => ({ ok: true, data: [mockSessionItem] }),
     });
-    const result = await getCoachSessions();
+    const result = await getCoachSessions(SESSION_TOKEN);
     expect(result).toEqual([mockSessionItem]);
   });
 
@@ -208,24 +251,27 @@ describe('getCoachSessions', () => {
     mockFetch.mockResolvedValue({
       json: async () => ({ ok: false, error: 'Unauthorized' }),
     });
-    await expect(getCoachSessions()).rejects.toThrow('Unauthorized');
+    await expect(getCoachSessions(SESSION_TOKEN)).rejects.toThrow('Unauthorized');
   });
 
   it('throws generic error when backend returns ok: false with no error message', async () => {
     mockFetch.mockResolvedValue({
       json: async () => ({ ok: false }),
     });
-    await expect(getCoachSessions()).rejects.toThrow('Failed to fetch sessions');
+    await expect(getCoachSessions(SESSION_TOKEN)).rejects.toThrow('Failed to fetch sessions');
   });
 });
-
-import { registerCoachForSession } from '../coach.api';
 
 describe('registerCoachForSession', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
+  });
+
+  it('throws Unauthorized when session token is missing', async () => {
+    await expect(
+      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('Unauthorized');
   });
 
   it('throws when VITE_GAS_BASE_URL is not configured', async () => {
@@ -238,14 +284,14 @@ describe('registerCoachForSession', () => {
   it('sends a POST request with correct shape', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'new-uuid' } }) });
     const payload = { firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' };
-    await registerCoachForSession(payload);
+    await registerCoachForSession(payload, SESSION_TOKEN);
     expect(mockFetch).toHaveBeenCalledWith(
       BASE,
       expect.objectContaining({
         method: 'POST',
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ route: 'registerCoachForSession', payload, token: TOKEN }),
+        body: JSON.stringify({ route: 'registerCoachForSession', payload, sessionToken: SESSION_TOKEN }),
       })
     );
   });
@@ -253,50 +299,53 @@ describe('registerCoachForSession', () => {
   it('sends optional start_time and end_time for free/sparring sessions', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'new-uuid' } }) });
     const payload = { firstname: 'John', lastname: 'Doe', session_type: 'free/sparring', date: '2026-03-09', start_time: '10:00', end_time: '11:30' };
-    await registerCoachForSession(payload);
+    await registerCoachForSession(payload, SESSION_TOKEN);
     expect(mockFetch).toHaveBeenCalledWith(
       BASE,
       expect.objectContaining({
-        body: JSON.stringify({ route: 'registerCoachForSession', payload, token: TOKEN }),
+        body: JSON.stringify({ route: 'registerCoachForSession', payload, sessionToken: SESSION_TOKEN }),
       })
     );
   });
 
   it('returns registration id when backend returns ok: true', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'reg-123' } }) });
-    const result = await registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' });
+    const result = await registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN);
     expect(result).toBe('reg-123');
   });
 
   it('throws "already_taken" when backend returns that error', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'already_taken' }) });
     await expect(
-      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN)
     ).rejects.toThrow('already_taken');
   });
 
   it('throws "unknown_coach" when backend returns that error', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'unknown_coach' }) });
     await expect(
-      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN)
     ).rejects.toThrow('unknown_coach');
   });
 
   it('throws with backend error message on other errors', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'Unauthorized' }) });
     await expect(
-      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+      registerCoachForSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN)
     ).rejects.toThrow('Unauthorized');
   });
 });
 
-import { removeCoachFromSession } from '../coach.api';
-
 describe('removeCoachFromSession', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     mockFetch.mockReset();
+  });
+
+  it('throws Unauthorized when session token is missing', async () => {
+    await expect(
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+    ).rejects.toThrow('Unauthorized');
   });
 
   it('throws when VITE_GAS_BASE_URL is not configured', async () => {
@@ -309,49 +358,49 @@ describe('removeCoachFromSession', () => {
   it('sends a POST request with correct shape', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'reg-1' } }) });
     const payload = { firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' };
-    await removeCoachFromSession(payload);
+    await removeCoachFromSession(payload, SESSION_TOKEN);
     expect(mockFetch).toHaveBeenCalledWith(
       BASE,
       expect.objectContaining({
         method: 'POST',
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ route: 'removeCoachFromSession', payload, token: TOKEN }),
+        body: JSON.stringify({ route: 'removeCoachFromSession', payload, sessionToken: SESSION_TOKEN }),
       })
     );
   });
 
   it('returns registration id when backend returns ok: true', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: { id: 'reg-1' } }) });
-    const result = await removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' });
+    const result = await removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN);
     expect(result).toBe('reg-1');
   });
 
   it('throws "concurrent_operation" when backend returns that error', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'concurrent_operation' }) });
     await expect(
-      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN)
     ).rejects.toThrow('concurrent_operation');
   });
 
   it('throws "registration_not_found" when backend returns that error', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'registration_not_found' }) });
     await expect(
-      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN)
     ).rejects.toThrow('registration_not_found');
   });
 
   it('throws "session_available" when backend returns that error', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'session_available' }) });
     await expect(
-      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN)
     ).rejects.toThrow('session_available');
   });
 
   it('throws with backend error message on other errors', async () => {
     mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'Unauthorized' }) });
     await expect(
-      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' })
+      removeCoachFromSession({ firstname: 'John', lastname: 'Doe', session_type: 'Kickboxing', date: '2026-03-09' }, SESSION_TOKEN)
     ).rejects.toThrow('Unauthorized');
   });
 });

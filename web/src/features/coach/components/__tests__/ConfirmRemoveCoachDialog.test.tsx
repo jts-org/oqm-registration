@@ -42,6 +42,7 @@ const mockSession: SessionItem = {
 const defaultProps = {
   open: true,
   session: mockSession,
+  sessionToken: 'coach-session-token',
   onSuccess: vi.fn(),
   onCancel: vi.fn(),
 };
@@ -122,7 +123,7 @@ describe('ConfirmRemoveCoachDialog', () => {
       lastname: 'Doe',
       session_type: 'Kickboxing',
       date: '2026-03-09',
-    });
+    }, 'coach-session-token');
   });
 
   it('calls onSuccess with registrationId after successful removal', async () => {

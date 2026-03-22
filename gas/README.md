@@ -5,4 +5,5 @@
 
 ## Script Properties (Apps Script → Project Settings)
 - `SHEET_ID`: target spreadsheet id
-- `API_TOKEN`: shared bearer token for simple auth
+- `COACH_PASSWORD`: coach password for `coachLogin` password mode
+- `ADMIN_PASSWORD`: admin password for `adminLogin`

@@ -30,6 +30,8 @@ import { AdminPage } from './pages/Admin/AdminPage'
 import { ManualsPage } from './pages/Manuals/ManualsPage'
 import type { CoachData } from './features/coach/types'
 
+const ADMIN_SESSION_TOKEN_KEY = 'oqm_admin_session_token'
+
 const customTheme = getTheme('kickboxing'); // Change to your desired theme
 const theme = createTheme({
   palette: {
@@ -51,14 +53,11 @@ const theme = createTheme({
 });
 
 interface HomeRouteProps {
-  coachPassword: string;
-  adminPassword: string;
-  onCoachVerified: (coachData?: CoachData) => void;
-  onAdminAuthenticated: () => void;
-  onCoachAuthenticated: () => void;
+  onCoachVerified: (result: { sessionToken: string; coachData?: CoachData }) => void;
+  onAdminAuthenticated: (sessionToken: string) => void;
 }
 
-function HomeRoute({ coachPassword, adminPassword, onCoachVerified, onAdminAuthenticated, onCoachAuthenticated }: HomeRouteProps) {
+function HomeRoute({ onCoachVerified, onAdminAuthenticated }: HomeRouteProps) {
   const navigate = useNavigate();
 
   return (
@@ -66,16 +65,13 @@ function HomeRoute({ coachPassword, adminPassword, onCoachVerified, onAdminAuthe
       onGoTrainee={() => navigate('/trainee')}
       onGoManuals={() => navigate('/manuals')}
       onGoCoach={(coachData) => {
-        onCoachAuthenticated();
         onCoachVerified(coachData);
         navigate('/coach');
       }}
-      onGoAdmin={() => {
-        onAdminAuthenticated();
+      onGoAdmin={(sessionToken) => {
+        onAdminAuthenticated(sessionToken);
         navigate('/admin');
       }}
-      coachPassword={coachPassword}
-      adminPassword={adminPassword}
     />
   );
 }
@@ -95,10 +91,11 @@ function ManualsRoute() {
 interface CoachRouteProps {
   isCoachAuthenticated: boolean;
   verifiedCoach?: CoachData;
+  coachSessionToken?: string;
   onLeaveCoach: () => void;
 }
 
-function CoachRoute({ isCoachAuthenticated, verifiedCoach, onLeaveCoach }: CoachRouteProps) {
+function CoachRoute({ isCoachAuthenticated, verifiedCoach, coachSessionToken, onLeaveCoach }: CoachRouteProps) {
   const navigate = useNavigate();
 
   if (!isCoachAuthenticated) {
@@ -112,6 +109,7 @@ function CoachRoute({ isCoachAuthenticated, verifiedCoach, onLeaveCoach }: Coach
         navigate('/');
       }}
       coachData={verifiedCoach}
+      sessionToken={coachSessionToken}
     />
   );
 }
@@ -136,13 +134,11 @@ function AdminRoute({ isAdminAuthenticated, onLeaveAdmin }: AdminRouteProps) {
 
 export default function App() {
   const { t } = useTranslation()
-  const { settings, loading: settingsLoading, error: settingsError, reload } = useSettingsContext()
+  const { loading: settingsLoading, error: settingsError, reload } = useSettingsContext()
   const [adminAuthenticated, setAdminAuthenticated] = useState(false)
   const [coachAuthenticated, setCoachAuthenticated] = useState(false)
+  const [coachSessionToken, setCoachSessionToken] = useState<string | undefined>(undefined)
   const [verifiedCoach, setVerifiedCoach] = useState<CoachData | undefined>(undefined)
-
-  const coachPassword = settings.find(s => s.parameter === 'coach_pwd')?.value ?? ''
-  const adminPassword = settings.find(s => s.parameter === 'admin_pwd')?.value ?? ''
 
   if (settingsLoading) {
     return (
@@ -185,11 +181,15 @@ export default function App() {
             path="/"
             element={(
               <HomeRoute
-                coachPassword={coachPassword}
-                adminPassword={adminPassword}
-                onCoachVerified={setVerifiedCoach}
-                onAdminAuthenticated={() => setAdminAuthenticated(true)}
-                onCoachAuthenticated={() => setCoachAuthenticated(true)}
+                onCoachVerified={(result) => {
+                  setCoachSessionToken(result.sessionToken)
+                  setCoachAuthenticated(true)
+                  setVerifiedCoach(result.coachData)
+                }}
+                onAdminAuthenticated={(sessionToken) => {
+                  sessionStorage.setItem(ADMIN_SESSION_TOKEN_KEY, sessionToken)
+                  setAdminAuthenticated(true)
+                }}
               />
             )}
           />
@@ -201,8 +201,10 @@ export default function App() {
               <CoachRoute
                 isCoachAuthenticated={coachAuthenticated}
                 verifiedCoach={verifiedCoach}
+                coachSessionToken={coachSessionToken}
                 onLeaveCoach={() => {
                   setCoachAuthenticated(false)
+                  setCoachSessionToken(undefined)
                   setVerifiedCoach(undefined)
                 }}
               />
@@ -213,7 +215,10 @@ export default function App() {
             element={(
               <AdminRoute
                 isAdminAuthenticated={adminAuthenticated}
-                onLeaveAdmin={() => setAdminAuthenticated(false)}
+                onLeaveAdmin={() => {
+                  sessionStorage.removeItem(ADMIN_SESSION_TOKEN_KEY)
+                  setAdminAuthenticated(false)
+                }}
               />
             )}
           />

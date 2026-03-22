@@ -18,9 +18,16 @@ import { CoachLoginDialog } from '../CoachLoginDialog';
 
 vi.mock('../../api/coach.api', () => ({
   registerCoachPin: vi.fn().mockResolvedValue(undefined),
-  verifyCoachPin: vi.fn().mockResolvedValue({
-    id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
-    created_at: '2026-01-01T00:00:00Z', last_activity: '',
+  coachLoginWithPin: vi.fn().mockResolvedValue({
+    session: { sessionToken: 'coach-session-token', role: 'coach', expiresInSeconds: 28800 },
+    coachData: {
+      id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
+      created_at: '2026-01-01T00:00:00Z', last_activity: '',
+    },
+  }),
+  coachLoginWithPassword: vi.fn().mockResolvedValue({
+    session: { sessionToken: 'coach-session-token', role: 'coach', expiresInSeconds: 28800 },
+    coachData: null,
   }),
 }));
 
@@ -35,15 +42,15 @@ vi.mock('react-hot-toast', () => {
 });
 
 import toast from 'react-hot-toast';
-import { registerCoachPin, verifyCoachPin } from '../../api/coach.api';
+import { coachLoginWithPassword, coachLoginWithPin, registerCoachPin } from '../../api/coach.api';
 
 const mockRegisterCoachPin = vi.mocked(registerCoachPin);
-const mockVerifyCoachPin = vi.mocked(verifyCoachPin);
+const mockCoachLoginWithPin = vi.mocked(coachLoginWithPin);
+const mockCoachLoginWithPassword = vi.mocked(coachLoginWithPassword);
 const mockToast = vi.mocked(toast);
 
 const defaultProps = {
   open: true,
-  coachPassword: 'secret',
   onLoginSuccess: vi.fn(),
   onCancel: vi.fn(),
 };
@@ -55,9 +62,16 @@ describe('CoachLoginDialog', () => {
       id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
       created_at: '2026-01-01T00:00:00Z', last_activity: '',
     });
-    mockVerifyCoachPin.mockResolvedValue({
-      id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
-      created_at: '2026-01-01T00:00:00Z', last_activity: '',
+    mockCoachLoginWithPin.mockResolvedValue({
+      session: { sessionToken: 'coach-session-token', role: 'coach', expiresInSeconds: 28800 },
+      coachData: {
+        id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234',
+        created_at: '2026-01-01T00:00:00Z', last_activity: '',
+      },
+    });
+    mockCoachLoginWithPassword.mockResolvedValue({
+      session: { sessionToken: 'coach-session-token', role: 'coach', expiresInSeconds: 28800 },
+      coachData: null,
     });
   });
   it('does not render when open=false', () => {
@@ -130,15 +144,18 @@ describe('CoachLoginDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
     await waitFor(() => expect(onLoginSuccess).toHaveBeenCalledOnce());
     expect(onLoginSuccess).toHaveBeenCalledWith(
-      expect.objectContaining({ id: '1', firstname: 'John', lastname: 'Doe' })
+      expect.objectContaining({
+        sessionToken: 'coach-session-token',
+        coachData: expect.objectContaining({ id: '1', firstname: 'John', lastname: 'Doe' }),
+      })
     );
   });
 
-  it('calls verifyCoachPin API when Verify is clicked with valid PIN', async () => {
+  it('calls coachLoginWithPin API when Verify is clicked with valid PIN', async () => {
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter PIN code'), '1234');
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
-    await waitFor(() => expect(mockVerifyCoachPin).toHaveBeenCalledWith('1234'));
+    await waitFor(() => expect(mockCoachLoginWithPin).toHaveBeenCalledWith('1234'));
   });
 
   it('shows toast on successful PIN verification', async () => {
@@ -149,7 +166,7 @@ describe('CoachLoginDialog', () => {
   });
 
   it('shows inline error when PIN not found', async () => {
-    mockVerifyCoachPin.mockRejectedValue(new Error('no_match_found'));
+    mockCoachLoginWithPin.mockRejectedValue(new Error('no_match_found'));
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter PIN code'), '9999');
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
@@ -159,7 +176,7 @@ describe('CoachLoginDialog', () => {
   });
 
   it('clears input fields after no_match_found error', async () => {
-    mockVerifyCoachPin.mockRejectedValue(new Error('no_match_found'));
+    mockCoachLoginWithPin.mockRejectedValue(new Error('no_match_found'));
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter PIN code'), '9999');
     await userEvent.type(screen.getByLabelText('Enter password'), 'secret');
@@ -172,7 +189,7 @@ describe('CoachLoginDialog', () => {
   });
 
   it('dialog stays open after no_match_found error', async () => {
-    mockVerifyCoachPin.mockRejectedValue(new Error('no_match_found'));
+    mockCoachLoginWithPin.mockRejectedValue(new Error('no_match_found'));
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter PIN code'), '9999');
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
@@ -195,21 +212,24 @@ describe('CoachLoginDialog', () => {
 
   it('clicking Login with correct password calls onLoginSuccess', async () => {
     const onLoginSuccess = vi.fn();
-    render(<CoachLoginDialog {...defaultProps} onLoginSuccess={onLoginSuccess} coachPassword="secret" />);
+    render(<CoachLoginDialog {...defaultProps} onLoginSuccess={onLoginSuccess} />);
     await userEvent.type(screen.getByLabelText('Enter password'), 'secret');
     await userEvent.click(screen.getByRole('button', { name: 'Login' }));
-    expect(onLoginSuccess).toHaveBeenCalledOnce();
+    await waitFor(() => expect(onLoginSuccess).toHaveBeenCalledOnce());
+    expect(onLoginSuccess).toHaveBeenCalledWith({ sessionToken: 'coach-session-token' });
   });
 
   it('clicking Login with wrong password shows error message', async () => {
-    render(<CoachLoginDialog {...defaultProps} coachPassword="secret" />);
+    mockCoachLoginWithPassword.mockRejectedValue(new Error('invalid_credentials'));
+    render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter password'), 'wrong');
     await userEvent.click(screen.getByRole('button', { name: 'Login' }));
-    expect(screen.getByText('Incorrect password. Try again.')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Incorrect password. Try again.')).toBeInTheDocument());
   });
 
   it('dialog stays open after wrong password', async () => {
-    render(<CoachLoginDialog {...defaultProps} coachPassword="secret" />);
+    mockCoachLoginWithPassword.mockRejectedValue(new Error('invalid_credentials'));
+    render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter password'), 'wrong');
     await userEvent.click(screen.getByRole('button', { name: 'Login' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -250,10 +270,10 @@ describe('CoachLoginDialog', () => {
 
   // ── Loading overlay (OQM-0005) ────────────────────────────────────────────
 
-  it('shows loading overlay while verifyCoachPin is in progress', async () => {
+  it('shows loading overlay while coachLoginWithPin is in progress', async () => {
     let resolveVerify!: (value: unknown) => void;
     const pendingVerify = new Promise(res => { resolveVerify = res; });
-    mockVerifyCoachPin.mockReturnValue(pendingVerify as ReturnType<typeof mockVerifyCoachPin>);
+    mockCoachLoginWithPin.mockReturnValue(pendingVerify as ReturnType<typeof mockCoachLoginWithPin>);
 
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter PIN code'), '1234');
@@ -261,26 +281,32 @@ describe('CoachLoginDialog', () => {
 
     expect(screen.getByRole('status')).toBeInTheDocument();
 
-    resolveVerify({ id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', created_at: '', last_activity: '' });
+    resolveVerify({
+      session: { sessionToken: 'coach-session-token', role: 'coach', expiresInSeconds: 28800 },
+      coachData: { id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', created_at: '', last_activity: '' },
+    });
   });
 
-  it('hides loading overlay after verifyCoachPin completes successfully', async () => {
+  it('hides loading overlay after coachLoginWithPin completes successfully', async () => {
     let resolveVerify!: (value: unknown) => void;
     const pendingVerify = new Promise(res => { resolveVerify = res; });
-    mockVerifyCoachPin.mockReturnValue(pendingVerify as ReturnType<typeof mockVerifyCoachPin>);
+    mockCoachLoginWithPin.mockReturnValue(pendingVerify as ReturnType<typeof mockCoachLoginWithPin>);
 
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter PIN code'), '1234');
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
 
-    resolveVerify({ id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', created_at: '', last_activity: '' });
+    resolveVerify({
+      session: { sessionToken: 'coach-session-token', role: 'coach', expiresInSeconds: 28800 },
+      coachData: { id: '1', firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', created_at: '', last_activity: '' },
+    });
     await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
   });
 
-  it('hides loading overlay after verifyCoachPin fails', async () => {
+  it('hides loading overlay after coachLoginWithPin fails', async () => {
     let rejectVerify!: (err: Error) => void;
     const pendingVerify = new Promise((_res, rej) => { rejectVerify = rej; });
-    mockVerifyCoachPin.mockReturnValue(pendingVerify as ReturnType<typeof mockVerifyCoachPin>);
+    mockCoachLoginWithPin.mockReturnValue(pendingVerify as ReturnType<typeof mockCoachLoginWithPin>);
 
     render(<CoachLoginDialog {...defaultProps} />);
     await userEvent.type(screen.getByLabelText('Enter PIN code'), '9999');

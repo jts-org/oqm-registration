@@ -5,6 +5,8 @@
  *  - GET  ?route=getSettings     — list rows from settings sheet (QCM-0001)
  *  - GET  ?route=getCoachSessions — fetch 21-day session window (OQM-0007)
  *  - GET  ?route=getTraineeSessions — fetch trainee-facing 21-day session window (OQM-0015)
+ *  - POST { route: "coachLogin", payload: { mode: "pin"|"password", pin?|password? } } — create coach session token
+ *  - POST { route: "adminLogin", payload: { password } } — create admin session token
  *  - POST { route: "createItem", payload: { name, email } }
  *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin } } — register a new coach PIN code (OQM-0003)
  *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
@@ -18,14 +20,14 @@
  */
 
 const SHEET_ID = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
-const API_TOKEN = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
+const COACH_PASSWORD = PropertiesService.getScriptProperties().getProperty('COACH_PASSWORD');
+const ADMIN_PASSWORD = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
+const SESSION_TTL_SECONDS = 60 * 60 * 8;
 
 function doGet(e) {
   try {
-    logToSheet(`doGet - before auth SHEET_ID: ${SHEET_ID}, API_TOKEN: ${API_TOKEN}`);
-    authorize_(e);
-    logToSheet(`doGet - after auth`);
     const route = (e.parameter.route || '').toString();
+    authorize_(e, route);
     logToSheet(`doGet - route: ${route}`);
     if (route === 'listItems') {
       const data = listItems_();
@@ -51,13 +53,20 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    logToSheet(`doPost - before auth SHEET_ID: ${SHEET_ID}, API_TOKEN: ${API_TOKEN}`);
-    authorize_(e);
-    logToSheet(`doPost - after auth`);
     const body = e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
-    logToSheet(`doPost - body: ${JSON.stringify(body)}`);
     const route = body.route;
     const payload = body.payload;
+    if (route === 'coachLogin') {
+      const result = coachLogin_(payload);
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'adminLogin') {
+      const result = adminLogin_(payload);
+      return json_({ ok: true, data: result });
+    }
+
+    authorize_(e, route, body);
+    logToSheet(`doPost - route: ${route}`);
     if (route === 'createItem') {
       const created = createItem_(payload);
       return json_({ ok: true, data: created });
@@ -162,14 +171,136 @@ function json_(obj, _status) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function authorize_(e) {
-  var token = (e.parameter && e.parameter.token) || null;
-  if (!token && e.postData && e.postData.contents) {
-    try { token = JSON.parse(e.postData.contents).token; } catch (_) {}
+function authorize_(e, route, body) {
+  if (isPublicRoute_(route)) {
+    return null;
   }
-  if (!API_TOKEN || token !== API_TOKEN) {
+
+  // Preferred auth path: short-lived role sessions.
+  const sessionToken = getSessionToken_(e, body);
+  if (sessionToken) {
+    if (isCoachRoute_(route)) {
+      return requireSessionRole_(sessionToken, ['coach', 'admin']);
+    }
+    if (isAdminRoute_(route)) {
+      return requireSessionRole_(sessionToken, ['admin']);
+    }
+  }
+
+  throw new Error('Unauthorized');
+}
+
+function isPublicRoute_(route) {
+  return [
+    'listItems',
+    'createItem',
+    'registerCoachPin',
+    'verifyCoachPin',
+    'getTraineeSessions',
+    'registerTraineeForSession',
+    'registerTraineePin',
+    'verifyTraineePin'
+  ].indexOf(String(route || '')) !== -1;
+}
+
+function isCoachRoute_(route) {
+  return [
+    'getCoachSessions',
+    'registerCoachForSession',
+    'removeCoachFromSession'
+  ].indexOf(String(route || '')) !== -1;
+}
+
+function isAdminRoute_(route) {
+  return [
+    'getSettings'
+  ].indexOf(String(route || '')) !== -1;
+}
+
+function getSessionToken_(e, body) {
+  if (body && body.sessionToken) {
+    return String(body.sessionToken);
+  }
+  if (e.parameter && e.parameter.sessionToken) {
+    return String(e.parameter.sessionToken);
+  }
+  return '';
+}
+
+function requireSessionRole_(sessionToken, allowedRoles) {
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get('session:' + sessionToken);
+  if (!raw) {
     throw new Error('Unauthorized');
   }
+
+  let session;
+  try {
+    session = JSON.parse(raw);
+  } catch (_err) {
+    throw new Error('Unauthorized');
+  }
+
+  if (!session || !session.role) {
+    throw new Error('Unauthorized');
+  }
+  if (allowedRoles.indexOf(session.role) === -1) {
+    throw new Error('Forbidden');
+  }
+  return session;
+}
+
+function createSession_(role, subject) {
+  const token = Utilities.getUuid() + Utilities.getUuid();
+  const cache = CacheService.getScriptCache();
+  const session = {
+    role: role,
+    subject: subject || '',
+    createdAt: new Date().toISOString()
+  };
+  cache.put('session:' + token, JSON.stringify(session), SESSION_TTL_SECONDS);
+  return {
+    sessionToken: token,
+    role: role,
+    expiresInSeconds: SESSION_TTL_SECONDS
+  };
+}
+
+function coachLogin_(payload) {
+  const mode = payload && payload.mode ? String(payload.mode) : '';
+  if (mode === 'pin') {
+    const coachData = verifyCoachPin_(payload);
+    if (!coachData) {
+      throw new Error('no_match_found');
+    }
+    return {
+      session: createSession_('coach', String(coachData.id || '')),
+      coachData: coachData
+    };
+  }
+
+  if (mode === 'password') {
+    const password = payload && payload.password ? String(payload.password) : '';
+    if (!COACH_PASSWORD || password !== COACH_PASSWORD) {
+      throw new Error('invalid_credentials');
+    }
+    return {
+      session: createSession_('coach', ''),
+      coachData: null
+    };
+  }
+
+  throw new Error('validation_failed');
+}
+
+function adminLogin_(payload) {
+  const password = payload && payload.password ? String(payload.password) : '';
+  if (!ADMIN_PASSWORD || password !== ADMIN_PASSWORD) {
+    throw new Error('invalid_credentials');
+  }
+  return {
+    session: createSession_('admin', 'admin')
+  };
 }
 
 /**

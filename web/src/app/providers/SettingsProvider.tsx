@@ -16,6 +16,7 @@ import { getSettings } from '../../features/settings/api/settings.api';
 import type { Setting, SettingsContextValue } from '../../features/settings/types';
 
 const SESSION_KEY = 'oqm_settings';
+const ADMIN_SESSION_TOKEN_KEY = 'oqm_admin_session_token';
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);
 
@@ -46,12 +47,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await getSettings();
-      setSettings(data);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+      const adminSessionToken = sessionStorage.getItem(ADMIN_SESSION_TOKEN_KEY) || '';
+      if (!adminSessionToken) {
+        setSettings([]);
+        sessionStorage.removeItem(SESSION_KEY);
+      } else {
+        const data = await getSettings(adminSessionToken);
+        setSettings(data);
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      setError(msg);
+      if (msg === 'Unauthorized') {
+        setSettings([]);
+        sessionStorage.removeItem(SESSION_KEY);
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

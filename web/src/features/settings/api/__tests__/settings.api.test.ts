@@ -9,7 +9,7 @@ import { getSettings } from '../settings.api';
 import type { Setting } from '../../types';
 
 const BASE = 'https://script.google.com/macros/s/TEST/exec';
-const TOKEN = 'test-token';
+const SESSION_TOKEN = 'admin-session-token';
 
 const mockSettings: Setting[] = [
   {
@@ -25,7 +25,6 @@ const mockSettings: Setting[] = [
 describe('getSettings', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GAS_BASE_URL', BASE);
-    vi.stubEnv('VITE_API_TOKEN', TOKEN);
     vi.stubGlobal('fetch', vi.fn());
   });
 
@@ -34,7 +33,7 @@ describe('getSettings', () => {
     vi.unstubAllGlobals();
   });
 
-  it('calls the correct URL with route=getSettings and token', async () => {
+  it('calls the correct URL with route=getSettings and sessionToken', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       new Response(JSON.stringify({ ok: true, data: mockSettings }), {
         status: 200,
@@ -42,11 +41,11 @@ describe('getSettings', () => {
       })
     );
 
-    await getSettings();
+    await getSettings(SESSION_TOKEN);
 
     const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
     expect(calledUrl).toContain('route=getSettings');
-    expect(calledUrl).toContain(`token=${encodeURIComponent(TOKEN)}`);
+    expect(calledUrl).toContain(`sessionToken=${encodeURIComponent(SESSION_TOKEN)}`);
     expect(calledUrl).toContain(BASE);
   });
 
@@ -58,7 +57,7 @@ describe('getSettings', () => {
       })
     );
 
-    await getSettings();
+    await getSettings(SESSION_TOKEN);
 
     const options = vi.mocked(fetch).mock.calls[0][1] as RequestInit;
     expect(options?.method).toBe('GET');
@@ -73,7 +72,7 @@ describe('getSettings', () => {
       })
     );
 
-    const result = await getSettings();
+    const result = await getSettings(SESSION_TOKEN);
     expect(result).toEqual(mockSettings);
   });
 
@@ -85,11 +84,15 @@ describe('getSettings', () => {
       })
     );
 
-    await expect(getSettings()).rejects.toThrow('Unauthorized');
+    await expect(getSettings(SESSION_TOKEN)).rejects.toThrow('Unauthorized');
   });
 
   it('throws when VITE_GAS_BASE_URL is not set', async () => {
     vi.stubEnv('VITE_GAS_BASE_URL', '');
-    await expect(getSettings()).rejects.toThrow('VITE_GAS_BASE_URL');
+    await expect(getSettings(SESSION_TOKEN)).rejects.toThrow('VITE_GAS_BASE_URL');
+  });
+
+  it('throws when sessionToken is missing', async () => {
+    await expect(getSettings('')).rejects.toThrow('Unauthorized');
   });
 });
