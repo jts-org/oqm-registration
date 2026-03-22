@@ -25,6 +25,8 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay/LoadingOverlay';
 import { SessionCard } from '../../features/coach/components/SessionCard';
@@ -52,6 +54,44 @@ function formatDateLabel(dateStr: string, locale: string): string {
   return `${weekday} ${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${year}`;
 }
 
+function toYmd(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseYmd(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function getWeekStartYmd(dateStr: string): string {
+  const date = parseYmd(dateStr);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + diff);
+  return toYmd(date);
+}
+
+function addDaysToYmd(dateStr: string, daysToAdd: number): string {
+  const date = parseYmd(dateStr);
+  date.setDate(date.getDate() + daysToAdd);
+  return toYmd(date);
+}
+
+function formatWeekTabDate(dateStr: string): string {
+  const [, month, day] = dateStr.split('-');
+  return `${day}.${month}`;
+}
+
+interface WeekGroup {
+  weekKey: string;
+  weekStart: string;
+  weekEnd: string;
+  dates: Array<[string, SessionItem[]]>;
+}
+
 /** Coach Quick Registration page displaying a 21-day window of sessions grouped by date. */
 export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
   const { t, i18n } = useTranslation();
@@ -65,6 +105,7 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
   const [sparringDialogOpen, setSparringDialogOpen] = useState(false);
   const [sparringDialogData, setSparringDialogData] = useState<{ firstname: string; lastname: string } | undefined>(undefined);
   const [selectedSession, setSelectedSession] = useState<SessionItem | null>(null);
+  const [activeWeekTab, setActiveWeekTab] = useState('');
   // Temporary CoachData built from manual name entry or PIN registration (OQM-0010).
   const [pendingCoachData, setPendingCoachData] = useState<CoachData | undefined>(undefined);
 
@@ -79,7 +120,7 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [sessionToken, t]);
 
   useEffect(() => {
     fetchSessions();
@@ -94,6 +135,43 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
     }
     return map;
   }, [sessions]);
+
+  /** Group already date-grouped sessions by calendar week (Mon-Sun). */
+  const sessionsByWeek = useMemo(() => {
+    const weekMap = new Map<string, WeekGroup>();
+    const dateEntries = Array.from(sessionsByDate.entries()).sort(([a], [b]) => a.localeCompare(b));
+
+    for (const [date, dateSessions] of dateEntries) {
+      const weekKey = getWeekStartYmd(date);
+      if (!weekMap.has(weekKey)) {
+        weekMap.set(weekKey, {
+          weekKey,
+          weekStart: weekKey,
+          weekEnd: addDaysToYmd(weekKey, 6),
+          dates: [],
+        });
+      }
+      weekMap.get(weekKey)!.dates.push([date, dateSessions]);
+    }
+
+    return weekMap;
+  }, [sessionsByDate]);
+
+  const weekTabs = useMemo(() => Array.from(sessionsByWeek.values()), [sessionsByWeek]);
+
+  useEffect(() => {
+    if (weekTabs.length === 0) {
+      if (activeWeekTab !== '') setActiveWeekTab('');
+      return;
+    }
+
+    const activeExists = weekTabs.some(week => week.weekKey === activeWeekTab);
+    if (activeExists) return;
+
+    const currentWeekKey = getWeekStartYmd(toYmd(new Date()));
+    const defaultWeek = weekTabs.find(week => week.weekKey === currentWeekKey) ?? weekTabs[0];
+    setActiveWeekTab(defaultWeek.weekKey);
+  }, [activeWeekTab, weekTabs]);
 
   const loggedInLabel = coachData?.alias
     ? t('coachQuickRegistration.loggedInAs', { name: coachData.alias })
@@ -279,26 +357,57 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
         </Card>
       )}
 
-      {Array.from(sessionsByDate.entries()).map(([date, dateSessions]) => (
-        <Card key={date} sx={{ mb: 3, borderRadius: 3 }}>
-          <CardContent>
-          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
-            {formatDateLabel(date, i18n.language)}
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
-            {dateSessions.map((session) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                onRegister={handleRegister}
-                onRemove={handleRemove}
-                cardStyle={{ width: '340px', height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-              />
-            ))}
-          </Box>
+      {!loading && !error && weekTabs.length > 0 && (
+        <Card sx={{ mb: 2, borderRadius: 3 }}>
+          <CardContent sx={{ pb: 1 }}>
+            <Tabs
+              value={activeWeekTab || false}
+              onChange={(_event, value: string) => setActiveWeekTab(value)}
+              variant={weekTabs.length <= 3 ? 'standard' : 'scrollable'}
+              centered={weekTabs.length <= 3}
+              scrollButtons={weekTabs.length <= 3 ? false : 'auto'}
+              allowScrollButtonsMobile
+              aria-label={t('coachQuickRegistration.weekTabsAriaLabel')}
+            >
+              {weekTabs.map(week => (
+                <Tab
+                  key={week.weekKey}
+                  value={week.weekKey}
+                  label={t('coachQuickRegistration.weekTabLabel', {
+                    start: formatWeekTabDate(week.weekStart),
+                    end: formatWeekTabDate(week.weekEnd),
+                  })}
+                />
+              ))}
+            </Tabs>
           </CardContent>
         </Card>
-      ))}
+      )}
+
+      {weekTabs
+        .filter(week => week.weekKey === activeWeekTab)
+        .map(week =>
+          week.dates.map(([date, dateSessions]) => (
+            <Card key={date} sx={{ mb: 3, borderRadius: 3 }}>
+              <CardContent>
+                <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
+                  {formatDateLabel(date, i18n.language)}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
+                  {dateSessions.map(session => (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      onRegister={handleRegister}
+                      onRemove={handleRemove}
+                      cardStyle={{ width: '340px', height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                    />
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          ))
+        )}
 
         <ConfirmCoachRegistrationDialog
         open={confirmRegisterOpen}

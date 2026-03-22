@@ -32,7 +32,17 @@ Odotettu tulos:
 
 Odotettu tulos:
 - Siirryt valmentajan pikailmoittautumiseen.
-- Harjoituskortit näkyvät päivittäin ryhmiteltyinä.
+- Harjoituskortit näkyvät viikkovälilehtien alla.
+
+## Selaa harjoituksia viikkovälilehdillä
+1. Avaa valmentajan pikailmoittautuminen.
+2. Käytä harjoituslistan yläpuolella olevia viikkovälilehtiä.
+3. Nykyinen kalenteriviikko valitaan oletuksena.
+4. Valitse toinen viikkovälilehti nähdäksesi kyseisen viikon harjoitukset.
+
+Odotettu tulos:
+- Näet vain valitun viikon harjoitukset.
+- Harjoitukset pysyvät päivittäin ryhmiteltyinä valitun viikon sisällä.
 
 ## Ilmoittaudu valmentajaksi harjoitukseen
 1. Etsi valmentajasivulta harjoituskortti.
