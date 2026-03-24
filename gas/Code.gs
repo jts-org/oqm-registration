@@ -8,7 +8,7 @@
  *  - POST { route: "coachLogin", payload: { mode: "pin"|"password", pin?|password? } } — create coach session token
  *  - POST { route: "adminLogin", payload: { password } } — create admin session token
  *  - POST { route: "createItem", payload: { name, email } }
- *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin } } — register a new coach PIN code (OQM-0003)
+ *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin, password } } — register a new coach PIN code (OQM-0003, OQM-0030)
  *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
  *  - POST { route: "registerCoachForSession", payload: { firstname, lastname, session_type, date, start_time?, end_time? } } — register coach for a session (OQM-0008/OQM-0011); returns overlapping_session|date|start|end for time conflicts
  *  - POST { route: "removeCoachFromSession", payload: { firstname, lastname, session_type, date } } — remove coach from a session (OQM-0009)
@@ -73,6 +73,9 @@ function doPost(e) {
     }
     if (route === 'registerCoachPin') {
       const result = registerCoachPin_(payload);
+      if (result.invalidPassword) {
+        return json_({ ok: false, error: 'invalid_password' });
+      }
       if (result.pinReserved) {
         return json_({ ok: false, error: 'pin_reserved' });
       }
@@ -386,8 +389,13 @@ function registerCoachPin_(payload) {
   const payloadLastname = String(payload.lastname).trim();
   const payloadAlias = String(payload.alias || '').trim();
   const payloadPin = String(payload.pin);
+  const payloadPassword = String(payload.password || '').trim();
   const payloadFirstnameLower = payloadFirstname.toLowerCase();
   const payloadLastnameLower = payloadLastname.toLowerCase();
+
+  if (!COACH_PASSWORD || payloadPassword !== COACH_PASSWORD) {
+    return { invalidPassword: true };
+  }
 
   const coachRows = getSheetData('coach_login');
   const matchingCoachIndex = coachRows.findIndex(r =>

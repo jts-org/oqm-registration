@@ -45,6 +45,7 @@ const NAME_PATTERN = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[- ][A-Za-zÀ-ÖØ-öø-ÿ]+)*
 const FIRSTNAME_PATTERN = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ .-][A-Za-zÀ-ÖØ-öø-ÿ]+)*\.?$/;
 
 type BusinessErrorCode =
+  | 'invalid_password'
   | 'pin_reserved'
   | 'concurrent_request'
   | 'name_already_exists'
@@ -160,6 +161,7 @@ export interface RegisterPinData {
   lastname: string;
   alias?: string;
   pin: string;
+  password?: string;
   isUnderage?: boolean;
   age?: number;
 }
@@ -215,6 +217,7 @@ export function RegisterPinDialog({
   const [age, setAge] = useState('');
   const [pin, setPin] = useState('');
   const [pinAgain, setPinAgain] = useState('');
+  const [password, setPassword] = useState('');
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [businessErrorCode, setBusinessErrorCode] = useState<BusinessErrorCode | null>(null);
@@ -230,6 +233,7 @@ export function RegisterPinDialog({
       setAge(initialIsUnderage ? String(resolvedAge ?? 15) : '');
       setPin('');
       setPinAgain('');
+      setPassword('');
       setDirty({});
       setIsSubmitting(false);
       setBusinessErrorCode(null);
@@ -257,6 +261,8 @@ export function RegisterPinDialog({
   const pinError = dirty.pin && pin.trim() === '' ? t('registerPin.mandatory') : null;
   const pinAgainError =
     dirty.pinAgain && pinAgain.trim() === '' ? t('registerPin.mandatory') : null;
+  const passwordError =
+    showAlias && dirty.password && password.trim() === '' ? t('registerPin.mandatory') : null;
 
   const pinMismatch =
     pin.length > 0 && pinAgain.length > 0 && pin !== pinAgain
@@ -279,7 +285,8 @@ export function RegisterPinDialog({
     aliasValid &&
     ageValid &&
     PIN_PATTERN.test(pin) &&
-    pin === pinAgain;
+    pin === pinAgain &&
+    (!showAlias || password.trim().length > 0);
 
   function buildPayload(): RegisterPinData {
     const basePayload: RegisterPinData = {
@@ -292,6 +299,7 @@ export function RegisterPinDialog({
       return {
         ...basePayload,
         alias: alias.trim(),
+        password: password.trim(),
       };
     }
 
@@ -323,6 +331,7 @@ export function RegisterPinDialog({
     } catch (err) {
       const code = err instanceof Error ? err.message : '';
       if (
+        code === 'invalid_password' ||
         code === 'pin_reserved' ||
         code === 'concurrent_request' ||
         code === 'name_already_exists' ||
@@ -351,6 +360,8 @@ export function RegisterPinDialog({
 
   function getBusinessErrorMessage(): string {
     switch (businessErrorCode) {
+      case 'invalid_password':
+        return t('registerPin.invalidPassword');
       case 'pin_reserved':
         return t('registerPin.pinReserved');
       case 'concurrent_request':
@@ -550,6 +561,23 @@ export function RegisterPinDialog({
                 />
               </Grid>
             </Grid>
+
+            {showAlias && (
+              <TextField
+                id="register-pin-password"
+                type="password"
+                label={t('registerPin.coachPassword')}
+                value={password}
+                onChange={e => {
+                  setPassword(e.target.value);
+                  markDirty('password');
+                }}
+                inputProps={{ 'aria-label': t('registerPin.coachPassword') }}
+                error={!!passwordError}
+                helperText={passwordError || ' '}
+                fullWidth
+              />
+            )}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

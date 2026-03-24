@@ -45,6 +45,11 @@ async function fillValidForm(pin = '1234') {
   await userEvent.type(screen.getByLabelText('Enter PIN again'), pin);
 }
 
+async function fillValidCoachForm(pin = '1234', password = 'secret') {
+  await fillValidForm(pin);
+  await userEvent.type(screen.getByLabelText('Coach password'), password);
+}
+
 describe('RegisterPinDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -85,9 +90,19 @@ describe('RegisterPinDialog', () => {
     expect(screen.getByLabelText('Alias')).toBeInTheDocument();
   });
 
+  it('renders coach password input when showAlias is true', () => {
+    render(<RegisterPinDialog {...defaultProps} />);
+    expect(screen.getByLabelText('Coach password')).toBeInTheDocument();
+  });
+
   it('does NOT render "Alias" input when showAlias=false', () => {
     render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
     expect(screen.queryByLabelText('Alias')).not.toBeInTheDocument();
+  });
+
+  it('does NOT render coach password input when showAlias=false', () => {
+    render(<RegisterPinDialog {...defaultProps} showAlias={false} />);
+    expect(screen.queryByLabelText('Coach password')).not.toBeInTheDocument();
   });
 
   it('renders trainee underage checkbox only when showAlias=false', () => {
@@ -219,15 +234,18 @@ describe('RegisterPinDialog', () => {
   it('Register button is enabled when firstname, lastname, and valid matching PINs are provided', async () => {
     render(<RegisterPinDialog {...defaultProps} />);
     await fillValidForm();
+    expect(screen.getByRole('button', { name: 'Register' })).toBeDisabled();
+  });
+
+  it('Register button is enabled in coach mode only after password is provided', async () => {
+    render(<RegisterPinDialog {...defaultProps} />);
+    await fillValidCoachForm();
     expect(screen.getByRole('button', { name: 'Register' })).toBeEnabled();
   });
 
   it('Register button is enabled when alias is empty (alias is optional)', async () => {
     render(<RegisterPinDialog {...defaultProps} />);
-    await userEvent.type(screen.getByLabelText('Firstname'), 'John');
-    await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
-    await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
-    await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
+    await fillValidCoachForm();
     // alias left empty
     expect(screen.getByRole('button', { name: 'Register' })).toBeEnabled();
   });
@@ -247,6 +265,7 @@ describe('RegisterPinDialog', () => {
     await userEvent.type(screen.getByLabelText('Lastname'), 'Nurmi');
     await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
     await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
+    await userEvent.type(screen.getByLabelText('Coach password'), 'secret');
     expect(screen.getByRole('button', { name: 'Register' })).toBeEnabled();
   });
 
@@ -265,6 +284,7 @@ describe('RegisterPinDialog', () => {
     await userEvent.type(screen.getByLabelText('Lastname'), 'von Kuckelkören');
     await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
     await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
+    await userEvent.type(screen.getByLabelText('Coach password'), 'secret');
     expect(screen.getByRole('button', { name: 'Register' })).toBeEnabled();
   });
 
@@ -311,13 +331,14 @@ describe('RegisterPinDialog', () => {
 
   it('calls onRegister with correct data when Register is clicked', async () => {
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm('4321');
+    await fillValidCoachForm('4321');
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
     expect(defaultProps.onRegister).toHaveBeenCalledWith({
       firstname: 'John',
       lastname: 'Doe',
       alias: '',
       pin: '4321',
+      password: 'secret',
     });
   });
 
@@ -329,7 +350,7 @@ describe('RegisterPinDialog', () => {
     defaultProps.onRegister.mockReturnValue(pendingRegister);
 
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(mockToast).toHaveBeenCalledWith('Registration ongoing. Please wait.');
@@ -378,14 +399,14 @@ describe('RegisterPinDialog', () => {
 
   it('calls onSuccess with the PIN after successful registration', async () => {
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm('4321');
+    await fillValidCoachForm('4321');
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
     await waitFor(() => expect(defaultProps.onSuccess).toHaveBeenCalledWith('4321'));
   });
 
   it('calls toast.success after successful registration', async () => {
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
     await waitFor(() => expect(mockToast.success).toHaveBeenCalled());
   });
@@ -397,9 +418,10 @@ describe('RegisterPinDialog', () => {
     await userEvent.type(screen.getByLabelText('Alias'), 'JD');
     await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
     await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
+    await userEvent.type(screen.getByLabelText('Coach password'), 'secret');
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
     expect(defaultProps.onRegister).toHaveBeenCalledWith(
-      expect.objectContaining({ alias: 'JD' })
+      expect.objectContaining({ alias: 'JD', password: 'secret' })
     );
   });
 
@@ -408,7 +430,7 @@ describe('RegisterPinDialog', () => {
   it('shows pin_reserved modal when onRegister throws "pin_reserved"', async () => {
     defaultProps.onRegister.mockRejectedValue(new Error('pin_reserved'));
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
     await waitFor(() =>
       expect(screen.getByText('PIN code reserved. Choose different PIN code.')).toBeInTheDocument()
@@ -461,7 +483,7 @@ describe('RegisterPinDialog', () => {
     defaultProps.onRegister.mockRejectedValue(new Error('mismatching_aliases'));
     render(<RegisterPinDialog {...defaultProps} />);
 
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.type(screen.getByLabelText('Alias'), 'JD');
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
 
@@ -476,7 +498,7 @@ describe('RegisterPinDialog', () => {
     defaultProps.onRegister.mockRejectedValue(new Error('already_registered'));
     render(<RegisterPinDialog {...defaultProps} />);
 
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     await waitFor(() => {
@@ -488,7 +510,7 @@ describe('RegisterPinDialog', () => {
     defaultProps.onRegister.mockRejectedValue(new Error('pins_do_not_match'));
     render(<RegisterPinDialog {...defaultProps} />);
 
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     await waitFor(() => {
@@ -505,6 +527,7 @@ describe('RegisterPinDialog', () => {
     await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
     await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
     await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
+    await userEvent.type(screen.getByLabelText('Coach password'), 'secret');
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
     await waitFor(() =>
       expect(screen.getByText('PIN code reserved. Choose different PIN code.')).toBeInTheDocument()
@@ -524,9 +547,21 @@ describe('RegisterPinDialog', () => {
   it('calls toast.error on network/unexpected error', async () => {
     defaultProps.onRegister.mockRejectedValue(new Error('Network error'));
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
     await waitFor(() => expect(mockToast.error).toHaveBeenCalled());
+  });
+
+  it('shows invalid_password message when onRegister throws "invalid_password"', async () => {
+    defaultProps.onRegister.mockRejectedValue(new Error('invalid_password'));
+    render(<RegisterPinDialog {...defaultProps} />);
+
+    await fillValidCoachForm();
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Wrong password. Try again.')).toBeInTheDocument();
+    });
   });
 
   // ── Cancel ────────────────────────────────────────────────────────────────
@@ -594,7 +629,7 @@ describe('RegisterPinDialog', () => {
     defaultProps.onRegister.mockReturnValue(pendingRegister);
 
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(screen.getByRole('status')).toBeInTheDocument();
@@ -608,7 +643,7 @@ describe('RegisterPinDialog', () => {
     defaultProps.onRegister.mockReturnValue(pendingRegister);
 
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     resolveRegister();
@@ -621,10 +656,22 @@ describe('RegisterPinDialog', () => {
     defaultProps.onRegister.mockReturnValue(pendingRegister);
 
     render(<RegisterPinDialog {...defaultProps} />);
-    await fillValidForm();
+    await fillValidCoachForm();
     await userEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     rejectRegister(new Error('Network error'));
     await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+  });
+
+  it('clears coach password when the dialog is reopened', async () => {
+    const { rerender } = render(<RegisterPinDialog {...defaultProps} />);
+
+    await fillValidCoachForm();
+
+    rerender(<RegisterPinDialog {...defaultProps} open={false} />);
+    rerender(<RegisterPinDialog {...defaultProps} />);
+
+    expect(screen.getByLabelText('Coach password')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Register' })).toBeDisabled();
   });
 });

@@ -77,7 +77,7 @@ Odotettu tulos:
 
 ## Rekisteröi uusi PIN-koodi (valmentaja)
 1. Valitse valmentajan kirjautumisikkunassa Rekisteröi uusi PIN-koodi.
-2. Täytä etunimi, sukunimi, mahdollinen alias ja PIN-kentät.
+2. Täytä etunimi, sukunimi, mahdollinen alias, PIN-kentät ja valmentajan salasana.
 3. Valitse Rekisteröi.
 4. Palaa kirjautumiseen ja tarkista uusi PIN.
 
@@ -88,6 +88,8 @@ Mahdolliset rekisteröintikonfliktiviestit:
   - Käytä olemassa olevaa PIN-koodiasi valmentajakirjautumisessa.
 - Samalla nimellä oleva valmentaja on jo rekisteröity, mutta PIN-koodi ei täsmää.
   - Tarkista PIN-koodi tai ota yhteys ylläpitoon, jos et tiedä alkuperäistä PIN-koodia.
+- Väärä salasana. Yritä uudelleen.
+  - Syötä valmentajan salasana uudelleen ja yritä heti uudelleen. Muut kenttiin syötetyt tiedot pysyvät käytettävissä.
 
 ## Muut hyödylliset toiminnot
 - Päivitä tiedot: lataa harjoituslista uudelleen.
