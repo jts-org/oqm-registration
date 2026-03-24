@@ -77,7 +77,7 @@ Expected result:
 
 ## Register New PIN Code (Coach)
 1. In Coach login dialog, select Register new PIN code.
-2. Fill first name, last name, optional alias, and PIN fields.
+2. Fill first name, last name, optional alias, PIN fields, and coach password.
 3. Select Register.
 4. Return to login and verify with the new PIN.
 
@@ -88,6 +88,8 @@ Possible registration conflict messages:
   - Use your existing PIN in Coach login.
 - Coach with the same name already registered but pins unmatch.
   - Verify your PIN or contact an administrator if you do not know the original PIN.
+- Wrong password. Try again.
+  - Re-enter the coach password and retry. Your other entered values remain available so you can try again immediately.
 
 ## Other Useful Actions
 - Refresh data: reloads the current session list.

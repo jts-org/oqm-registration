@@ -101,7 +101,7 @@ test('registerCoachPin_ returns mismatchingAliases when row alias exists but pay
     return [];
   };
 
-  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234' });
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', password: 'test' });
 
   assert.deepEqual(toPlain(result), { mismatchingAliases: true });
 });
@@ -115,7 +115,7 @@ test('registerCoachPin_ returns mismatchingAliases when aliases differ', () => {
     return [];
   };
 
-  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'Johnny', pin: '1234' });
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'Johnny', pin: '1234', password: 'test' });
 
   assert.deepEqual(toPlain(result), { mismatchingAliases: true });
 });
@@ -129,7 +129,7 @@ test('registerCoachPin_ returns alreadyRegistered when same-name row has same pi
     return [];
   };
 
-  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234' });
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', password: 'test' });
 
   assert.deepEqual(toPlain(result), { alreadyRegistered: true });
 });
@@ -143,7 +143,7 @@ test('registerCoachPin_ returns pinsDoNotMatch when same-name row has different 
     return [];
   };
 
-  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234' });
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', password: 'test' });
 
   assert.deepEqual(toPlain(result), { pinsDoNotMatch: true });
 });
@@ -178,7 +178,7 @@ test('registerCoachPin_ updates same-name row with empty pin and sets last_activ
     return null;
   };
 
-  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234' });
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', password: 'test' });
 
   assert.equal(result.id, 'id-1');
   assert.equal(result.firstname, 'John');
@@ -225,7 +225,7 @@ test('registerCoachPin_ stores payload alias into row alias when same-name row a
     return null;
   };
 
-  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234' });
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', password: 'test' });
 
   assert.equal(result.alias, 'JD');
   assert.equal(updates.length, 3);
@@ -259,7 +259,7 @@ test('registerCoachPin_ keeps no-match path by appending a new row', () => {
     return null;
   };
 
-  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234' });
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', password: 'test' });
 
   assert.equal(result.id, 'uuid-1');
   assert.equal(result.firstname, 'John');
@@ -272,6 +272,54 @@ test('registerCoachPin_ keeps no-match path by appending a new row', () => {
   assert.equal(appendedRows[0][2], 'Doe');
   assert.equal(appendedRows[0][3], 'JD');
   assert.equal(appendedRows[0][4], '1234');
+});
+
+test('registerCoachPin_ returns invalidPassword when password is missing', () => {
+  const sandbox = createSandbox();
+  let sheetReads = 0;
+
+  sandbox.getSheetData = () => {
+    sheetReads += 1;
+    return [];
+  };
+
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234' });
+
+  assert.deepEqual(toPlain(result), { invalidPassword: true });
+  assert.equal(sheetReads, 0);
+});
+
+test('registerCoachPin_ returns invalidPassword when password is incorrect', () => {
+  const sandbox = createSandbox();
+  let sheetReads = 0;
+
+  sandbox.getSheetData = () => {
+    sheetReads += 1;
+    return [];
+  };
+
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', password: 'wrong' });
+
+  assert.deepEqual(toPlain(result), { invalidPassword: true });
+  assert.equal(sheetReads, 0);
+});
+
+test('registerCoachPin_ validates password before alias conflict checks', () => {
+  const sandbox = createSandbox();
+  let sheetReads = 0;
+
+  sandbox.getSheetData = sheetName => {
+    sheetReads += 1;
+    if (sheetName === 'coach_login') {
+      return [['id-1', 'John', 'Doe', 'JD', '', '2026-01-01T00:00:00.000Z', '']];
+    }
+    return [];
+  };
+
+  const result = sandbox.registerCoachPin_({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', password: 'wrong' });
+
+  assert.deepEqual(toPlain(result), { invalidPassword: true });
+  assert.equal(sheetReads, 0);
 });
 
 test('registerCoachForSession_ appends lowercase session_type to coach_registrations', () => {
@@ -313,8 +361,15 @@ test('registerCoachForSession_ appends lowercase session_type to coach_registrat
 
 test('doPost returns new registerCoachPin error codes to frontend', () => {
   const sandbox = createSandbox();
-  sandbox.registerCoachPin_ = () => ({ mismatchingAliases: true });
+  sandbox.registerCoachPin_ = () => ({ invalidPassword: true });
   let result = sandbox.doPost({
+    postData: { contents: JSON.stringify({ route: 'registerCoachPin', payload: {}, token: 'test' }) },
+    parameter: {},
+  });
+  assert.deepEqual(JSON.parse(result.payload), { ok: false, error: 'invalid_password' });
+
+  sandbox.registerCoachPin_ = () => ({ mismatchingAliases: true });
+  result = sandbox.doPost({
     postData: { contents: JSON.stringify({ route: 'registerCoachPin', payload: {}, token: 'test' }) },
     parameter: {},
   });

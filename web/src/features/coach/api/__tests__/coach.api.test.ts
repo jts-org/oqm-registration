@@ -105,6 +105,15 @@ describe('registerCoachPin', () => {
     ).rejects.toThrow('pins_do_not_match');
   });
 
+  it('throws "invalid_password" unchanged when backend returns that error', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: false, error: 'invalid_password' }),
+    });
+    await expect(
+      registerCoachPin({ firstname: 'John', lastname: 'Doe', alias: '', pin: '1234', password: 'secret' } as any)
+    ).rejects.toThrow('invalid_password');
+  });
+
   it('throws with backend error message on other errors', async () => {
     mockFetch.mockResolvedValue({
       json: async () => ({ ok: false, error: 'Unauthorized' }),

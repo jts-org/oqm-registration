@@ -23,6 +23,7 @@ import type {
  * Register a new coach PIN code by posting to the GAS backend.
  * POST { route: "registerCoachPin", payload: RegisterPinData }
  * Returns the newly created CoachData on success (OQM-0010: used to pre-fill ConfirmCoachRegistrationDialog).
+ * Throws Error('invalid_password') when coach entitlement password is missing or incorrect.
  * Throws Error('pin_reserved') if the PIN already exists in coach_login or trainee_login.
  * Throws Error('mismatching_aliases') when same-name coach aliases differ.
  * Throws Error('already_registered') when same-name coach is already registered with the same PIN.

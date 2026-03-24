@@ -88,6 +88,43 @@
 }
 ```
 
+## Coach PIN Registration Contract
+### Request
+```json
+{
+  "route": "registerCoachPin",
+  "payload": {
+    "firstname": "John",
+    "lastname": "Doe",
+    "alias": "JD",
+    "pin": "1234",
+    "password": "coach-password"
+  }
+}
+```
+
+### Response (success)
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "uuid",
+    "firstname": "John",
+    "lastname": "Doe",
+    "alias": "JD",
+    "pin": "1234",
+    "created_at": "ISO-8601"
+  }
+}
+```
+
+### Response (errors)
+- `invalid_password` when the coach password is missing or incorrect.
+- `pin_reserved` when the PIN already exists in coach_login or trainee_login.
+- `mismatching_aliases` when the same-name coach row has a different stored alias.
+- `already_registered` when the same-name coach row already has the same PIN.
+- `pins_do_not_match` when the same-name coach row already has a different PIN.
+
 ## Admin Login Contract
 ### Request
 ```json
