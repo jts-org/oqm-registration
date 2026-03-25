@@ -1377,6 +1377,8 @@ function getTraineeSessions_() {
     const endDate = timeToStr(row[5], tz, 'yyyy-MM-dd');
     if (endDate < windowStart || startDate > windowEnd) return;
     campMap[campId] = {
+      name: String(row[1] || '').trim(),
+      alias: String(row[2] || '').trim(),
       instructor: String(row[3] || '').trim(),
     };
   });
@@ -1396,8 +1398,8 @@ function getTraineeSessions_() {
 
     campSessions.push({
       id: 'camp_' + String(row[0] || '') + '_' + dateStr,
-      session_type: sessionName,
-      session_type_alias: sessionName,
+      session_type: camp.name + (sessionName ? ' - ' + sessionName : ''),
+      session_type_alias: (camp.alias || camp.name) + (sessionName ? ' - ' + sessionName : ''),
       date: dateStr,
       start_time: timeToStr(row[4], tz, 'HH:mm'),
       end_time: timeToStr(row[5], tz, 'HH:mm'),

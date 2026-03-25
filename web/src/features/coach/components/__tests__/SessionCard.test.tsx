@@ -127,4 +127,33 @@ describe('SessionCard', () => {
     renderCard(baseSession);
     expect(screen.getByRole('button', { name: 'Register' })).not.toBeDisabled();
   });
+
+  it('does not render Remove button for camp session even when coach is assigned', () => {
+    const campSessionWithCoach: SessionItem = {
+      ...sessionWithCoach,
+      id: 'camp_1_2026-03-09',
+    };
+
+    renderCard(campSessionWithCoach);
+
+    expect(screen.getByText('Kickboxing')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+  });
+
+  it('does not render Register button for camp session when coach is not assigned', () => {
+    const campSessionWithoutCoach: SessionItem = {
+      ...baseSession,
+      id: 'camp_2_2026-03-09',
+    };
+
+    renderCard(campSessionWithoutCoach);
+
+    expect(screen.getByText('Kickboxing')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Register' })).not.toBeInTheDocument();
+  });
+
+  it('keeps non-camp Remove behavior unchanged when coach is assigned', () => {
+    renderCard(sessionWithCoach);
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+  });
 });

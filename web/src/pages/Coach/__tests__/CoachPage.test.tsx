@@ -107,6 +107,13 @@ function buildMultiWeekSessions(): [SessionItem, SessionItem] {
   ];
 }
 
+async function renderCoachPageAndWait(props?: React.ComponentProps<typeof CoachPage>) {
+  render(<CoachPage onBack={vi.fn()} {...props} />);
+  await waitFor(() => {
+    expect(mockGetCoachSessions).toHaveBeenCalled();
+  });
+}
+
 describe('CoachPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -114,17 +121,17 @@ describe('CoachPage', () => {
   });
 
   it('renders title "Coach Quick Registration"', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByRole('heading', { name: 'Coach Quick Registration' })).toBeInTheDocument();
   });
 
   it('renders Back to main button', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByRole('button', { name: 'Back to main' })).toBeInTheDocument();
   });
 
   it('renders Refresh data button', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByRole('button', { name: 'Refresh data' })).toBeInTheDocument();
   });
 
@@ -136,7 +143,7 @@ describe('CoachPage', () => {
   });
 
   it('shows "You are not registered" when no coachData provided', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByText(/You are not registered/)).toBeInTheDocument();
   });
 
@@ -145,7 +152,7 @@ describe('CoachPage', () => {
       id: '1', firstname: 'John', lastname: 'Doe', alias: 'JD',
       pin: '1234', created_at: '', last_activity: '',
     };
-    render(<CoachPage onBack={vi.fn()} coachData={coachData} />);
+    await renderCoachPageAndWait({ coachData });
     expect(screen.getByText(/JD/)).toBeInTheDocument();
   });
 
@@ -241,6 +248,68 @@ describe('CoachPage', () => {
     expect(screen.getByText('Confirm Removal')).toBeInTheDocument();
   });
 
+  it('renders camp session card without action button while non-camp keeps Remove action', async () => {
+    const campSessionWithCoach: SessionItem = {
+      ...mockSession,
+      id: 'camp_1_2026-03-09',
+      session_type: 'Camp Session',
+      coach_alias: 'CampCoach',
+      coach_firstname: 'Camp',
+      coach_lastname: 'Coach',
+      registration_id: 'camp-reg-1',
+    };
+    const nonCampSessionWithCoach: SessionItem = {
+      ...mockSession,
+      id: 'ws-2_2026-03-09',
+      session_type: 'Regular Session',
+      coach_alias: 'JD',
+      coach_firstname: 'John',
+      coach_lastname: 'Doe',
+      registration_id: 'reg-1',
+    };
+
+    mockGetCoachSessions.mockResolvedValue([campSessionWithCoach, nonCampSessionWithCoach]);
+    render(<CoachPage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Camp Session')).toBeInTheDocument();
+      expect(screen.getByText('Regular Session')).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByRole('button', { name: 'Remove' })).toHaveLength(1);
+  });
+
+  it('still opens ConfirmRemoveCoachDialog when Remove is clicked for non-camp session in mixed data', async () => {
+    const campSessionWithCoach: SessionItem = {
+      ...mockSession,
+      id: 'camp_2_2026-03-09',
+      session_type: 'Camp Session',
+      coach_alias: 'CampCoach',
+      coach_firstname: 'Camp',
+      coach_lastname: 'Coach',
+      registration_id: 'camp-reg-2',
+    };
+    const nonCampSessionWithCoach: SessionItem = {
+      ...mockSession,
+      id: 'ws-3_2026-03-09',
+      session_type: 'Regular Session',
+      coach_alias: 'JD',
+      coach_firstname: 'John',
+      coach_lastname: 'Doe',
+      registration_id: 'reg-2',
+    };
+
+    mockGetCoachSessions.mockResolvedValue([campSessionWithCoach, nonCampSessionWithCoach]);
+    render(<CoachPage onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Regular Session')).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(screen.getByText('Confirm Removal')).toBeInTheDocument();
+  });
+
   it('passes selected session and coachData to ConfirmCoachRegistrationDialog', async () => {
     const coachData = { id: '1', firstname: 'John', lastname: 'Doe', alias: 'JD', pin: '1234', created_at: '', last_activity: '' };
     mockGetCoachSessions.mockResolvedValue([mockSession]);
@@ -285,7 +354,7 @@ describe('CoachPage', () => {
   });
 
   it('renders "Free/sparring session" button', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByRole('button', { name: 'Free/sparring session' })).toBeInTheDocument();
   });
 

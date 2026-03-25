@@ -61,6 +61,9 @@ Odotettu tulos:
 3. Lue varoitus vahvistusikkunassa.
 4. Valitse Vahvista poistaaksesi ilmoittautumisen.
 
+Huomio:
+- Leirisessioiden korteilla ei näytetä Poista- tai Ilmoittaudu-toimintoja.
+
 Odotettu tulos:
 - Näet viestin Ilmoittautuminen poistettu onnistuneesti.
 - Kortti palautuu vapaaseen tilaan.

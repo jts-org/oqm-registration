@@ -61,6 +61,9 @@ Expected result:
 3. Read the warning in the confirmation dialog.
 4. Select Confirm to remove.
 
+Note:
+- Camp sessions do not show Remove or Register actions on the session card.
+
 Expected result:
 - You see Registration removed successfully.
 - Session card returns to available state.

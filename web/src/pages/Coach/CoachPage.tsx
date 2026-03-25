@@ -190,6 +190,9 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
   }
 
   function handleRemove(session: SessionItem) {
+    if (session.id.startsWith('camp_')) {
+      return;
+    }
     setSelectedSession(session);
     setConfirmRemoveOpen(true);
   }
