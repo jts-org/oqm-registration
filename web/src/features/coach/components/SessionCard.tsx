@@ -34,6 +34,7 @@ export function SessionCard({ session, onRegister, onRemove, cardStyle }: Sessio
   const theme = useTheme();
 
   const hasCoach = Boolean(session.coach_alias || session.coach_firstname);
+  const isCampSession = session.id.startsWith('camp_');
 
   const backgroundColor = hasCoach
     ? theme.palette.success.main
@@ -65,30 +66,32 @@ export function SessionCard({ session, onRegister, onRemove, cardStyle }: Sessio
             </Typography>
           )}
         </CardContent>
-        <CardActions sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-          {hasCoach ? (
-            <Button
-              size="small"
-              variant="contained"
-              color="error"
-              onClick={() => onRemove(session)}
-              sx={{ border: '1px solid #000' }}
-            >
-              {t('coachQuickRegistration.remove')}
-            </Button>
-          ) : (
-            <Button
-              size="small"
-              variant="contained"
-              color="primary"
-              onClick={() => onRegister(session)}
-              disabled={isRegisterDisabled}
-              sx={{ border: '1px solid #000' }}
-            >
-              {t('coachQuickRegistration.register')}
-            </Button>
-          )}
-        </CardActions>
+        {!isCampSession && (
+          <CardActions sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
+            {hasCoach ? (
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                onClick={() => onRemove(session)}
+                sx={{ border: '1px solid #000' }}
+              >
+                {t('coachQuickRegistration.remove')}
+              </Button>
+            ) : (
+              <Button
+                size="small"
+                variant="contained"
+                color="primary"
+                onClick={() => onRegister(session)}
+                disabled={isRegisterDisabled}
+                sx={{ border: '1px solid #000' }}
+              >
+                {t('coachQuickRegistration.register')}
+              </Button>
+            )}
+          </CardActions>
+        )}
       </Box>
     </Card>
   );
