@@ -107,6 +107,13 @@ function buildMultiWeekSessions(): [SessionItem, SessionItem] {
   ];
 }
 
+async function renderCoachPageAndWait(props?: React.ComponentProps<typeof CoachPage>) {
+  render(<CoachPage onBack={vi.fn()} {...props} />);
+  await waitFor(() => {
+    expect(mockGetCoachSessions).toHaveBeenCalled();
+  });
+}
+
 describe('CoachPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -114,17 +121,17 @@ describe('CoachPage', () => {
   });
 
   it('renders title "Coach Quick Registration"', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByRole('heading', { name: 'Coach Quick Registration' })).toBeInTheDocument();
   });
 
   it('renders Back to main button', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByRole('button', { name: 'Back to main' })).toBeInTheDocument();
   });
 
   it('renders Refresh data button', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByRole('button', { name: 'Refresh data' })).toBeInTheDocument();
   });
 
@@ -136,7 +143,7 @@ describe('CoachPage', () => {
   });
 
   it('shows "You are not registered" when no coachData provided', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByText(/You are not registered/)).toBeInTheDocument();
   });
 
@@ -145,7 +152,7 @@ describe('CoachPage', () => {
       id: '1', firstname: 'John', lastname: 'Doe', alias: 'JD',
       pin: '1234', created_at: '', last_activity: '',
     };
-    render(<CoachPage onBack={vi.fn()} coachData={coachData} />);
+    await renderCoachPageAndWait({ coachData });
     expect(screen.getByText(/JD/)).toBeInTheDocument();
   });
 
@@ -347,7 +354,7 @@ describe('CoachPage', () => {
   });
 
   it('renders "Free/sparring session" button', async () => {
-    render(<CoachPage onBack={vi.fn()} />);
+    await renderCoachPageAndWait();
     expect(screen.getByRole('button', { name: 'Free/sparring session' })).toBeInTheDocument();
   });
 
