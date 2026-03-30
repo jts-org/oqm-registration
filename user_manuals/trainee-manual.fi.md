@@ -53,6 +53,7 @@ Odotettu tulos:
 - Näet onnistumisviestin PIN-koodin tarkistuksesta.
 - Olet kirjautuneena.
 - Rekisteröi PIN- ja Kirjaudu-painikkeet poistuvat käytöstä kirjautumisen aikana.
+- Olemassa olevat ilmoittautumiset näkyvän 21 päivän ikkunassa päivittyvät automaattisesti ilmoittautuneiksi korteiksi.
 
 ## Rekisteröi uusi PIN (harrastaja)
 1. Valitse harrastajasivulla Rekisteröi PIN.
@@ -63,10 +64,12 @@ Odotettu tulos:
 Odotettu tulos:
 - Näet viestin PIN-koodi rekisteröity onnistuneesti.
 - Voit jatkaa ilmoittautumisia kirjautuneena.
+- Olemassa olevat ilmoittautumiset näkyvän 21 päivän ikkunassa päivittyvät automaattisesti ilmoittautuneiksi korteiksi.
 
 ## Muut hyödylliset toiminnot
 - Päivitä tiedot: lataa harjoituslista uudelleen.
 - Kirjaudu ulos: tyhjentää kirjautumistiedot ja päivittää listan.
+- Uloskirjautumisen jälkeen kirjautumiseen perustuvat ilmoittautumismerkinnät poistuvat korteilta.
 - Takaisin etusivulle: palaa etusivulle.
 
 ## Virheet ja toipuminen

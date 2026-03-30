@@ -11,7 +11,8 @@
 - `POST { route: "createItem", payload }`
 - `POST { route: "registerCoachPin", payload }`
 - `POST { route: "verifyCoachPin", payload }` (legacy-compatible; `coachLogin` is preferred)
-- `GET ?route=getTraineeSessions`
+- `GET ?route=getTraineeSessions` for anonymous trainee session loading
+- `POST { route: "getTraineeSessions", payload?: { first_name, last_name, age_group, underage_age? } }`
 - `POST { route: "registerTraineePin", payload }`
 - `POST { route: "verifyTraineePin", payload }`
 - `POST { route: "registerTraineeForSession", payload }`
@@ -156,6 +157,49 @@
 - Settings fetch requires admin session token.
 - Coach page requests must pass coach `sessionToken`.
 - Remove any new usage of `VITE_API_TOKEN` and shared token query/body parameters.
+
+## Get Trainee Sessions Contract (OQM-0033)
+### Request
+```json
+{
+  "route": "getTraineeSessions",
+  "payload": {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "age_group": "adult"
+  }
+}
+```
+
+- `payload` is optional.
+- Frontend should use `GET ?route=getTraineeSessions` when trainee identity is not yet known.
+- When trainee identity is known, frontend should use POST with `payload` to receive trainee-specific registration flags.
+- Identity matching uses `first_name + last_name + age_group`; for `underage`, `underage_age` must also match.
+
+### Response (success)
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "weekly-basic_2026-03-30",
+      "session_type": "Basic",
+      "session_type_alias": "Basic",
+      "date": "2026-03-30",
+      "start_time": "18:00",
+      "end_time": "19:00",
+      "location": "Main Hall",
+      "coach_firstname": "",
+      "coach_lastname": "",
+      "camp_instructor_name": "",
+      "is_free_sparring": false,
+      "trainee_registered": true
+    }
+  ]
+}
+```
+
+- `trainee_registered` is set to `true` only for sessions where a matching row exists in `trainee_registrations` for the same session/date/time in the 21-day window.
 
 ## Script Properties (Apps Script)
 - `SHEET_ID`

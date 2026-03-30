@@ -114,12 +114,12 @@ export function TraineePage({ onBack }: TraineePageProps) {
   /** Captures the submitted RegisterPinData so onSuccess can build PendingTraineeData. */
   const pendingRegisterPinDataRef = useRef<RegisterPinData | null>(null);
 
-  const fetchSessions = useCallback(async () => {
+  const fetchSessions = useCallback(async (identity?: PendingTraineeData) => {
     setLoading(true);
     setError(null);
     toast(t('traineeRegistration.fetchingSessions'));
     try {
-      const data = await getTraineeSessions();
+      const data = await getTraineeSessions(identity);
       setSessions(data);
     } catch {
       setError(t('traineeRegistration.loadError'));
@@ -196,6 +196,7 @@ export function TraineePage({ onBack }: TraineePageProps) {
   function handleConfirmSuccess(_registrationId: string) {
     setConfirmDialogOpen(false);
     setManualDialogOpen(false);
+    const resolvedTrainee = confirmTraineeData;
     if (selectedSession) {
       setSessions(prev => prev.map(session => (
         session.id === selectedSession.id
@@ -203,14 +204,16 @@ export function TraineePage({ onBack }: TraineePageProps) {
           : session
       )));
     }
-    if (confirmTraineeData) {
-      setPendingTraineeData(confirmTraineeData);
+    if (resolvedTrainee) {
+      setPendingTraineeData(resolvedTrainee);
+      fetchSessions(resolvedTrainee);
     }
   }
 
   function handleAlreadyRegistered() {
     setConfirmDialogOpen(false);
     setManualDialogOpen(false);
+    const resolvedTrainee = confirmTraineeData;
     if (selectedSession) {
       setSessions(prev => prev.map(session => (
         session.id === selectedSession.id
@@ -218,8 +221,9 @@ export function TraineePage({ onBack }: TraineePageProps) {
           : session
       )));
     }
-    if (confirmTraineeData) {
-      setPendingTraineeData(confirmTraineeData);
+    if (resolvedTrainee) {
+      setPendingTraineeData(resolvedTrainee);
+      fetchSessions(resolvedTrainee);
     }
   }
 
@@ -247,11 +251,13 @@ export function TraineePage({ onBack }: TraineePageProps) {
   function handleLoginSuccess(trainee: TraineeData) {
     setLoginDialogOpen(false);
     setTraineePinRegistered(true);
-    setPendingTraineeData({
+    const resolvedTrainee: PendingTraineeData = {
       first_name: trainee.firstname,
       last_name: trainee.lastname,
       age_group: 'adult',
-    });
+    };
+    setPendingTraineeData(resolvedTrainee);
+    fetchSessions(resolvedTrainee);
   }
 
   function handleLoginCancel() {
@@ -278,12 +284,14 @@ export function TraineePage({ onBack }: TraineePageProps) {
     setRegisterPinDialogOpen(false);
     setTraineePinRegistered(true);
     if (data) {
-      setPendingTraineeData({
+      const resolvedTrainee: PendingTraineeData = {
         first_name: data.firstname,
         last_name: data.lastname,
         age_group: data.isUnderage ? 'underage' : 'adult',
         underage_age: data.isUnderage && data.age !== undefined ? data.age : undefined,
-      });
+      };
+      setPendingTraineeData(resolvedTrainee);
+      fetchSessions(resolvedTrainee);
     }
   }
 
@@ -347,7 +355,15 @@ export function TraineePage({ onBack }: TraineePageProps) {
               {t('traineeRegistration.logout')}
             </Button>
 
-            <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchSessions} sx={{ flex: 1 }} disabled={loading}>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={() => {
+                fetchSessions();
+              }}
+              sx={{ flex: 1 }}
+              disabled={loading}
+            >
               {t('coachQuickRegistration.refreshData')}
             </Button>
 
