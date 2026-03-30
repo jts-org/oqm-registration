@@ -104,7 +104,12 @@ function buildMultiWeekSessions(): [TraineeSessionItem, TraineeSessionItem] {
 describe('TraineePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetTraineeSessions.mockResolvedValue([mockSession]);
+    mockGetTraineeSessions.mockImplementation(async identity => {
+      if (identity) {
+        return [{ ...mockSession, trainee_registered: true }];
+      }
+      return [mockSession];
+    });
     mockRegisterTraineeForSession.mockResolvedValue('reg-1');
     mockVerifyTraineePin.mockResolvedValue({
       id: 'trainee-pin-1',
@@ -297,7 +302,12 @@ async function fillRegisterPinForm(firstname = 'Jane', pin = '1234') {
 describe('OQM-0019 — trainee PIN registration from TraineePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetTraineeSessions.mockResolvedValue([mockSession]);
+    mockGetTraineeSessions.mockImplementation(async identity => {
+      if (identity) {
+        return [{ ...mockSession, trainee_registered: true }];
+      }
+      return [mockSession];
+    });
     mockRegisterTraineeForSession.mockResolvedValue('reg-1');
     mockVerifyTraineePin.mockResolvedValue({
       id: 'trainee-pin-1',
@@ -419,6 +429,14 @@ describe('OQM-0019 — trainee PIN registration from TraineePage', () => {
     expect(screen.getByRole('button', { name: 'Register PIN' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Login' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Log out' })).not.toBeDisabled();
+
+    await waitFor(() => {
+      expect(mockGetTraineeSessions).toHaveBeenLastCalledWith({
+        first_name: 'Jane',
+        last_name: 'Doe',
+        age_group: 'adult',
+      });
+    });
   });
 
   it('concurrent_request error keeps dialog open with correct message', async () => {
@@ -517,7 +535,12 @@ describe('OQM-0019 — trainee PIN registration from TraineePage', () => {
 describe('OQM-0020 — trainee PIN login from TraineePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetTraineeSessions.mockResolvedValue([mockSession]);
+    mockGetTraineeSessions.mockImplementation(async identity => {
+      if (identity) {
+        return [{ ...mockSession, trainee_registered: true }];
+      }
+      return [mockSession];
+    });
     mockRegisterTraineeForSession.mockResolvedValue('reg-1');
     mockRegisterTraineePin.mockResolvedValue({
       id: 'trainee-pin-1',
@@ -643,6 +666,14 @@ describe('OQM-0020 — trainee PIN login from TraineePage', () => {
     expect(screen.getByRole('button', { name: 'Login' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Register PIN' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Log out' })).not.toBeDisabled();
+
+    await waitFor(() => {
+      expect(mockGetTraineeSessions).toHaveBeenLastCalledWith({
+        first_name: 'Jane',
+        last_name: 'Doe',
+        age_group: 'adult',
+      });
+    });
   });
 
   it('successful verification shows success toast', async () => {
@@ -744,6 +775,7 @@ describe('OQM-0020 — trainee PIN login from TraineePage', () => {
 
     await waitFor(() => {
       expect(mockGetTraineeSessions.mock.calls.length).toBeGreaterThan(callsBefore);
+      expect(mockGetTraineeSessions).toHaveBeenLastCalledWith(undefined);
     });
   });
 });

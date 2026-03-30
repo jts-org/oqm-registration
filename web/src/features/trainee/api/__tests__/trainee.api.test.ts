@@ -384,7 +384,7 @@ describe('getTraineeSessions', () => {
     await expect(getTraineeSessions()).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
   });
 
-  it('sends a GET request with route=getTraineeSessions', async () => {
+  it('sends a GET request with route=getTraineeSessions when no identity is provided', async () => {
     mockFetch.mockResolvedValue({
       json: async () => ({ ok: true, data: [] }),
     });
@@ -393,7 +393,41 @@ describe('getTraineeSessions', () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       `${BASE}?route=getTraineeSessions`,
-      expect.objectContaining({ method: 'GET', redirect: 'follow' })
+      expect.objectContaining({
+        method: 'GET',
+        redirect: 'follow',
+      })
+    );
+  });
+
+  it('includes identity payload when provided', async () => {
+    mockFetch.mockResolvedValue({
+      json: async () => ({ ok: true, data: [] }),
+    });
+
+    await getTraineeSessions({
+      first_name: 'Jane',
+      last_name: 'Doe',
+      age_group: 'underage',
+      underage_age: 13,
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      BASE,
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          route: 'getTraineeSessions',
+          payload: {
+            first_name: 'Jane',
+            last_name: 'Doe',
+            age_group: 'underage',
+            underage_age: 13,
+          },
+        }),
+      })
     );
   });
 

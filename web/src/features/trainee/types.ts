@@ -113,3 +113,14 @@ export interface PendingTraineeData {
   age_group: 'adult' | 'underage';
   underage_age?: number;
 }
+
+/**
+ * Optional identity context sent when fetching trainee sessions.
+ * When provided, backend marks matching sessions as trainee_registered.
+ */
+export interface TraineeSessionIdentityPayload {
+  first_name: string;
+  last_name: string;
+  age_group: 'adult' | 'underage';
+  underage_age?: number;
+}

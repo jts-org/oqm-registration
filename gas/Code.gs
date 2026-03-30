@@ -5,6 +5,7 @@
  *  - GET  ?route=getSettings     — list rows from settings sheet (QCM-0001)
  *  - GET  ?route=getCoachSessions — fetch 21-day session window (OQM-0007)
  *  - GET  ?route=getTraineeSessions — fetch trainee-facing 21-day session window (OQM-0015)
+ *  - POST { route: "getTraineeSessions", payload?: { first_name, last_name, age_group, underage_age? } } — fetch trainee-facing 21-day session window with optional trainee identity flags (OQM-0033)
  *  - POST { route: "coachLogin", payload: { mode: "pin"|"password", pin?|password? } } — create coach session token
  *  - POST { route: "adminLogin", payload: { password } } — create admin session token
  *  - POST { route: "createItem", payload: { name, email } }
@@ -67,6 +68,10 @@ function doPost(e) {
 
     authorize_(e, route, body);
     logToSheet(`doPost - route: ${route}`);
+    if (route === 'getTraineeSessions') {
+      const data = getTraineeSessions_(payload);
+      return json_({ ok: true, data });
+    }
     if (route === 'createItem') {
       const created = createItem_(payload);
       return json_({ ok: true, data: created });
@@ -1236,7 +1241,7 @@ function logToSheet(message) {
  * Returns trainee-facing session objects sorted by date and start_time.
  * @returns {Array}
  */
-function getTraineeSessions_() {
+function getTraineeSessions_(traineeIdentity) {
   const sessionsRows = getSheetData('sessions');
   const weeklyScheduleRows = getSheetData('weekly_schedule');
   const coachRegistrationsRows = getSheetData('coach_registrations');
@@ -1421,6 +1426,63 @@ function getTraineeSessions_() {
     if (a.date !== b.date) return a.date.localeCompare(b.date);
     return a.start_time.localeCompare(b.start_time);
   });
+
+  const identity = traineeIdentity || {};
+  const identityFirstName = String(identity.first_name || '').trim().toLowerCase();
+  const identityLastName = String(identity.last_name || '').trim().toLowerCase();
+  const identityAgeGroup = String(identity.age_group || '').trim().toLowerCase();
+  const identityUnderageAge = identityAgeGroup === 'underage'
+    ? String(identity.underage_age || '').trim()
+    : '';
+
+  const hasIdentity = identityFirstName && identityLastName && (identityAgeGroup === 'adult' || identityAgeGroup === 'underage');
+
+  if (hasIdentity) {
+    const traineeRegistrationsRows = getSheetData('trainee_registrations');
+    const registrationKeys = {};
+
+    traineeRegistrationsRows.forEach(row => {
+      if (row.length >= 11 && !getBooleanValue(row[10])) return;
+
+      const rowFirstName = String(row[1] || '').trim().toLowerCase();
+      const rowLastName = String(row[2] || '').trim().toLowerCase();
+      const rowAgeGroup = String(row[3] || '').trim().toLowerCase();
+      const rowUnderageAge = String(row[4] || '').trim();
+      if (rowFirstName !== identityFirstName) return;
+      if (rowLastName !== identityLastName) return;
+      if (rowAgeGroup !== identityAgeGroup) return;
+      if (identityAgeGroup === 'underage' && rowUnderageAge !== identityUnderageAge) return;
+
+      const dateStr = normalizeDateYmd_(row[7], tz);
+      const startTime = normalizeTimeHm_(row[8], tz);
+      const endTime = normalizeTimeHm_(row[9], tz);
+      const campSessionId = String(row[6] || '').trim();
+      const sessionType = String(row[5] || '').trim().toLowerCase();
+      if (!dateStr || !startTime || !endTime) return;
+
+      if (campSessionId) {
+        registrationKeys[`camp:${campSessionId}|${dateStr}|${startTime}|${endTime}`] = true;
+        return;
+      }
+
+      registrationKeys[`type:${sessionType}|${dateStr}|${startTime}|${endTime}`] = true;
+    });
+
+    merged.forEach(session => {
+      let registrationKey = '';
+      if (String(session.id || '').indexOf('camp_') === 0) {
+        const idParts = String(session.id).split('_');
+        const campSessionId = idParts.length >= 3 ? idParts[1] : '';
+        registrationKey = `camp:${campSessionId}|${session.date}|${session.start_time}|${session.end_time}`;
+      } else {
+        registrationKey = `type:${String(session.session_type || '').trim().toLowerCase()}|${session.date}|${session.start_time}|${session.end_time}`;
+      }
+
+      if (registrationKeys[registrationKey]) {
+        session.trainee_registered = true;
+      }
+    });
+  }
 
   logToSheet('getTraineeSessions_() - returned ' + merged.length + ' sessions');
   return merged;

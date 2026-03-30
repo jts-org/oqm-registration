@@ -14,6 +14,7 @@ import type {
   RegisterTraineeForSessionPayload,
   RegisterTraineePinData,
   TraineeData,
+  TraineeSessionIdentityPayload,
   TraineeSessionItem,
 } from '../types';
 
@@ -66,15 +67,26 @@ export async function verifyTraineePin(pin: string): Promise<TraineeData> {
 
 /**
  * Fetch all trainee sessions for the active 21-day registration window.
- * GET ?route=getTraineeSessions
+ * Uses legacy GET for anonymous page load and POST when identity context is known.
  * Returns array of TraineeSessionItem sorted by date and start_time.
  * @see skills/SKILL.wire-react-to-gas.md
  */
-export async function getTraineeSessions(): Promise<TraineeSessionItem[]> {
+export async function getTraineeSessions(
+  identity?: TraineeSessionIdentityPayload
+): Promise<TraineeSessionItem[]> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
   if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
-  const url = `${base}?route=getTraineeSessions`;
-  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+  const res = identity
+    ? await fetch(base, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ route: 'getTraineeSessions', payload: identity }),
+      })
+    : await fetch(`${base}?route=getTraineeSessions`, {
+        method: 'GET',
+        redirect: 'follow',
+      });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Failed to fetch sessions');
   return json.data as TraineeSessionItem[];

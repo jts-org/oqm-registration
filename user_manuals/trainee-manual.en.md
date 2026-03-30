@@ -53,6 +53,7 @@ Expected result:
 - You see PIN verified succesfully.
 - You are shown as logged in.
 - Register PIN and Login buttons are disabled while logged in.
+- Existing registrations in the visible 21-day window are refreshed and shown as registered cards automatically.
 
 ## Register a New PIN (Trainee)
 1. On the trainee page, select Register PIN.
@@ -63,10 +64,12 @@ Expected result:
 Expected result:
 - You see PIN code registered successfully.
 - You are treated as logged in for registrations.
+- Existing registrations in the visible 21-day window are refreshed and shown as registered cards automatically.
 
 ## Other Useful Actions
 - Refresh data: reloads session list.
 - Log out: clears your logged-in trainee state and refreshes sessions.
+- After log out, identity-based registered markers are removed from cards.
 - Back to main: returns to the main view.
 
 ## Error and Recovery
