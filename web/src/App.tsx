@@ -116,26 +116,33 @@ function CoachRoute({ isCoachAuthenticated, verifiedCoach, coachSessionToken, on
 
 interface AdminRouteProps {
   isAdminAuthenticated: boolean;
+  adminSessionToken?: string;
   onLeaveAdmin: () => void;
 }
 
-function AdminRoute({ isAdminAuthenticated, onLeaveAdmin }: AdminRouteProps) {
+function AdminRoute({ isAdminAuthenticated, adminSessionToken, onLeaveAdmin }: AdminRouteProps) {
   const navigate = useNavigate();
 
   if (!isAdminAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
-  return <AdminPage onBack={() => {
-    onLeaveAdmin();
-    navigate('/');
-  }} />;
+  return (
+    <AdminPage
+      sessionToken={adminSessionToken}
+      onBack={() => {
+        onLeaveAdmin();
+        navigate('/');
+      }}
+    />
+  );
 }
 
 export default function App() {
   const { t } = useTranslation()
   const { loading: settingsLoading, error: settingsError, reload } = useSettingsContext()
   const [adminAuthenticated, setAdminAuthenticated] = useState(false)
+  const [adminSessionToken, setAdminSessionToken] = useState<string | undefined>(undefined)
   const [coachAuthenticated, setCoachAuthenticated] = useState(false)
   const [coachSessionToken, setCoachSessionToken] = useState<string | undefined>(undefined)
   const [verifiedCoach, setVerifiedCoach] = useState<CoachData | undefined>(undefined)
@@ -189,6 +196,7 @@ export default function App() {
                 onAdminAuthenticated={(sessionToken) => {
                   sessionStorage.setItem(ADMIN_SESSION_TOKEN_KEY, sessionToken)
                   setAdminAuthenticated(true)
+                  setAdminSessionToken(sessionToken)
                 }}
               />
             )}
@@ -215,9 +223,11 @@ export default function App() {
             element={(
               <AdminRoute
                 isAdminAuthenticated={adminAuthenticated}
+                adminSessionToken={adminSessionToken}
                 onLeaveAdmin={() => {
                   sessionStorage.removeItem(ADMIN_SESSION_TOKEN_KEY)
                   setAdminAuthenticated(false)
+                  setAdminSessionToken(undefined)
                 }}
               />
             )}

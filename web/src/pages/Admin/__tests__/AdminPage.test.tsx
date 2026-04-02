@@ -62,4 +62,14 @@ describe('AdminPage', () => {
 
     expect(onBack).toHaveBeenCalledOnce();
   });
+
+  it('opens batch feed section and keeps submit disabled until rows are valid', async () => {
+    render(<AdminPage onBack={vi.fn()} sessionToken="token-1" />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Batch feed' }));
+
+    expect(screen.getByRole('heading', { name: 'Batch feed trainee registrations' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add row' })).toBeInTheDocument();
+  });
 });

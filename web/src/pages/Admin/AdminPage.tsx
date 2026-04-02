@@ -31,19 +31,24 @@ import ListItemText from '@mui/material/ListItemText';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Toolbar from '@mui/material/Toolbar';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+
+import { AdminBatchFeedPanel } from '../../features/admin/components/AdminBatchFeedPanel';
 
 export interface AdminPageProps {
   /** Navigates back to the main view. */
   onBack: () => void;
+  /** Current admin session token for protected admin routes. */
+  sessionToken?: string;
 }
-type AdminSection = 'dashboard' | 'reports' | 'settings';
+type AdminSection = 'dashboard' | 'reports' | 'settings' | 'batchFeed';
 
 type ReportTab = 'logs' | 'usage' | 'errors';
 
 const DRAWER_WIDTH = 248;
 
 /** Full-page admin view with internal navigation and section content. */
-export function AdminPage({ onBack }: AdminPageProps) {
+export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
   const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
   const [activeReportTab, setActiveReportTab] = useState<ReportTab>('logs');
@@ -64,6 +69,11 @@ export function AdminPage({ onBack }: AdminPageProps) {
         id: 'settings' as const,
         label: t('adminView.settings'),
         icon: <SettingsIcon />,
+      },
+      {
+        id: 'batchFeed' as const,
+        label: t('adminView.batchFeed'),
+        icon: <UploadFileIcon />,
       },
     ],
     [t]
@@ -169,6 +179,10 @@ export function AdminPage({ onBack }: AdminPageProps) {
     );
   }
 
+  function renderBatchFeed() {
+    return <AdminBatchFeedPanel sessionToken={sessionToken} />;
+  }
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="fixed" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -216,6 +230,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
         {activeSection === 'dashboard' && renderDashboard()}
         {activeSection === 'reports' && renderReports()}
         {activeSection === 'settings' && renderSettings()}
+        {activeSection === 'batchFeed' && renderBatchFeed()}
       </Box>
     </Box>
   );
