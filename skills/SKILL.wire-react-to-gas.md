@@ -24,6 +24,7 @@
 
 ### Admin-protected routes
 - `GET ?route=getSettings&sessionToken=...`
+- `POST { route: "registerTraineeBatchForSessions", payload: { rows: [{ first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time?, end_time? }] }, sessionToken }`
 
 ### Login routes (issue session token)
 - `POST { route: "coachLogin", payload: { mode: "pin", pin } }`
@@ -136,6 +137,62 @@
   }
 }
 ```
+
+## Admin Batch Trainee Registration Contract (OQM-0034)
+### Request
+```json
+{
+  "route": "registerTraineeBatchForSessions",
+  "sessionToken": "...",
+  "payload": {
+    "rows": [
+      {
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "age_group": "adult",
+        "underage_age": "",
+        "session_type": "advanced",
+        "camp_session_id": "",
+        "dates": ["2026-04-01", "2026-04-02"],
+        "start_time": "18:00",
+        "end_time": "19:00"
+      }
+    ]
+  }
+}
+```
+
+### Validation highlights
+- Route is admin-protected and requires valid admin `sessionToken`.
+- `rows` must be a non-empty array.
+- Per-row required fields: `first_name`, `last_name`, `age_group`, `session_type`, `dates`.
+- `dates` must be a non-empty array of date strings in YYYY-MM-DD format. Each date creates a separate registration entry.
+- `age_group` must be `adult` or `underage`.
+- `underage_age` is required when `age_group` is `underage`.
+- For `free/sparring`, `start_time` and `end_time` are optional; if one is set then both are required (applies to all dates in the row).
+- For non-`free/sparring` rows, both `start_time` and `end_time` are not used (no time tracking).
+- For `camp` rows, `camp_session_id` is required.
+- Duplicate rows are rejected when matching trainee/session/date/time identity already exists in `trainee_registrations` or is duplicated inside the same batch.
+- `totalRows` reflects the original number of input rows, while `addedCount` reflects the number of actual registrations created (may be greater if rows have multiple dates).
+
+### Response (success with summary)
+```json
+{
+  "ok": true,
+  "data": {
+    "totalRows": 1,
+    "addedCount": 2,
+    "rejectedCount": 0,
+    "results": [
+      { "rowIndex": 0, "status": "added", "id": "uuid-1" }
+    ]
+  }
+}
+```
+
+### Response (errors)
+- `concurrent_request` when script lock cannot be acquired.
+- `validation_failed` when payload shape is invalid (for example missing/non-array `rows` or empty `dates` array).
 
 ### Response (success)
 ```json

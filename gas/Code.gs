@@ -16,6 +16,7 @@
  *  - POST { route: "registerTraineePin", payload: { firstname, lastname, age, pin } } — register a new trainee PIN code (OQM-0016)
  *  - POST { route: "verifyTraineePin", payload: { pin } } — verify a trainee PIN against trainee_login sheet (OQM-0016)
  *  - POST { route: "registerTraineeForSession", payload: { first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time, end_time } } — register trainee for a session (OQM-0014)
+ *  - POST { route: "registerTraineeBatchForSessions", payload: { rows: [{ first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time?, end_time? }] }, sessionToken } — admin batch trainee registrations (OQM-0034)
  * Internal helpers (not exposed as routes):
  *  - updateCoachLastActivity_(coachId) — sets last_activity in coach_login (OQM-0011)
  */
@@ -167,6 +168,16 @@ function doPost(e) {
       }
       return json_({ ok: true, data: { id: result.id } });
     }
+    if (route === 'registerTraineeBatchForSessions') {
+      const result = registerTraineeBatchForSessions_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      return json_({ ok: true, data: result });
+    }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
     return json_({ ok: false, error: String(err) }, 400);
@@ -221,7 +232,8 @@ function isCoachRoute_(route) {
 
 function isAdminRoute_(route) {
   return [
-    'getSettings'
+    'getSettings',
+    'registerTraineeBatchForSessions'
   ].indexOf(String(route || '')) !== -1;
 }
 
@@ -1218,6 +1230,211 @@ function registerTraineeForSession_(payload) {
 
     logToSheet(`registerTraineeForSession_ - appended row id: ${id}`);
     return { id };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function buildTraineeRegistrationKey_(entry, tz) {
+  return [
+    String(entry.first_name || '').trim().toLowerCase(),
+    String(entry.last_name || '').trim().toLowerCase(),
+    String(entry.age_group || '').trim().toLowerCase(),
+    String(entry.underage_age || '').trim(),
+    String(entry.session_type || '').trim().toLowerCase(),
+    String(entry.camp_session_id || '').trim(),
+    normalizeDateYmd_(entry.date, tz),
+    normalizeTimeHm_(entry.start_time, tz),
+    normalizeTimeHm_(entry.end_time, tz)
+  ].join('|');
+}
+
+function validateBatchTraineeRegistrationRow_(row) {
+  if (!row) {
+    return 'validation_failed';
+  }
+
+  const required = ['first_name', 'last_name', 'age_group', 'session_type', 'date'];
+  const missing = required.some(field => !String(row[field] || '').trim());
+  if (missing) {
+    return 'validation_failed';
+  }
+
+  const ageGroup = String(row.age_group || '').trim().toLowerCase();
+  if (ageGroup !== 'adult' && ageGroup !== 'underage') {
+    return 'validation_failed';
+  }
+
+  if (ageGroup === 'underage' && !String(row.underage_age === undefined || row.underage_age === null ? '' : row.underage_age).trim()) {
+    return 'validation_failed_age';
+  }
+
+  const sessionType = String(row.session_type || '').trim().toLowerCase();
+  const startTime = String(row.start_time || '').trim();
+  const endTime = String(row.end_time || '').trim();
+  const hasStartTime = !!startTime;
+  const hasEndTime = !!endTime;
+
+  if (sessionType === 'free/sparring') {
+    if (hasStartTime !== hasEndTime) {
+      return 'validation_failed_time_pair';
+    }
+  }
+
+  if (sessionType === 'camp' && !String(row.camp_session_id || '').trim()) {
+    return 'validation_failed_camp_session_id';
+  }
+
+  return '';
+}
+
+/**
+ * Register trainee rows in batch for admin paper-list transfer (OQM-0034).
+ * Expands rows with multiple dates into separate rows before processing.
+ * Returns per-row status and summary counts.
+ */
+function registerTraineeBatchForSessions_(payload) {
+  const rows = payload && Array.isArray(payload.rows) ? payload.rows : null;
+  if (!rows || rows.length === 0) {
+    return { validationFailed: true };
+  }
+
+  // Expand rows with multiple dates into individual rows
+  const expandedRows = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] || {};
+    const dates = Array.isArray(row.dates) ? row.dates : [];
+    
+    if (dates.length === 0) {
+      // At least one date is required per row
+      return { validationFailed: true };
+    }
+
+    dates.forEach(date => {
+      expandedRows.push({
+        ...row,
+        date: date,
+        originalRowIndex: i
+      });
+    });
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const tz = Session.getScriptTimeZone();
+    const sheet = getSheetByName('trainee_registrations');
+    if (!sheet) {
+      throw new Error('Sheet not found: trainee_registrations');
+    }
+
+    const existingRows = getSheetData('trainee_registrations');
+    const existingKeys = {};
+    existingRows.forEach(row => {
+      const key = buildTraineeRegistrationKey_({
+        first_name: row[1],
+        last_name: row[2],
+        age_group: row[3],
+        underage_age: row[4],
+        session_type: row[5],
+        camp_session_id: row[6],
+        date: row[7],
+        start_time: row[8],
+        end_time: row[9]
+      }, tz);
+      existingKeys[key] = true;
+    });
+
+    const now = new Date().toISOString();
+    const results = [];
+    let addedCount = 0;
+    let rejectedCount = 0;
+    const rowResultMap = {}; // Track results per original row index
+
+    for (let i = 0; i < expandedRows.length; i++) {
+      const rawRow = expandedRows[i] || {};
+      const originalRowIndex = rawRow.originalRowIndex;
+      const firstName = String(rawRow.first_name || '').trim();
+      const lastName = String(rawRow.last_name || '').trim();
+      const ageGroup = String(rawRow.age_group || '').trim().toLowerCase();
+      const underageAge = String(rawRow.underage_age === undefined || rawRow.underage_age === null ? '' : rawRow.underage_age).trim();
+      const sessionType = String(rawRow.session_type || '').trim().toLowerCase();
+      const campSessionId = String(rawRow.camp_session_id || '').trim();
+      const date = normalizeDateYmd_(rawRow.date, tz);
+      const startTime = normalizeTimeHm_(rawRow.start_time, tz);
+      const endTime = normalizeTimeHm_(rawRow.end_time, tz);
+
+      const normalizedRow = {
+        first_name: firstName,
+        last_name: lastName,
+        age_group: ageGroup,
+        underage_age: underageAge,
+        session_type: sessionType,
+        camp_session_id: campSessionId,
+        date: date,
+        start_time: startTime,
+        end_time: endTime
+      };
+
+      const validationError = validateBatchTraineeRegistrationRow_(normalizedRow);
+      if (validationError) {
+        if (!rowResultMap[originalRowIndex]) {
+          rowResultMap[originalRowIndex] = { rowIndex: originalRowIndex, status: 'rejected', reason: validationError };
+          rejectedCount += 1;
+        }
+        continue;
+      }
+
+      const key = buildTraineeRegistrationKey_(normalizedRow, tz);
+      if (existingKeys[key]) {
+        if (!rowResultMap[originalRowIndex]) {
+          rowResultMap[originalRowIndex] = { rowIndex: originalRowIndex, status: 'rejected', reason: 'already_registered' };
+          rejectedCount += 1;
+        }
+        continue;
+      }
+
+      const id = Utilities.getUuid();
+      sheet.appendRow([
+        id,
+        firstName,
+        lastName,
+        ageGroup,
+        ageGroup === 'underage' ? underageAge : '',
+        sessionType,
+        campSessionId,
+        date,
+        startTime,
+        endTime,
+        true,
+        now,
+        now
+      ]);
+      existingKeys[key] = true;
+      addedCount += 1;
+      
+      if (!rowResultMap[originalRowIndex]) {
+        rowResultMap[originalRowIndex] = { rowIndex: originalRowIndex, status: 'added', id: id };
+      }
+    }
+
+    // Compile results in original row order
+    const finalResults = [];
+    for (let i = 0; i < rows.length; i++) {
+      if (rowResultMap[i]) {
+        finalResults.push(rowResultMap[i]);
+      }
+    }
+
+    return {
+      totalRows: rows.length,
+      addedCount: addedCount,
+      rejectedCount: rejectedCount,
+      results: finalResults
+    };
   } finally {
     lock.releaseLock();
   }
