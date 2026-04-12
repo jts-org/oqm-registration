@@ -54,6 +54,24 @@ describe('AdminPage', () => {
     expect(screen.getByRole('heading', { name: 'Reports' })).toBeInTheDocument();
   });
 
+  it('opens events section from drawer navigation', async () => {
+    render(<AdminPage onBack={vi.fn()} sessionToken="token-1" />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }));
+
+    expect(screen.getByRole('heading', { name: 'Events' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Customer events' })).toBeInTheDocument();
+  });
+
+  it('opens events section from dashboard card action', async () => {
+    render(<AdminPage onBack={vi.fn()} sessionToken="token-1" />);
+
+    const openButtons = screen.getAllByRole('button', { name: 'Open' });
+    await userEvent.click(openButtons[3]);
+
+    expect(screen.getByRole('heading', { name: 'Events' })).toBeInTheDocument();
+  });
+
   it('calls onBack when Back to main button is clicked', async () => {
     const onBack = vi.fn();
     render(<AdminPage onBack={onBack} />);

@@ -32,8 +32,10 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Toolbar from '@mui/material/Toolbar';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 
 import { AdminBatchFeedPanel } from '../../features/admin/components/AdminBatchFeedPanel';
+import { AdminCustomerEventsPanel } from '../../features/admin/components/AdminCustomerEventsPanel';
 
 export interface AdminPageProps {
   /** Navigates back to the main view. */
@@ -41,7 +43,7 @@ export interface AdminPageProps {
   /** Current admin session token for protected admin routes. */
   sessionToken?: string;
 }
-type AdminSection = 'dashboard' | 'reports' | 'settings' | 'batchFeed';
+type AdminSection = 'dashboard' | 'reports' | 'settings' | 'batchFeed' | 'events';
 
 type ReportTab = 'logs' | 'usage' | 'errors';
 
@@ -75,6 +77,11 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         label: t('adminView.batchFeed'),
         icon: <UploadFileIcon />,
       },
+      {
+        id: 'events' as const,
+        label: t('adminView.events'),
+        icon: <EventNoteIcon />,
+      },
     ],
     [t]
   );
@@ -101,6 +108,13 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         description: t('adminView.settingsDescription'),
         icon: <SettingsIcon fontSize="large" color="primary" />,
         target: 'settings' as const,
+      },
+      {
+        id: 'events',
+        title: t('adminView.events'),
+        description: t('adminView.eventsDescription'),
+        icon: <EventNoteIcon fontSize="large" color="primary" />,
+        target: 'events' as const,
       },
     ],
     [t]
@@ -183,6 +197,10 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
     return <AdminBatchFeedPanel sessionToken={sessionToken} />;
   }
 
+  function renderEvents() {
+    return <AdminCustomerEventsPanel sessionToken={sessionToken} />;
+  }
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="fixed" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -231,6 +249,7 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         {activeSection === 'reports' && renderReports()}
         {activeSection === 'settings' && renderSettings()}
         {activeSection === 'batchFeed' && renderBatchFeed()}
+        {activeSection === 'events' && renderEvents()}
       </Box>
     </Box>
   );

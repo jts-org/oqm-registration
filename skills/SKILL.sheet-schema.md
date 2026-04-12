@@ -144,11 +144,50 @@ Sheet: `trainee_registrations` (new OQM-0014)
 - I/J: time in 'HH:MM' format
 - K: defaults to true on creation
 
+Sheet: `customer_events` (new OQM-0035)
+
+| Column | Name        | Type     |
+|--------|-------------|----------|
+| A      | id          | string   |
+| B      | event       | string   |
+| C      | event_alias | string   |
+| D      | instructor  | string   |
+| E      | start_date  | ISO-8601 |
+| F      | end_date    | ISO-8601 |
+| G      | realized    | boolean  |
+| H      | created_at  | ISO-8601 |
+| I      | updated_at  | ISO-8601 |
+
+- E/F: date in 'YYYY-MM-DD' format
+- G: defaults to true on creation
+
+Sheet: `customer_event_schedules` (new OQM-0035)
+
+| Column | Name               | Type     |
+|--------|--------------------|----------|
+| A      | id                 | string   |
+| B      | event_id           | string   |
+| C      | session_name       | string   |
+| D      | session_name_alias | string   |
+| E      | date               | ISO-8601 |
+| F      | start_time         | time     |
+| G      | end_time           | time     |
+| H      | realized           | boolean  |
+| I      | created_at         | ISO-8601 |
+| J      | updated_at         | ISO-8601 |
+
+- B: foreign key referencing `customer_events.id`
+- E: date in 'YYYY-MM-DD' format
+- F/G: time in 'HH:MM' format
+- H: defaults to true on creation
+
 ## Changelog
 Track all schema changes here with date and reason.
 
 | Date       | Sheet                  | Change                                      | Reason    |
 |------------|------------------------|---------------------------------------------|-----------|
+| 2026-04-12 | customer_events        | New sheet                                   | OQM-0035  |
+| 2026-04-12 | customer_event_schedules | New sheet                                 | OQM-0035  |
 | 2026-03-17 | trainee_registrations  | New sheet                                   | OQM-0014  |
 | 2026-03-09 | sessions           | Added session_type_alias, created_at, updated_at; renamed course→session_type | OQM-0007  |
 | 2026-03-09 | weekly_schedule    | Renamed session→session_type, weekday→weekdays_available (now comma-sep); added created_at, updated_at | OQM-0007  |
