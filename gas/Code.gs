@@ -17,6 +17,7 @@
  *  - POST { route: "verifyTraineePin", payload: { pin } } — verify a trainee PIN against trainee_login sheet (OQM-0016)
  *  - POST { route: "registerTraineeForSession", payload: { first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time, end_time } } — register trainee for a session (OQM-0014)
  *  - POST { route: "registerTraineeBatchForSessions", payload: { rows: [{ first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time?, end_time? }] }, sessionToken } — admin batch trainee registrations (OQM-0034)
+ *  - POST { route: "registerCustomerEventWithSchedule", payload: { event, event_alias, instructor, start_date, end_date, schedules: [{ session_name, session_name_alias, date, start_time, end_time }] }, sessionToken } — admin customer event + schedule creation (OQM-0035)
  * Internal helpers (not exposed as routes):
  *  - updateCoachLastActivity_(coachId) — sets last_activity in coach_login (OQM-0011)
  */
@@ -178,6 +179,19 @@ function doPost(e) {
       }
       return json_({ ok: true, data: result });
     }
+    if (route === 'registerCustomerEventWithSchedule') {
+      const result = registerCustomerEventWithSchedule_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.duplicateEvent) {
+        return json_({ ok: false, error: 'already_registered' });
+      }
+      return json_({ ok: true, data: result });
+    }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
     return json_({ ok: false, error: String(err) }, 400);
@@ -233,7 +247,8 @@ function isCoachRoute_(route) {
 function isAdminRoute_(route) {
   return [
     'getSettings',
-    'registerTraineeBatchForSessions'
+    'registerTraineeBatchForSessions',
+    'registerCustomerEventWithSchedule'
   ].indexOf(String(route || '')) !== -1;
 }
 
@@ -1286,6 +1301,207 @@ function validateBatchTraineeRegistrationRow_(row) {
   }
 
   return '';
+}
+
+function buildCustomerEventKey_(eventEntry) {
+  return [
+    String(eventEntry.event || '').trim().toLowerCase(),
+    String(eventEntry.event_alias || '').trim().toLowerCase()
+  ].join('|');
+}
+
+function buildCustomerEventScheduleKey_(scheduleEntry, tz) {
+  return [
+    String(scheduleEntry.session_name || '').trim().toLowerCase(),
+    String(scheduleEntry.session_name_alias || '').trim().toLowerCase(),
+    normalizeDateYmd_(scheduleEntry.date, tz),
+    normalizeTimeHm_(scheduleEntry.start_time, tz),
+    normalizeTimeHm_(scheduleEntry.end_time, tz)
+  ].join('|');
+}
+
+function validateCustomerEventPayload_(payload, tz) {
+  if (!payload) {
+    return false;
+  }
+
+  const event = String(payload.event || '').trim();
+  const eventAlias = String(payload.event_alias || '').trim();
+  const instructor = String(payload.instructor || '').trim();
+  const startDate = normalizeDateYmd_(payload.start_date, tz);
+  const endDate = normalizeDateYmd_(payload.end_date, tz);
+  const schedules = payload && Array.isArray(payload.schedules) ? payload.schedules : null;
+
+  if (!event || !eventAlias || !instructor || !startDate || !endDate) {
+    return false;
+  }
+  if (endDate < startDate) {
+    return false;
+  }
+  if (!schedules || schedules.length === 0) {
+    return false;
+  }
+
+  return true;
+}
+
+function validateCustomerEventScheduleRow_(row, eventStartDate, eventEndDate, tz) {
+  const sessionName = String(row.session_name || '').trim();
+  const sessionNameAlias = String(row.session_name_alias || '').trim();
+  const date = normalizeDateYmd_(row.date, tz);
+  const startTime = normalizeTimeHm_(row.start_time, tz);
+  const endTime = normalizeTimeHm_(row.end_time, tz);
+
+  if (!sessionName || !sessionNameAlias || !date || !startTime || !endTime) {
+    return 'validation_failed';
+  }
+  if (date < eventStartDate || date > eventEndDate) {
+    return 'validation_failed_date_range';
+  }
+  if (endTime < startTime) {
+    return 'validation_failed_time_range';
+  }
+
+  return '';
+}
+
+/**
+ * Register one customer event and one or more customer event schedules (OQM-0035).
+ * Writes the customer event row once, then inserts valid non-duplicate schedule rows.
+ * Invalid or duplicate schedules are rejected with row-level reasons.
+ */
+function registerCustomerEventWithSchedule_(payload) {
+  const tz = Session.getScriptTimeZone();
+  if (!validateCustomerEventPayload_(payload, tz)) {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const eventsSheet = getSheetByName('customer_events');
+    if (!eventsSheet) {
+      throw new Error('Sheet not found: customer_events');
+    }
+    const schedulesSheet = getSheetByName('customer_event_schedules');
+    if (!schedulesSheet) {
+      throw new Error('Sheet not found: customer_event_schedules');
+    }
+
+    const event = String(payload.event || '').trim();
+    const eventAlias = String(payload.event_alias || '').trim();
+    const instructor = String(payload.instructor || '').trim();
+    const startDate = normalizeDateYmd_(payload.start_date, tz);
+    const endDate = normalizeDateYmd_(payload.end_date, tz);
+    const schedules = Array.isArray(payload.schedules) ? payload.schedules : [];
+
+    const existingEventRows = getSheetData('customer_events');
+    const existingEventKeys = {};
+    existingEventRows.forEach(row => {
+      const key = buildCustomerEventKey_({
+        event: row[1],
+        event_alias: row[2]
+      });
+      existingEventKeys[key] = true;
+    });
+
+    const eventKey = buildCustomerEventKey_({ event: event, event_alias: eventAlias });
+    if (existingEventKeys[eventKey]) {
+      return { duplicateEvent: true };
+    }
+
+    const now = new Date().toISOString();
+    const eventId = Utilities.getUuid();
+    eventsSheet.appendRow([
+      eventId,
+      event,
+      eventAlias,
+      instructor,
+      startDate,
+      endDate,
+      true,
+      now,
+      now
+    ]);
+
+    const existingScheduleRows = getSheetData('customer_event_schedules');
+    const existingScheduleKeys = {};
+    existingScheduleRows.forEach(row => {
+      const key = buildCustomerEventScheduleKey_({
+        session_name: row[2],
+        session_name_alias: row[3],
+        date: row[4],
+        start_time: row[5],
+        end_time: row[6]
+      }, tz);
+      existingScheduleKeys[key] = true;
+    });
+
+    let scheduleInsertedCount = 0;
+    let scheduleRejectedCount = 0;
+    const results = [];
+
+    for (let i = 0; i < schedules.length; i++) {
+      const rawRow = schedules[i] || {};
+      const sessionName = String(rawRow.session_name || '').trim();
+      const sessionNameAlias = String(rawRow.session_name_alias || '').trim();
+      const date = normalizeDateYmd_(rawRow.date, tz);
+      const startTime = normalizeTimeHm_(rawRow.start_time, tz);
+      const endTime = normalizeTimeHm_(rawRow.end_time, tz);
+
+      const normalizedRow = {
+        session_name: sessionName,
+        session_name_alias: sessionNameAlias,
+        date: date,
+        start_time: startTime,
+        end_time: endTime
+      };
+
+      const validationError = validateCustomerEventScheduleRow_(normalizedRow, startDate, endDate, tz);
+      if (validationError) {
+        scheduleRejectedCount += 1;
+        results.push({ rowIndex: i, status: 'rejected', reason: validationError });
+        continue;
+      }
+
+      const scheduleKey = buildCustomerEventScheduleKey_(normalizedRow, tz);
+      if (existingScheduleKeys[scheduleKey]) {
+        scheduleRejectedCount += 1;
+        results.push({ rowIndex: i, status: 'rejected', reason: 'already_registered' });
+        continue;
+      }
+
+      const scheduleId = Utilities.getUuid();
+      schedulesSheet.appendRow([
+        scheduleId,
+        eventId,
+        sessionName,
+        sessionNameAlias,
+        date,
+        startTime,
+        endTime,
+        true,
+        now,
+        now
+      ]);
+      existingScheduleKeys[scheduleKey] = true;
+      scheduleInsertedCount += 1;
+      results.push({ rowIndex: i, status: 'added', id: scheduleId });
+    }
+
+    return {
+      customerEventInsertedCount: 1,
+      totalScheduleRows: schedules.length,
+      scheduleInsertedCount: scheduleInsertedCount,
+      scheduleRejectedCount: scheduleRejectedCount,
+      results: results
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**

@@ -7,6 +7,8 @@
 import type {
   BatchTraineeRegistrationRequest,
   BatchTraineeRegistrationResponse,
+  CustomerEventWithScheduleRequest,
+  CustomerEventWithScheduleResponse,
 } from '../types';
 
 export interface AdminSession {
@@ -53,4 +55,28 @@ export async function registerTraineeBatchForSessions(
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Batch registration failed');
   return json.data as BatchTraineeRegistrationResponse;
+}
+
+/**
+ * Submit one customer event and related schedule rows in one request.
+ * Throws backend error code string as Error.message when request fails.
+ */
+export async function registerCustomerEventWithSchedule(
+  sessionToken: string,
+  payload: CustomerEventWithScheduleRequest
+): Promise<CustomerEventWithScheduleResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'registerCustomerEventWithSchedule', payload, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Customer event submission failed');
+  return json.data as CustomerEventWithScheduleResponse;
 }

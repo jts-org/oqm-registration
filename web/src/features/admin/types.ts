@@ -49,3 +49,39 @@ export interface BatchTraineeRegistrationResponse {
   rejectedCount: number;
   results: BatchTraineeRegistrationResult[];
 }
+
+/** One schedule row for customer event creation. */
+export interface CustomerEventScheduleRow {
+  session_name: string;
+  session_name_alias: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+/** Request payload for creating customer event and schedules. */
+export interface CustomerEventWithScheduleRequest {
+  event: string;
+  event_alias: string;
+  instructor: string;
+  start_date: string;
+  end_date: string;
+  schedules: CustomerEventScheduleRow[];
+}
+
+/** Row-level processing result for customer event schedule rows. */
+export interface CustomerEventScheduleResult {
+  rowIndex: number;
+  status: 'added' | 'rejected';
+  id?: string;
+  reason?: string;
+}
+
+/** Summary response for customer event creation. */
+export interface CustomerEventWithScheduleResponse {
+  customerEventInsertedCount: number;
+  totalScheduleRows: number;
+  scheduleInsertedCount: number;
+  scheduleRejectedCount: number;
+  results: CustomerEventScheduleResult[];
+}

@@ -25,6 +25,7 @@
 ### Admin-protected routes
 - `GET ?route=getSettings&sessionToken=...`
 - `POST { route: "registerTraineeBatchForSessions", payload: { rows: [{ first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time?, end_time? }] }, sessionToken }`
+- `POST { route: "registerCustomerEventWithSchedule", payload: { event, event_alias, instructor, start_date, end_date, schedules: [{ session_name, session_name_alias, date, start_time, end_time }] }, sessionToken }`
 
 ### Login routes (issue session token)
 - `POST { route: "coachLogin", payload: { mode: "pin", pin } }`
@@ -193,6 +194,65 @@
 ### Response (errors)
 - `concurrent_request` when script lock cannot be acquired.
 - `validation_failed` when payload shape is invalid (for example missing/non-array `rows` or empty `dates` array).
+
+## Admin Customer Event + Schedule Contract (OQM-0035)
+### Request
+```json
+{
+  "route": "registerCustomerEventWithSchedule",
+  "sessionToken": "...",
+  "payload": {
+    "event": "Customer Camp",
+    "event_alias": "Asiakasleiri",
+    "instructor": "Sensei Doe",
+    "start_date": "2026-06-01",
+    "end_date": "2026-06-03",
+    "schedules": [
+      {
+        "session_name": "Day 1 Morning",
+        "session_name_alias": "Paiva 1 Aamu",
+        "date": "2026-06-01",
+        "start_time": "09:00",
+        "end_time": "10:30"
+      }
+    ]
+  }
+}
+```
+
+### Validation highlights
+- Route is admin-protected and requires a valid admin `sessionToken`.
+- Customer event required fields: `event`, `event_alias`, `instructor`, `start_date`, `end_date`.
+- `end_date` must be the same as or after `start_date`.
+- `schedules` must be a non-empty array.
+- Every schedule row requires `session_name`, `session_name_alias`, `date`, `start_time`, `end_time`.
+- Schedule `date` must be within customer event date range.
+- Schedule `end_time` must be the same as or after `start_time`.
+- Duplicate event is detected by `event + event_alias` against existing `customer_events`.
+- Duplicate schedule is detected against existing `customer_event_schedules` and within submitted request rows.
+- Customer event row is inserted once when event-level validation/duplicate checks pass; schedule rows are inserted per-row, with invalid/duplicate rows rejected in summary.
+
+### Response (success with summary)
+```json
+{
+  "ok": true,
+  "data": {
+    "customerEventInsertedCount": 1,
+    "totalScheduleRows": 2,
+    "scheduleInsertedCount": 1,
+    "scheduleRejectedCount": 1,
+    "results": [
+      { "rowIndex": 0, "status": "added", "id": "uuid-1" },
+      { "rowIndex": 1, "status": "rejected", "reason": "already_registered" }
+    ]
+  }
+}
+```
+
+### Response (errors)
+- `concurrent_request` when script lock cannot be acquired.
+- `validation_failed` when top-level payload validation fails.
+- `already_registered` when the customer event already exists.
 
 ### Response (success)
 ```json
