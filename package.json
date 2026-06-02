@@ -4,5 +4,8 @@
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.3.9",
     "react-router-dom": "^7.13.1"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/server-github": "^2025.4.8"
   }
 }

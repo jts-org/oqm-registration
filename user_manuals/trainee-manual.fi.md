@@ -27,14 +27,16 @@ Odotettu tulos:
 2. Valitse Harrastajat.
 3. Odota, että harjoituslista latautuu.
 4. Tarkista harjoituslistan yläpuolella näkyvät viikkovälilehdet.
-5. Nykyinen viikko avautuu oletuksena. Valitse toinen viikkovälilehti, jos haluat nähdä toisen viikon harjoitukset.
-6. Valitse harjoituskortilta Ilmoittaudu.
-7. Jos et ole kirjautunut, täytä etu- ja sukunimi.
-8. Jos olet alle 18-vuotias, valitse alaikäinen ja aseta ikä.
-9. Valitse Ok.
-10. Tarkista tiedot vahvistusikkunassa.
-11. Valitse Ok vahvistaaksesi ilmoittautumisen.
-12. Odota tulosviesti.
+5. Jokainen välilehti näyttää vain viikon päivämäärävälin (esimerkiksi 02.06 - 08.06).
+6. Valitun viikon harjoituskorttien yläpuolella näytetään Viikko-otsikko.
+7. Nykyinen viikko avautuu oletuksena. Valitse toinen viikkovälilehti, jos haluat nähdä toisen viikon harjoitukset.
+8. Valitse harjoituskortilta Ilmoittaudu.
+9. Jos et ole kirjautunut, täytä etu- ja sukunimi.
+10. Jos olet alle 18-vuotias, valitse alaikäinen ja aseta ikä.
+11. Valitse Ok.
+12. Tarkista tiedot vahvistusikkunassa.
+13. Valitse Ok vahvistaaksesi ilmoittautumisen.
+14. Odota tulosviesti.
 
 Odotettu tulos:
 - Näet viestin Ilmoittautuminen onnistui.
