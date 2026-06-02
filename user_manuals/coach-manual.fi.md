@@ -37,8 +37,10 @@ Odotettu tulos:
 ## Selaa harjoituksia viikkovälilehdillä
 1. Avaa valmentajan pikailmoittautuminen.
 2. Käytä harjoituslistan yläpuolella olevia viikkovälilehtiä.
-3. Nykyinen kalenteriviikko valitaan oletuksena.
-4. Valitse toinen viikkovälilehti nähdäksesi kyseisen viikon harjoitukset.
+3. Jokainen välilehti näyttää vain viikon päivämäärävälin (esimerkiksi 02.06 - 08.06).
+4. Valitun viikon harjoituskorttien yläpuolella näytetään Viikko-otsikko.
+5. Nykyinen kalenteriviikko valitaan oletuksena.
+6. Valitse toinen viikkovälilehti nähdäksesi kyseisen viikon harjoitukset.
 
 Odotettu tulos:
 - Näet vain valitun viikon harjoitukset.

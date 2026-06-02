@@ -37,8 +37,10 @@ Expected result:
 ## Browse Sessions by Week Tabs
 1. Open Coach Quick Registration.
 2. Use the week tabs above the session list.
-3. By default, the current calendar week tab is selected.
-4. Select another week tab to view that week's sessions.
+3. Each tab shows only the week date range (for example, 02.06 - 08.06).
+4. A Week heading is shown above the selected week's session cards.
+5. By default, the current calendar week tab is selected.
+6. Select another week tab to view that week's sessions.
 
 Expected result:
 - Only sessions from the selected week are shown.

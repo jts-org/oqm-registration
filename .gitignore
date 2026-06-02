@@ -18,3 +18,8 @@ Thumbs.db
 # GAS/CLASP local auth
 .clasp.json.local
 .clasprc.json
+
+# others
+/.vscode/
+id_*_jts_org
+id_*_jts_org.pub

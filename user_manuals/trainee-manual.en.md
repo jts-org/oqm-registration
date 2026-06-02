@@ -27,14 +27,16 @@ Expected result:
 2. Select Trainees.
 3. Wait until sessions are loaded.
 4. Review the week tabs above the session list.
-5. The current week opens by default. Select another week tab if you want to see sessions from a different week.
-6. Choose a session card and select Register.
-7. If you are not logged in yet, fill your first name and last name in the form.
-8. If you are under 18, enable the underage checkbox and set your age.
-9. Select Ok.
-10. Review your registration details in the confirmation dialog.
-11. Select Ok to confirm registration.
-12. Wait for the result message.
+5. Each tab shows only the week date range (for example, 02.06 - 08.06).
+6. A Week heading is shown above the selected week's session cards.
+7. The current week opens by default. Select another week tab if you want to see sessions from a different week.
+8. Choose a session card and select Register.
+9. If you are not logged in yet, fill your first name and last name in the form.
+10. If you are under 18, enable the underage checkbox and set your age.
+11. Select Ok.
+12. Review your registration details in the confirmation dialog.
+13. Select Ok to confirm registration.
+14. Wait for the result message.
 
 Expected result:
 - You see Registration successfull.

@@ -159,6 +159,11 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
 
   const weekTabs = useMemo(() => Array.from(sessionsByWeek.values()), [sessionsByWeek]);
 
+  const selectedWeek = useMemo(
+    () => weekTabs.find(week => week.weekKey === activeWeekTab),
+    [activeWeekTab, weekTabs]
+  );
+
   useEffect(() => {
     if (weekTabs.length === 0) {
       if (activeWeekTab !== '') setActiveWeekTab('');
@@ -387,10 +392,16 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
         </Card>
       )}
 
-      {weekTabs
-        .filter(week => week.weekKey === activeWeekTab)
-        .map(week =>
-          week.dates.map(([date, dateSessions]) => (
+      {!loading && !error && selectedWeek && (
+        <>
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, textAlign: 'center' }}>
+            {t('coachQuickRegistration.selectedWeekLabel', {
+              start: formatWeekTabDate(selectedWeek.weekStart),
+              end: formatWeekTabDate(selectedWeek.weekEnd),
+            })}
+          </Typography>
+
+          {selectedWeek.dates.map(([date, dateSessions]) => (
             <Card key={date} sx={{ mb: 3, borderRadius: 3 }}>
               <CardContent>
                 <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
@@ -409,8 +420,9 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
                 </Box>
               </CardContent>
             </Card>
-          ))
-        )}
+          ))}
+        </>
+      )}
 
         <ConfirmCoachRegistrationDialog
         open={confirmRegisterOpen}
