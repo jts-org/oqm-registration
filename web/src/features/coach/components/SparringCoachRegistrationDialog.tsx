@@ -100,19 +100,52 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
         fullScreen={fullScreen}
         slotProps={{
           paper: {
-            sx: {
+            sx: theme => ({
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: fullScreen ? '100%' : '90vh',
-              height: fullScreen ? '100%' : 'auto',
-            },
+
+              // Width rules
+              width: { xs: '100%', sm: '480px' },
+              maxWidth: '100%',
+
+              // Height rules
+              ...(fullScreen
+                ? {
+                    height: '100%',
+                    maxHeight: '100%',
+                    borderRadius: 0,
+                  }
+                : {
+                    height: 'auto',
+                    maxHeight: 'none',
+                    borderRadius: 3,
+                  }),
+
+              background: theme.palette.background.paper,
+              color: theme.palette.text.primary,
+            }),
           },
         }}
       >
         <DialogTitle id="sparring-coach-registration-title">
           {t('coachQuickRegistration.fillSparringSessionInfo')}
         </DialogTitle>
-        <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+        <DialogContent 
+          dividers 
+          sx={
+            fullScreen
+              ? {
+                  flex: '1 1 0',
+                  minHeight: 0,
+                  maxHeight: '100%',
+                  overflowY: 'auto',
+                }
+              : {
+                  flex: '0 1 auto',
+                  overflowY: 'visible',
+                }
+          }
+        >
           <Box>
             <Grid container spacing={2}>
               <Grid size={{xs: 12, sm: 6}}>

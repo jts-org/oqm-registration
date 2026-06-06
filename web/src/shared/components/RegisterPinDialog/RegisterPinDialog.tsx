@@ -392,20 +392,35 @@ export function RegisterPinDialog({
         open={open}
         aria-labelledby="register-pin-title"
         onClose={onCancel}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
         fullScreen={fullScreen}
         slotProps={{
           paper: {
-            sx: {
+            sx: theme => ({
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: fullScreen ? '100%' : '90vh',
-              height: fullScreen ? '100%' : 'auto',
+
+              // Width rules
+              width: { xs: '100%', sm: '480px' },
+              maxWidth: '100%',
+
+              // Height rules
+              ...(fullScreen
+                ? {
+                    height: '100%',
+                    maxHeight: '100%',
+                    borderRadius: 0,
+                  }
+                : {
+                    height: 'auto',
+                    maxHeight: 'none',
+                    borderRadius: 3,
+                  }),
+
               background: theme.palette.background.paper,
               color: theme.palette.text.primary,
-              borderRadius: fullScreen ? 0 : 3,
-            },
+            }),
           },
           backdrop: {
             sx: {
@@ -417,7 +432,22 @@ export function RegisterPinDialog({
         }}
       >
         <DialogTitle id="register-pin-title">{t('registerPin.title')}</DialogTitle>
-        <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+        <DialogContent 
+          dividers 
+          sx={
+            fullScreen
+              ? {
+                  flex: '1 1 0',
+                  minHeight: 0,
+                  maxHeight: '100%',
+                  overflowY: 'auto',
+                }
+              : {
+                  flex: '0 1 auto',
+                  overflowY: 'visible',
+                }
+          }
+        >
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {t('registerPin.hint')}
           </Typography>

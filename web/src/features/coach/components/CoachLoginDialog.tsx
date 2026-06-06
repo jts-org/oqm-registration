@@ -116,21 +116,39 @@ export function CoachLoginDialog({ open, onLoginSuccess, onCancel }: CoachLoginD
         open={open}
         aria-labelledby="coach-login-title"
         onClose={handleCloseDialog}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
         fullScreen={fullScreen}
         slotProps={{
           paper: {
-            sx: {
+            sx: theme => ({
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: fullScreen ? '100%' : '90vh',
-              height: fullScreen ? '100%' : 'auto',
-              borderRadius: fullScreen ? 0 : 3,
+
+              // Width rules
+              width: { xs: '100%', sm: '480px' },
+              maxWidth: '100%',   // prevents overflow on small screens
+
+              // Height rules
+              // Mobile: full height
+              // Desktop: natural height (no shrinking)
+              ...(fullScreen
+                ? {
+                    height: '100%',
+                    maxHeight: '100%',
+                    borderRadius: 0,
+                  }
+                : {
+                    height: 'auto',
+                    maxHeight: 'none',
+                    borderRadius: 3,
+                  }),
+
               background: theme.palette.background.paper,
               color: theme.palette.text.primary,
-            },
+            }),
           },
+
           backdrop: {
             sx: {
               backgroundColor: 'rgba(10, 10, 15, 0.75)',
@@ -141,7 +159,22 @@ export function CoachLoginDialog({ open, onLoginSuccess, onCancel }: CoachLoginD
         }}
       >
         <DialogTitle id="coach-login-title">{t('coachLogin.title')}</DialogTitle>
-        <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+        <DialogContent 
+          dividers 
+          sx={{
+            ...(fullScreen
+              ? {
+                  flex: '1 1 0',
+                  minHeight: 0,
+                  maxHeight: '100%',
+                  overflowY: 'auto',
+                }
+              : {
+                  flex: '0 1 auto',
+                  overflowY: 'visible',
+                }),
+          }}
+        >
           <Stack spacing={2}>
             <Box>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-start' }}>
