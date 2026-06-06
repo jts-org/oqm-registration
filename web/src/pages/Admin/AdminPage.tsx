@@ -33,6 +33,9 @@ import Tabs from '@mui/material/Tabs';
 import Toolbar from '@mui/material/Toolbar';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import EventNoteIcon from '@mui/icons-material/EventNote';
+import MenuIcon from '@mui/icons-material/Menu';
+import IconButton from '@mui/material/IconButton';
+import { useIsMobile } from '../../shared/hooks/useResponsive';
 
 import { AdminBatchFeedPanel } from '../../features/admin/components/AdminBatchFeedPanel';
 import { AdminCustomerEventsPanel } from '../../features/admin/components/AdminCustomerEventsPanel';
@@ -52,8 +55,10 @@ const DRAWER_WIDTH = 248;
 /** Full-page admin view with internal navigation and section content. */
 export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
   const [activeReportTab, setActiveReportTab] = useState<ReportTab>('logs');
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const navigationItems = useMemo(
     () => [
@@ -140,7 +145,7 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
                   </Typography>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" onClick={() => setActiveSection(action.target)}>
+                  <Button size="small" onClick={() => handleNavigate(action.target)}>
                     {t('adminView.open')}
                   </Button>
                 </CardActions>
@@ -161,6 +166,9 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         <Tabs
           value={activeReportTab}
           onChange={(_, value: ReportTab) => setActiveReportTab(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           aria-label={t('adminView.reportTabsAria')}
         >
           <Tab value="logs" label={t('adminView.reportsLogs')} />
@@ -201,10 +209,51 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
     return <AdminCustomerEventsPanel sessionToken={sessionToken} />;
   }
 
+  function handleNavigate(section: AdminSection) {
+    setActiveSection(section);
+    if (isMobile) {
+      setMobileDrawerOpen(false);
+    }
+  }
+
+  function toggleMobileDrawer() {
+    setMobileDrawerOpen(!mobileDrawerOpen);
+  }
+
+  const drawerContent = (
+    <>
+      <Toolbar />
+      <List>
+        {navigationItems.map((item) => (
+          <ListItemButton
+            key={item.id}
+            selected={activeSection === item.id}
+            onClick={() => handleNavigate(item.id)}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} />
+          </ListItemButton>
+        ))}
+      </List>
+      <Divider />
+    </>
+  );
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="fixed" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <AppBar position="fixed" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={toggleMobileDrawer}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
             {t('adminView.title')}
           </Typography>
@@ -215,7 +264,12 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
       </AppBar>
 
       <Drawer
-        variant="permanent"
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={isMobile ? mobileDrawerOpen : true}
+        onClose={() => setMobileDrawerOpen(false)}
+        ModalProps={{
+          keepMounted: true, // Better mobile performance
+        }}
         sx={{
           width: DRAWER_WIDTH,
           flexShrink: 0,
@@ -227,23 +281,18 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
           },
         }}
       >
-        <Toolbar />
-        <List>
-          {navigationItems.map((item) => (
-            <ListItemButton
-              key={item.id}
-              selected={activeSection === item.id}
-              onClick={() => setActiveSection(item.id)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
-        </List>
-        <Divider />
+        {drawerContent}
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: { xs: '100%', sm: `calc(100% - ${DRAWER_WIDTH}px)` },
+          ml: { xs: 0, sm: `${DRAWER_WIDTH}px` },
+        }}
+      >
         <Toolbar />
         {activeSection === 'dashboard' && renderDashboard()}
         {activeSection === 'reports' && renderReports()}

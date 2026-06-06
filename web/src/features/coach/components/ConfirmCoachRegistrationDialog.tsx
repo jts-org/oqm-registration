@@ -22,6 +22,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 import { registerCoachForSession } from '../api/coach.api';
 import type { SessionItem, CoachData } from '../types';
 
@@ -55,6 +56,7 @@ export function ConfirmCoachRegistrationDialog({
   onCancel,
 }: ConfirmCoachRegistrationDialogProps) {
   const { t } = useTranslation();
+  const { fullScreen } = useResponsiveDialog();
   const [loading, setLoading] = useState(false);
 
   async function handleConfirm() {
@@ -97,18 +99,35 @@ export function ConfirmCoachRegistrationDialog({
   const coachName = coachData?.alias || (coachData ? `${coachData.firstname} ${coachData.lastname}` : '');
 
   return (
-    <Dialog open={open} onClose={onCancel} aria-labelledby="confirm-register-title">
+    <Dialog 
+      open={open} 
+      onClose={onCancel} 
+      aria-labelledby="confirm-register-title" 
+      maxWidth="sm" 
+      fullWidth 
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: fullScreen ? '100%' : '90vh',
+            height: fullScreen ? '100%' : 'auto',
+          },
+        },
+      }}
+    >
       <LoadingOverlay visible={loading} />
       <DialogTitle id="confirm-register-title">
         {t('coachQuickRegistration.confirmRegisterTitle')}
       </DialogTitle>
-      <DialogContent>
+      <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
         <DialogContentText>
           {t('coachQuickRegistration.confirmRegisterQuestion')}
         </DialogContentText>
         {session && (
           <>
-            <Typography variant="body2" sx={{ mt: 1 }}>
+            <Typography variant="body2">
               <strong>{t('coachQuickRegistration.sessionTypeLabel')}:</strong>{' '}
               {session.session_type_alias || session.session_type}
             </Typography>

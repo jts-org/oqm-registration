@@ -24,6 +24,7 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -407,17 +408,17 @@ export function CoachPage({ onBack, coachData, sessionToken }: CoachPageProps) {
                 <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
                   {formatDateLabel(date, i18n.language)}
                 </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
+                <Grid container spacing={2}>
                   {dateSessions.map(session => (
-                    <SessionCard
-                      key={session.id}
-                      session={session}
-                      onRegister={handleRegister}
-                      onRemove={handleRemove}
-                      cardStyle={{ width: '340px', height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-                    />
+                    <Grid key={session.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <SessionCard
+                        session={session}
+                        onRegister={handleRegister}
+                        onRemove={handleRemove}
+                      />
+                    </Grid>
                   ))}
-                </Box>
+                </Grid>
               </CardContent>
             </Card>
           ))}

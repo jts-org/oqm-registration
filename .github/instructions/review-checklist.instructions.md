@@ -4,3 +4,5 @@
 - [ ] Relevant skill docs referenced in PR and code comments
 - [ ] Test coverage for new/changed code
 - [ ] Contract compliance verified
+- [ ] Frontend changes reviewed using `frontend.review-checklist.md` (if applicable)
+

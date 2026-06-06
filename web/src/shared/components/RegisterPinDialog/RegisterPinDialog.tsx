@@ -37,6 +37,7 @@ import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { LoadingOverlay } from '../LoadingOverlay/LoadingOverlay';
+import { useResponsiveDialog } from '../../hooks/useResponsive';
 
 const PIN_PATTERN = /^\d{4,6}$/;
 /** Allows letters (including Nordic), spaces and hyphens between letter groups. */
@@ -210,6 +211,7 @@ export function RegisterPinDialog({
 }: RegisterPinDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const { fullScreen } = useResponsiveDialog();
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [alias, setAlias] = useState('');
@@ -392,12 +394,17 @@ export function RegisterPinDialog({
         onClose={onCancel}
         maxWidth="xs"
         fullWidth
+        fullScreen={fullScreen}
         slotProps={{
           paper: {
             sx: {
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: fullScreen ? '100%' : '90vh',
+              height: fullScreen ? '100%' : 'auto',
               background: theme.palette.background.paper,
               color: theme.palette.text.primary,
-              borderRadius: 3,
+              borderRadius: fullScreen ? 0 : 3,
             },
           },
           backdrop: {
@@ -410,7 +417,7 @@ export function RegisterPinDialog({
         }}
       >
         <DialogTitle id="register-pin-title">{t('registerPin.title')}</DialogTitle>
-        <DialogContent>
+        <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {t('registerPin.hint')}
           </Typography>
@@ -454,10 +461,8 @@ export function RegisterPinDialog({
                 gap={2}
                 flexWrap="wrap"
                 sx={{
-                  "@media (max-width: 400px)": {
-                    flexDirection: "column",
-                    alignItems: "stretch",
-                  },
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'stretch', sm: 'center' },
                 }}
               >
                 <Box

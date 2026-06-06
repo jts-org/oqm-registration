@@ -23,6 +23,7 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 import { verifyTraineePin } from '../api/trainee.api';
 import type { TraineeData } from '../types';
 
@@ -44,6 +45,7 @@ export interface TraineeLoginDialogProps {
 export function TraineeLoginDialog({ open, onLoginSuccess, onCancel }: TraineeLoginDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const { fullScreen } = useResponsiveDialog();
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -90,10 +92,15 @@ export function TraineeLoginDialog({ open, onLoginSuccess, onCancel }: TraineeLo
       onClose={handleCancel}
       maxWidth="xs"
       fullWidth
+      fullScreen={fullScreen}
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: fullScreen ? '100%' : '90vh',
+            height: fullScreen ? '100%' : 'auto',
+            borderRadius: fullScreen ? 0 : 3,
             background: theme.palette.background.paper,
             color: theme.palette.text.primary,
           },
@@ -108,8 +115,8 @@ export function TraineeLoginDialog({ open, onLoginSuccess, onCancel }: TraineeLo
       }}
     >
       <DialogTitle id="trainee-login-title">{t('traineeLogin.title')}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} mt={1}>
+      <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+        <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-start' }}>
             <TextField
               id="trainee-pin"

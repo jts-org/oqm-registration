@@ -27,6 +27,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { RegisterPinDialog } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 import { registerCoachPin } from '../api/coach.api';
 import type { CoachData } from '../types';
 
@@ -62,6 +63,7 @@ export function ManualCoachRegistrationDialog({
   onCancel,
 }: ManualCoachRegistrationDialogProps) {
   const { t } = useTranslation();
+  const { fullScreen } = useResponsiveDialog();
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [registerPinOpen, setRegisterPinOpen] = useState(false);
@@ -129,10 +131,15 @@ export function ManualCoachRegistrationDialog({
         onClose={handleCancel}
         maxWidth="xs"
         fullWidth
+        fullScreen={fullScreen}
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: fullScreen ? '100%' : '90vh',
+              height: fullScreen ? '100%' : 'auto',
+              borderRadius: fullScreen ? 0 : 3,
             },
           },
           backdrop: {
@@ -148,8 +155,8 @@ export function ManualCoachRegistrationDialog({
           {t('manualCoachRegistration.title')}
         </DialogTitle>
 
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 0.5 }}>
+        <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+          <Stack spacing={2}>
             <TextField
               id="outlined-helpertext-firstname"
               label={t('manualCoachRegistration.firstName')}

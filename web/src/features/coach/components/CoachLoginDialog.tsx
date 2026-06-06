@@ -30,6 +30,7 @@ import Typography from '@mui/material/Typography';
 import { RegisterPinDialog } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 import { coachLoginWithPassword, coachLoginWithPin, registerCoachPin } from '../api/coach.api';
 import type { CoachLoginDialogProps } from '../types';
 
@@ -42,6 +43,7 @@ const PIN_PATTERN = /^\d{4,6}$/;
 export function CoachLoginDialog({ open, onLoginSuccess, onCancel }: CoachLoginDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const { fullScreen } = useResponsiveDialog();
   const [pin, setPin] = useState('');
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -116,10 +118,15 @@ export function CoachLoginDialog({ open, onLoginSuccess, onCancel }: CoachLoginD
         onClose={handleCloseDialog}
         maxWidth="xs"
         fullWidth
+        fullScreen={fullScreen}
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: fullScreen ? '100%' : '90vh',
+              height: fullScreen ? '100%' : 'auto',
+              borderRadius: fullScreen ? 0 : 3,
               background: theme.palette.background.paper,
               color: theme.palette.text.primary,
             },
@@ -134,8 +141,8 @@ export function CoachLoginDialog({ open, onLoginSuccess, onCancel }: CoachLoginD
         }}
       >
         <DialogTitle id="coach-login-title">{t('coachLogin.title')}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
+        <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+          <Stack spacing={2}>
             <Box>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-start' }}>
                 <TextField

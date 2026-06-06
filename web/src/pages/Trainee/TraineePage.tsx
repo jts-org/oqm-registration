@@ -31,6 +31,7 @@ import toast from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
 import { getTraineeSessions } from '../../features/trainee/api/trainee.api';
 import { registerTraineePin } from '../../features/trainee/api/trainee.api';
 import { verifyTraineePin } from '../../features/trainee/api/trainee.api';
@@ -445,15 +446,16 @@ export function TraineePage({ onBack }: TraineePageProps) {
                 <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
                   {formatDateLabel(date, i18n.language)}
                 </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
+                <Grid container spacing={2}>
                   {dateSessions.map(session => (
-                    <TraineeSessionCard
-                      key={session.id}
-                      session={session}
-                      onRegister={handleOpenRegister}
-                    />
+                    <Grid key={session.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <TraineeSessionCard
+                        session={session}
+                        onRegister={handleOpenRegister}
+                      />
+                    </Grid>
                   ))}
-                </Box>
+                </Grid>
               </CardContent>
             </Card>
           ))}

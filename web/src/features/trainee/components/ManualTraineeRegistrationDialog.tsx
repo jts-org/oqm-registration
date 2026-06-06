@@ -32,6 +32,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 import type { PendingTraineeData } from '../types';
 
 const NAME_PATTERN = /^[A-Za-zÀ-ÖØ-öø-ÿ]+([- ][A-Za-zÀ-ÖØ-öø-ÿ]+)*$/;
@@ -109,6 +110,7 @@ export function ManualTraineeRegistrationDialog({
   onCancel,
 }: ManualTraineeRegistrationDialogProps) {
   const { t } = useTranslation();
+  const { fullScreen } = useResponsiveDialog();
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [isUnderage, setIsUnderage] = useState(false);
@@ -136,10 +138,27 @@ export function ManualTraineeRegistrationDialog({
   }
 
   return (
-    <Dialog open={open} aria-labelledby="manual-trainee-registration-title" onClose={onCancel} maxWidth="xs" fullWidth>
+    <Dialog 
+      open={open} 
+      aria-labelledby="manual-trainee-registration-title" 
+      onClose={onCancel} 
+      maxWidth="xs" 
+      fullWidth 
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: fullScreen ? '100%' : '90vh',
+            height: fullScreen ? '100%' : 'auto',
+          },
+        },
+      }}
+    >
       <DialogTitle id="manual-trainee-registration-title">{t('manualTraineeRegistration.title')}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 0.5 }}>
+      <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+        <Stack spacing={2}>
           <TextField
             label={t('manualTraineeRegistration.firstName')}
             placeholder={t('manualTraineeRegistration.firstNamePlaceholder')}

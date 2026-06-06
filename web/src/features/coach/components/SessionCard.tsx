@@ -25,11 +25,10 @@ export interface SessionCardProps {
   session: SessionItem;
   onRegister: (session: SessionItem) => void;
   onRemove: (session: SessionItem) => void;
-  cardStyle?: React.CSSProperties;
 }
 
 /** MUI Card for one session — shows type, time, location, coach and action button. */
-export function SessionCard({ session, onRegister, onRemove, cardStyle }: SessionCardProps) {
+export function SessionCard({ session, onRegister, onRemove }: SessionCardProps) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
 
@@ -48,7 +47,17 @@ export function SessionCard({ session, onRegister, onRemove, cardStyle }: Sessio
   const isRegisterDisabled = !hasCoach && session.is_free_sparring;
 
   return (
-    <Card sx={{ backgroundColor, mb: 1, color: '#fff', border: `2px solid ${theme.palette.common.white}`, ...cardStyle }}>
+    <Card
+      sx={{
+        backgroundColor,
+        mb: 1,
+        color: '#fff',
+        border: `2px solid ${theme.palette.common.white}`,
+        width: '100%',
+        maxWidth: { xs: '100%', sm: '340px' },
+        minHeight: '120px',
+      }}
+    >
       <Box sx={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
         <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', pb: 0 }}>
           <Typography variant="subtitle1" fontWeight="bold">

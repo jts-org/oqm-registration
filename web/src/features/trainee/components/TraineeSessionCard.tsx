@@ -43,7 +43,8 @@ export function TraineeSessionCard({ session, onRegister }: TraineeSessionCardPr
         mb: 1,
         color: '#fff',
         border: `2px solid ${theme.palette.common.white}`,
-        width: '340px',
+        width: '100%',
+        maxWidth: { xs: '100%', sm: '340px' },
         minHeight: '120px',
         position: 'relative',
       }}
