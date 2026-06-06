@@ -23,6 +23,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 import { removeCoachFromSession } from '../api/coach.api';
 import type { SessionItem } from '../types';
 
@@ -53,6 +54,7 @@ export function ConfirmRemoveCoachDialog({
   onCancel,
 }: ConfirmRemoveCoachDialogProps) {
   const { t } = useTranslation();
+  const { fullScreen } = useResponsiveDialog();
   const [loading, setLoading] = useState(false);
 
   async function handleConfirm() {
@@ -89,12 +91,29 @@ export function ConfirmRemoveCoachDialog({
     : '';
 
   return (
-    <Dialog open={open} onClose={onCancel} aria-labelledby="confirm-remove-title">
+    <Dialog 
+      open={open} 
+      onClose={onCancel} 
+      aria-labelledby="confirm-remove-title" 
+      maxWidth="sm" 
+      fullWidth 
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: fullScreen ? '100%' : '90vh',
+            height: fullScreen ? '100%' : 'auto',
+          },
+        },
+      }}
+    >
       <LoadingOverlay visible={loading} />
       <DialogTitle id="confirm-remove-title">
         {t('coachQuickRegistration.confirmRemoveTitle')}
       </DialogTitle>
-      <DialogContent>
+      <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
         <DialogContentText>
           {t('coachQuickRegistration.confirmRemoveQuestion')}
         </DialogContentText>

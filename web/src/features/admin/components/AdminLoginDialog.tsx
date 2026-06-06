@@ -19,6 +19,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 import { adminLogin } from '../api/admin.api';
 import type { AdminLoginDialogProps } from '../types';
 
@@ -29,6 +30,7 @@ import type { AdminLoginDialogProps } from '../types';
 export function AdminLoginDialog({ open, onLoginSuccess, onCancel }: AdminLoginDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const { fullScreen } = useResponsiveDialog();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -49,9 +51,16 @@ export function AdminLoginDialog({ open, onLoginSuccess, onCancel }: AdminLoginD
       open={open}
       aria-labelledby="admin-login-title"
       onClose={onCancel}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={fullScreen}
       slotProps={{
         paper: {
           sx: {
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: fullScreen ? '100%' : '90vh',
+            height: fullScreen ? '100%' : 'auto',
             background: theme.palette.background.default,
             color: theme.palette.text.primary,
             border: '2px solid',
@@ -68,7 +77,7 @@ export function AdminLoginDialog({ open, onLoginSuccess, onCancel }: AdminLoginD
       }}
     >
       <DialogTitle id="admin-login-title">{t('adminLogin.title')}</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
         <TextField
           id="admin-password"
           type="password"

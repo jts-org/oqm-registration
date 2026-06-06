@@ -21,6 +21,7 @@ import Typography from '@mui/material/Typography';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { LoadingOverlay } from '../../../shared/components/LoadingOverlay/LoadingOverlay';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 import { registerTraineeForSession } from '../api/trainee.api';
 import type { PendingTraineeData, RegisterTraineeForSessionPayload, TraineeSessionItem } from '../types';
 
@@ -43,6 +44,7 @@ export function ConfirmTraineeRegistrationDialog({
   onCancel,
 }: ConfirmTraineeRegistrationDialogProps) {
   const { t } = useTranslation();
+  const { fullScreen } = useResponsiveDialog();
   const [loading, setLoading] = useState(false);
   const [inlineError, setInlineError] = useState<string>('');
 
@@ -88,15 +90,32 @@ export function ConfirmTraineeRegistrationDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onCancel} aria-labelledby="confirm-trainee-register-title">
+    <Dialog 
+      open={open} 
+      onClose={onCancel} 
+      aria-labelledby="confirm-trainee-register-title" 
+      maxWidth="sm" 
+      fullWidth 
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: fullScreen ? '100%' : '90vh',
+            height: fullScreen ? '100%' : 'auto',
+          },
+        },
+      }}
+    >
       <LoadingOverlay visible={loading} />
       <DialogTitle id="confirm-trainee-register-title">{t('traineeRegistration.confirmRegisterTitle')}</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
         <DialogContentText>{t('traineeRegistration.confirmRegisterQuestion')}</DialogContentText>
 
         {session && (
           <>
-            <Typography variant="body2" sx={{ mt: 1 }}>
+            <Typography variant="body2">
               <strong>{t('traineeRegistration.sessionTypeLabel')}:</strong> {session.session_type_alias || session.session_type}
             </Typography>
             <Typography variant="body2">

@@ -29,6 +29,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/fi';
 import 'dayjs/locale/de';
+import { useResponsiveDialog } from '../../../shared/hooks/useResponsive';
 
 export interface SparringCoachRegistrationDialogProps {
   open: boolean;
@@ -55,6 +56,7 @@ function getAdapterLocale(lang: string): string {
 
 export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, onCancel }: SparringCoachRegistrationDialogProps) {
   const { t, i18n } = useTranslation();
+  const { fullScreen } = useResponsiveDialog();
   const [firstname, setFirstname] = useState(coachData?.firstname || '');
   const [lastname, setLastname] = useState(coachData?.lastname || '');
   const [date, setDate] = useState<Dayjs | null>(dayjs());
@@ -89,14 +91,31 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={adapterLocale}>
-      <Dialog open={open} onClose={onCancel} aria-labelledby="sparring-coach-registration-title">
+      <Dialog 
+        open={open} 
+        onClose={onCancel} 
+        aria-labelledby="sparring-coach-registration-title" 
+        maxWidth="sm" 
+        fullWidth 
+        fullScreen={fullScreen}
+        slotProps={{
+          paper: {
+            sx: {
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: fullScreen ? '100%' : '90vh',
+              height: fullScreen ? '100%' : 'auto',
+            },
+          },
+        }}
+      >
         <DialogTitle id="sparring-coach-registration-title">
           {t('coachQuickRegistration.fillSparringSessionInfo')}
         </DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2 }}>
+        <DialogContent dividers sx={{ flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+          <Box>
             <Grid container spacing={2}>
-              <Grid size={{xs: 6, md: 6}}>
+              <Grid size={{xs: 12, sm: 6}}>
                 <Item>
                   <TextField
                     id="sparring-firstname"
@@ -107,7 +126,7 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
                   />
                 </Item>
               </Grid>
-              <Grid size={{xs: 6, md: 6}}>
+              <Grid size={{xs: 12, sm: 6}}>
                 <Item>
                   <TextField
                     id="sparring-lastname"
@@ -120,7 +139,7 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
               </Grid>
             </Grid>
             <Grid container spacing={2} sx={{ mt: 2 }}>
-              <Grid size={{xs: 6, md: 6}}>
+              <Grid size={{xs: 12, sm: 6}}>
                 <Item>
                   <DatePicker
                     label={t('coachQuickRegistration.date')}
@@ -133,7 +152,7 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
               </Grid>
             </Grid>
             <Grid container spacing={2} sx={{ mt: 2 }}>
-              <Grid size={{xs: 6, md: 6}}>
+              <Grid size={{xs: 12, sm: 6}}>
                 <Item>
                   <TimePicker
                     label={t('coachQuickRegistration.startTime')}
@@ -143,7 +162,7 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
                   />
                 </Item>
               </Grid>
-              <Grid size={{xs: 6, md: 6}}>
+              <Grid size={{xs: 12, sm: 6}}>
                 <Item>
                   <TimePicker
                     label={t('coachQuickRegistration.endTime')}
