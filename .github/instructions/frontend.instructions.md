@@ -32,6 +32,105 @@ All new features must be implemented **mobile-first**, then enhanced for larger 
   `sx={{ display: { xs: 'none', md: 'block' } }}`
 - Avoid horizontal scrolling; content must wrap gracefully.
 
+### 🪟 Dialogs (MUI)
+
+All dialogs must follow these rules to ensure correct behavior on both mobile and desktop.
+
+#### Mobile behavior (xs–sm)
+- Dialogs must be fullScreen on mobile:
+      fullScreen={useMediaQuery(theme.breakpoints.down('sm'))}
+- Paper must use:
+      height: 100%
+      maxHeight: 100%
+      borderRadius: 0
+- DialogContent must be scrollable:
+      <DialogContent
+        sx={{
+          flex: '1 1 0',
+          minHeight: 0,
+          maxHeight: '100%',
+          overflowY: 'auto',
+        }}
+      />
+
+#### Desktop behavior (md+)
+- Dialogs must not be fullScreen.
+- Dialog width must be responsive:
+      width: { xs: '100%', sm: '480px' }
+      maxWidth: '100%'
+- Dialog height must be natural (no shrinking):
+      height: auto
+      maxHeight: none
+      overflowY: visible
+- DialogContent must not use mobile flex rules:
+      <DialogContent
+        sx={{
+          flex: '0 1 auto',
+          overflowY: 'visible',
+        }}
+      />
+
+#### Required pattern for all dialogs
+Use this structure for every dialog in the app:
+
+      <Dialog
+        fullScreen={fullScreen}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: theme => ({
+              display: 'flex',
+              flexDirection: 'column',
+
+              // Width rules
+              width: { xs: '100%', sm: '480px' },
+              maxWidth: '100%',
+
+              // Height rules
+              ...(fullScreen
+                ? {
+                    height: '100%',
+                    maxHeight: '100%',
+                    borderRadius: 0,
+                  }
+                : {
+                    height: 'auto',
+                    maxHeight: 'none',
+                    borderRadius: 3,
+                  }),
+
+              background: theme.palette.background.paper,
+              color: theme.palette.text.primary,
+            }),
+          },
+        }}
+      >
+        <DialogContent
+          sx={
+            fullScreen
+              ? {
+                  flex: '1 1 0',
+                  minHeight: 0,
+                  maxHeight: '100%',
+                  overflowY: 'auto',
+                }
+              : {
+                  flex: '0 1 auto',
+                  overflowY: 'visible',
+                }
+          }
+        >
+          ...
+        </DialogContent>
+      </Dialog>
+
+#### Do NOT use
+- maxHeight: 90vh on desktop  
+- flex: '1 1 0' on desktop  
+- overflowY: auto on desktop  
+- maxWidth="xs" unless intentionally creating a compact mobile-only dialog
+
 ### Touch Interaction
 - Minimum touch target size: **48×48 px**.
 - Ensure adequate spacing between interactive elements.

@@ -13,7 +13,7 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import '../../../../lib/i18n';
@@ -205,12 +205,14 @@ describe('ManualCoachRegistrationDialog', () => {
     render(<ManualCoachRegistrationDialog {...defaultProps} />);
     await userEvent.click(screen.getByRole('button', { name: 'Register PIN code' }));
 
-    // Fill RegisterPinDialog fields
+    // Fill RegisterPinDialog fields (coach mode requires password)
     await userEvent.type(screen.getByLabelText('Firstname'), 'John');
     await userEvent.type(screen.getByLabelText('Lastname'), 'Doe');
     await userEvent.type(screen.getByLabelText('Enter new PIN code'), '1234');
     await userEvent.type(screen.getByLabelText('Enter PIN again'), '1234');
-    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+    await userEvent.type(screen.getByLabelText('Coach password'), 'testpass');
+    // Use fireEvent for nested dialog button to bypass pointer-events check in test environment
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     await waitFor(() => {
       expect(defaultProps.onOk).toHaveBeenCalledWith(mockCoachData);

@@ -50,6 +50,7 @@ export function useIsDesktop(): boolean {
  * ```
  */
 export function useResponsiveDialog() {
-  const fullScreen = useIsMobile();
-  return { fullScreen };
+  const isMobile = useIsMobile();
+  const dialogWidth = isMobile ? '100%' : '480px';
+  return { fullScreen: isMobile, dialogWidth };
 }
