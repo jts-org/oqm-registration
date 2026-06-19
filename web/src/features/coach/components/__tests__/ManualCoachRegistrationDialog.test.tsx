@@ -9,7 +9,7 @@
  *   Covers: rendering, Ok button enable/disable, Cancel behaviour,
  *   name transfer to RegisterPinDialog, and PIN registration success flow.
  *   Written before implementation (TDD).
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';

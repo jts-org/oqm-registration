@@ -8,7 +8,7 @@
  * @description Modal dialog for trainee login via PIN code.
  *   PIN must be 4–6 digits. Calls the GAS backend verifyTraineePin route.
  *   Uses MUI Dialog, TextField, and Button for accessible and consistent UI.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useState } from 'react';
 import { useTheme } from '@mui/material/styles';

@@ -10,7 +10,7 @@
  *   grouped by date. Coaches can click Register to open a confirmation dialog that sends a
  *   real registration to the backend (OQM-0008), or Remove to trigger a removal confirmation.
  *   Uses MUI for accessible and consistent UI.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';

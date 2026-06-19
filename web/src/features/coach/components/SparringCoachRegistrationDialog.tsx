@@ -8,7 +8,7 @@
  * @description Sparring Coach Registration Dialog — collects free/sparring session information from the coach.
  *   Pre-fills coach name from coachData when provided (PIN-authenticated coach).
  *   Locale fallback logic: 'fi' → 'de' → 'en' for date/time fields.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

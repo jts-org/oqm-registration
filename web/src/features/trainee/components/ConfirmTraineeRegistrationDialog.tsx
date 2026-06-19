@@ -7,7 +7,7 @@
 /**
  * @description Confirmation dialog for trainee session registration.
  *   Sends registration payload to GAS and surfaces inline validation errors.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useState } from 'react';
 import Alert from '@mui/material/Alert';

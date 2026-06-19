@@ -2,7 +2,7 @@
  * @copyright 2026 Jouni Sipola by OQM
  * @description Tests for SettingsProvider — written before full implementation (TDD).
  *   Verifies startup fetch, context availability, loading state, and error handling.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILLS.md
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

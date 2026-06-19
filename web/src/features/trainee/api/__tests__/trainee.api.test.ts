@@ -7,7 +7,7 @@
 /**
  * @description Tests for trainee API functions.
  *   Written before implementation (TDD).
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {

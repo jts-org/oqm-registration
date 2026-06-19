@@ -10,7 +10,7 @@
  *   Opens a RegisterPinDialog when the user wants to register a new PIN.
  *   Login calls the GAS backend (coachLogin route).
  *   Uses MUI Dialog, TextField, and Button for accessible and consistent UI.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useState } from 'react';
 import { useTheme } from '@mui/material/styles';

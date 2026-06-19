@@ -8,7 +8,7 @@
  * @description SettingsProvider — fetches application settings on startup and
  *   makes them available to all child components via React context.
  *   Also persists settings in sessionStorage for the duration of the session.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILLS.md
  */
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 

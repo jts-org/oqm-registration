@@ -9,7 +9,7 @@
  *   Displays session details and coach name, calls the GAS backend to remove the coach registration,
  *   shows loading state during the API call, and notifies the parent on success or cancellation.
  *   Uses MUI Dialog for accessible and consistent UI.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';

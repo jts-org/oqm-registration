@@ -129,7 +129,7 @@ export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin }: Hom
               {t('mainView.languageFinnish')}
             </Button>
           </Stack>
-          <Typography variant="h3" gutterBottom>
+          <Typography variant="h4" gutterBottom>
             {t('app.title')}
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">

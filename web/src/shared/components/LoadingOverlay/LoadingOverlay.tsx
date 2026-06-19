@@ -8,7 +8,7 @@
  * @description Full-screen dimmed overlay with a centered spinner.
  *   Rendered during API operations to block user interaction and signal loading.
  *   Uses MUI CircularProgress for the spinner with a custom accessible overlay.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';

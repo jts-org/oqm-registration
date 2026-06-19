@@ -8,7 +8,7 @@
  * @description API functions for trainee registration (OQM-0014).
  *   Calls the GAS backend routes as defined in SKILL.wire-react-to-gas.md.
  *   Env vars are read inside each function so vi.stubEnv works correctly in tests.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import type {
   RegisterTraineeForSessionPayload,
@@ -26,7 +26,7 @@ import type {
  * Throws Error('name_already_exists') if a trainee with the same name already exists.
  * Throws Error('concurrent_request') if the backend script lock cannot be acquired.
  * Throws other Errors for network/service failures.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export async function registerTraineePin(data: RegisterTraineePinData): Promise<TraineeData> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
@@ -49,7 +49,7 @@ export async function registerTraineePin(data: RegisterTraineePinData): Promise<
  * Backend checks trainee_login first and then coach_login as fallback (OQM-0023).
  * Throws Error('no_match_found') if the PIN does not match any trainee or coach.
  * Throws other Errors for network/service failures.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export async function verifyTraineePin(pin: string): Promise<TraineeData> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
@@ -69,7 +69,7 @@ export async function verifyTraineePin(pin: string): Promise<TraineeData> {
  * Fetch all trainee sessions for the active 21-day registration window.
  * Uses legacy GET for anonymous page load and POST when identity context is known.
  * Returns array of TraineeSessionItem sorted by date and start_time.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export async function getTraineeSessions(
   identity?: TraineeSessionIdentityPayload
@@ -101,7 +101,7 @@ export async function getTraineeSessions(
  * Throws Error('validation_failed') if required fields are missing or invalid.
  * Throws Error('validation_failed_age') if age_group is 'underage' but underage_age is missing.
  * Throws other Errors for network/service failures.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export async function registerTraineeForSession(
   payload: RegisterTraineeForSessionPayload

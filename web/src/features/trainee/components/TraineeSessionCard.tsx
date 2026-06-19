@@ -7,7 +7,7 @@
 /**
  * @description Card for trainee session registration actions.
  *   Mirrors coach card layout while applying trainee-specific labels and state.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React from 'react';
 import DoneIcon from '@mui/icons-material/Done';

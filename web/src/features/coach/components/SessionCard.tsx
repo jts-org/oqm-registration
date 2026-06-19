@@ -8,7 +8,7 @@
  * @description MUI Card displaying a single session instance.
  *   Background is accent-secondary when no coach is assigned; light-green when assigned.
  *   Shows Register button (no coach) or Remove button (coach assigned).
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';

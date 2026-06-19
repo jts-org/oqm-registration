@@ -9,7 +9,7 @@
  *   Collects firstname, lastname, alias (optional) and a validated PIN.
  *   PIN must be 4–6 numeric characters. Used by coach and trainee flows.
  *   Uses MUI Dialog, TextField, and Button for accessible and consistent UI.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '@mui/material/styles';

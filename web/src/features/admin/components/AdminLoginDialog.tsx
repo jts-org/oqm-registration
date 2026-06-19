@@ -8,7 +8,7 @@
  * @description Modal dialog for admin login via password.
  *   Password verification is done server-side using adminLogin route.
  *   Uses MUI Dialog, TextField, and Button for accessible and consistent UI.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILLS.md
  */
 import React, { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
