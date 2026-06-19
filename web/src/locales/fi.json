@@ -1,5 +1,5 @@
 {
-  "app.title": "Treenien hallinta- ja ilmoittautumisj\u00e4rjestelm\u00e4",
+  "app.title": "Treenien hallinta- ja ilmoittautumis- j\u00e4rjestelm\u00e4",
   "settings.loading": "Ladataan asetuksia…",
   "settings.error": "Asetusten lataus ep\u00e4onnistui: {{message}}",
   "settings.retry": "Yrit\u00e4 uudelleen",

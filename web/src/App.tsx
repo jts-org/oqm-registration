@@ -11,7 +11,7 @@
  *   Reads application settings from SettingsContext (loaded by SettingsProvider on startup).
  *   Holds verifiedCoach state during the coach session; cleared when navigating away.
  *   Wraps the app in MUI ThemeProvider for consistent design.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILLS.md
  */
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'

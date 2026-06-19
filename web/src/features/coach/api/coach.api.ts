@@ -8,7 +8,7 @@
  * @description API functions for coach registration and PIN verification.
  *   Calls the GAS backend routes as defined in SKILL.wire-react-to-gas.md.
  *   Env vars are read inside each function so vi.stubEnv works correctly in tests.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import type { RegisterPinData } from '../../../shared/components/RegisterPinDialog/RegisterPinDialog';
 import type {
@@ -84,7 +84,7 @@ export async function coachLoginWithPassword(password: string): Promise<{ sessio
  * Returns the coach's data on success.
  * Throws Error('no_match_found') if the PIN does not match any coach.
  * Throws other Errors for network/service failures.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export async function verifyCoachPin(pin: string): Promise<CoachData> {
   const { coachData } = await coachLoginWithPin(pin);
@@ -95,7 +95,7 @@ export async function verifyCoachPin(pin: string): Promise<CoachData> {
  * Fetch all coach sessions for the 21-day window (7 days prior to this week's Monday, 14 days forward).
  * GET ?route=getCoachSessions&token=...
  * Returns array of SessionItem objects sorted by date and start_time.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export async function getCoachSessions(sessionToken?: string): Promise<SessionItem[]> {
   const base = import.meta.env.VITE_GAS_BASE_URL as string;
@@ -116,7 +116,7 @@ export async function getCoachSessions(sessionToken?: string): Promise<SessionIt
  * Throws Error('already_taken') if a coach is already registered for that session and date.
  * Throws Error('unknown_coach') if the coach is not found in coach_login.
  * Throws other Errors for network/service failures.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export async function registerCoachForSession(
   payload: RegisterCoachForSessionPayload,
@@ -145,7 +145,7 @@ export async function registerCoachForSession(
  * Throws Error('registration_not_found') if no realized registration matches.
  * Throws Error('session_available') if the matching registration is already realized=false.
  * Throws other Errors for network/service failures.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export async function removeCoachFromSession(
   payload: RemoveCoachFromSessionPayload,

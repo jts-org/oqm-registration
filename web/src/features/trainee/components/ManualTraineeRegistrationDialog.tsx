@@ -7,7 +7,7 @@
 /**
  * @description Manual dialog for collecting trainee registration profile data.
  *   Includes underage checkbox and age spinner for under-18 trainees.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useEffect, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';

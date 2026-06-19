@@ -6,7 +6,7 @@
 
 /**
  * @description Backend unit tests for admin customer event + schedule creation (OQM-0035).
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILLS.md
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');

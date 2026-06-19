@@ -6,7 +6,7 @@
 
 /**
  * @description Tests for AdminCustomerEventsPanel add event flow.
- * @see skills/SKILL.wire-react-to-gas.md
+ * @see .github/skills/wire-react-to-gas/SKILLS.md
  */
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';

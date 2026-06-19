@@ -2,7 +2,7 @@
  * @copyright 2026 Jouni Sipola by OQM
  * @description API functions for admin authentication.
  *   Calls GAS route adminLogin and returns a short-lived session token.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILLS.md
  */
 import type {
   BatchTraineeRegistrationRequest,

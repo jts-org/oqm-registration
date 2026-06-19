@@ -5,17 +5,17 @@ A ready-to-commit starter that uses a **React (Vite)** frontend with a **Google 
 ## Quick Start
 
 ### 1) Backend (Apps Script)
-- Follow `skills/SKILL.setup-gas-webapp.md` to create and deploy a Web App; copy the `/exec` URL.
+- Follow `.github/skills/setup-gas-webapp/SKILLS.md` to create and deploy a Web App; copy the `/exec` URL.
 - In Apps Script **Project Settings → Script properties**, set:
   - `SHEET_ID` (Spreadsheet ID)
   - `COACH_PASSWORD` (coach password used by `coachLogin` password mode)
   - `ADMIN_PASSWORD` (admin password used by `adminLogin`)
 
 ### 2) Spreadsheet
-- Create a Sheet with a tab named `Data` and headers: `id, name, email, created_at` (see `skills/SKILL.sheet-schema.md`).
+- Create a Sheet with a tab named `Data` and headers: `id, name, email, created_at` (see `.github/skills/sheet-schema/SKILLS.md`).
 
 ### 3) Frontend
-- Follow `skills/SKILL.setup-react-vite.md`.
+- Follow `.github/skills/setup-react-vite/SKILLS.md`.
 - Create `web/.env.local`:
   ```env
   VITE_GAS_BASE_URL=https://script.google.com/macros/s/…/exec
@@ -31,7 +31,7 @@ A ready-to-commit starter that uses a **React (Vite)** frontend with a **Google 
 - CLASP for local Apps Script development.
 - Vite getting started & static deploy to GitHub Pages.
 
-See `AGENTS.md` and `skills/` for the working method.
+See `AGENTS/SKILLS.md` and `.github/skills/` for the working method.
 ## Environment Variables
 - VITE_GAS_BASE_URL: GAS web app endpoint
 
@@ -43,6 +43,6 @@ See `AGENTS.md` and `skills/` for the working method.
 
 ## Documentation Links
 - [AGENTS.md](AGENTS.md)
-- [skills/SKILL.sheet-schema.md](skills/SKILL.sheet-schema.md)
-- [skills/SKILL.wire-react-to-gas.md](skills/SKILL.wire-react-to-gas.md)
-- [skills/SKILL.deploy-ci.md](skills/SKILL.deploy-ci.md)
+- [.github/skills/sheet-schema/SKILLS.md](.github/skills/sheet-schema/SKILLS.md)
+- [.github/skills/wire-react-to-gas/SKILLS.md](.github/skills/wire-react-to-gas/SKILLS.md)
+- [.github/skills/deploy-ci/SKILLS.md](.github/skills/deploy-ci/SKILLS.md)

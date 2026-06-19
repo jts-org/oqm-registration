@@ -10,7 +10,7 @@
  *   Also supports opening RegisterPinDialog to register a PIN directly from this dialog;
  *   pre-fills name fields when transferring to RegisterPinDialog.
  *   After PIN registration, closes and opens ConfirmCoachRegistrationDialog with full CoachData.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

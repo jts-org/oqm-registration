@@ -10,7 +10,7 @@
  *   and stores pending trainee profile for repeated registrations.
  *   Supports PIN registration via RegisterPinDialog (OQM-0019).
  *   Supports PIN-based login via TraineeLoginDialog (OQM-0020).
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRef } from 'react';

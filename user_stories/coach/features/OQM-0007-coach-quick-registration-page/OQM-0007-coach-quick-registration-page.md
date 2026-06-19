@@ -243,6 +243,6 @@ User must have provided a valid PIN code or password in Coach Login Dialog
 - [copilot-instructions.md](../../../../.github/instructions/copilot-instructions.md)
 - [frontend.instructions.md](../../../../.github/instructions/frontend.instructions.md)
 - [backend.instructions.md](../../../../.github/instructions/backend.instructions.md)
-- [SKILL.wire-react-to-gas.md](../../../../.github/skills/SKILL.wire-react-to-gas.md) for API contract
-- [SKILL.sheet-schema.md](../../../../.github/skills/SKILL.sheet-schema.md) for data structure
+- [SKILL.wire-react-to-gas.md](../../../../.github/skills/wire-react-to-gas.md) for API contract
+- [SKILL.sheet-schema.md](../../../../.github/skills/sheet-schema.md) for data structure
 

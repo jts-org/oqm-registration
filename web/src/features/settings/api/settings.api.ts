@@ -3,7 +3,7 @@
  * @description API functions for the settings feature.
  *   Calls the GAS backend route `getSettings` as defined in SKILL.wire-react-to-gas.md.
  *   Env vars are read inside each function so vi.stubEnv works correctly in tests.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import type { Setting } from '../types';
 

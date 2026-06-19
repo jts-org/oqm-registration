@@ -2,7 +2,7 @@
  * @copyright 2026 Jouni Sipola by OQM
  * @description Tests for settings.api — written before implementation (TDD).
  *   Verifies route URL construction, response parsing, and error handling.
- *   @see skills/SKILL.wire-react-to-gas.md
+ *   @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getSettings } from '../settings.api';
