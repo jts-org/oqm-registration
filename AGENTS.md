@@ -46,7 +46,7 @@ Backend is deployed as a Web App using `doGet/doPost` and returns JSON.
 
 # Workflow
 
-Issue → assign skills → branch → PR → CI → agent review → human review → merge.
+Issue → assign skills → branch → PR → CI → agent review (PR Review + Documentation Update) → human review → merge.
 
 Backend uses **CLASP** for code sync; deployment is manual via Apps Script UI.
 
@@ -69,6 +69,7 @@ Backend uses **CLASP** for code sync; deployment is manual via Apps Script UI.
 - Tests written and passing  
 - Relevant skills followed  
 - API contract unchanged or updated in skills  
+- Documentation updated when UI behavior, flows, schemas, or API contracts change (see documentation-update skill)  
 - No secrets leaked  
 - Manual GAS deploy instructions followed (if backend changed)  
 
@@ -124,6 +125,13 @@ If blocked by CI or review, tag a maintainer and describe the issue.
 
 ---
 
+## PR Quality & Documentation
+
+- `.github/skills/pr-review/SKILL.md`  
+- `.github/skills/documentation-update/SKILL.md`  
+
+---
+
 # Quick Reference (For New Features)
 
 1. Create GitHub issue  
@@ -136,4 +144,4 @@ If blocked by CI or review, tag a maintainer and describe the issue.
 4. Apply performance patterns:  
    `.github/skills/frontend-performance/SKILL.md`  
 5. Deploy frontend via GitHub Pages  
-6. Deploy backend manually via Apps Script UI  
+6. Deploy backend manually via Apps Script UI

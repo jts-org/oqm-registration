@@ -80,12 +80,11 @@ On unauthorized backend response:
 | registerTraineePin | POST | Register trainee PIN |
 | registerTraineeForSession | POST | Register trainee for a session |
 
-**Deprecated (legacy):**
+**Legacy / Compatibility**
 
-- verifyCoachPin  
-- verifyTraineePin  
-
-Copilot must not generate new code using deprecated routes.
+- `verifyCoachPin` and `verifyTraineePin` are supported for backward compatibility.
+  Prefer `coachLogin` and current login/verification flows for new implementations.
+  If legacy routes are used, document the reason and treat them as compatibility-only.
 
 ---
 

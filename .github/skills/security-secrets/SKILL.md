@@ -205,9 +205,8 @@ Copilot must follow the global backend error model:
 - no_match_found  
 - pin_reserved  
 - name_already_exists  
-- concurrentRequest  
-- concurrent_operation  
 - concurrent_request  
+- concurrent_operation  
 - validation_failed  
 - validation_failed_age  
 - already_registered  

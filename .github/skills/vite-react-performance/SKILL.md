@@ -181,14 +181,14 @@ Correct:
 
 ---
 
-## 3. Deployment & Build Configuration
+### 3. Deployment & Build Configuration
 
 ### 3.1 Environment Variables Security
 
 Correct:
 ```env
-VITE_GAS_BASE_URL=https://...
-VITE_API_TOKEN=...
+VITE_GAS_BASE_URL=https://script.google.com/macros/s/<YOUR_EXEC_ID>/exec
+# VITE_API_TOKEN is optional/legacy; avoid committing real tokens in the repository
 ```
 
 Type safety:

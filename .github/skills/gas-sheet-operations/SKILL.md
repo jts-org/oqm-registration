@@ -69,8 +69,9 @@ Copilot must:
 Copilot must:
 
 - generate IDs using incremental numeric or timestamp-based patterns  
-- never use UUID libraries  
-- never use random strings  
+ - generate IDs using incremental numeric, timestamp-based, or UUID (via Utilities.getUuid()) patterns  
+ - never use external UUID libraries; use `Utilities.getUuid()` where needed  
+ - never use random strings  
 - never generate IDs on the frontend  
 - ensure ID generation happens **inside the lock**  
 

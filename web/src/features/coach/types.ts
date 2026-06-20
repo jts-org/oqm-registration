@@ -24,7 +24,7 @@ export interface CoachSession {
 /**
  * A single session instance returned from the GAS backend for the 21-day window.
  * Used by CoachQuickRegistrationPage to build session cards.
- * @see .github/skills/wire-react-to-gas/SKILLS.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export interface SessionItem {
   /** Unique identifier: schedule_id + date */
@@ -55,7 +55,7 @@ export interface SessionItem {
 
 /**
  * Payload for registering a coach for a specific session.
- * @see .github/skills/wire-react-to-gas/SKILLS.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export interface RegisterCoachForSessionPayload {
   firstname: string;
@@ -71,7 +71,7 @@ export interface RegisterCoachForSessionPayload {
 
 /**
  * Payload for removing a coach from a specific session (OQM-0009).
- * @see .github/skills/wire-react-to-gas/SKILLS.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export interface RemoveCoachFromSessionPayload {
   firstname: string;
