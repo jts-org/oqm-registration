@@ -6,7 +6,7 @@
 
 /**
  * @description Backend unit tests for verifyTraineePin_ fallback behavior (OQM-0023).
- * @see .github/skills/wire-react-to-gas/SKILLS.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');

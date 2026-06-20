@@ -49,7 +49,7 @@ Copilot must always generate locking code in this exact form:
 ```js
 var lock = LockService.getScriptLock();
 if (!lock.tryLock(5000)) {
-  return { ok: false, error: "concurrentRequest" };
+  return { ok: false, error: "concurrent_request" };
 }
 try {
   // critical section
@@ -101,9 +101,8 @@ Copilot must place the following inside the critical section:
 
 Copilot must use the backend’s established error codes:
 
-- `concurrentRequest` — trainee/coach registration conflicts  
-- `concurrent_operation` — coach removal conflicts  
-- `concurrent_request` — batch operations  
+- `concurrent_request` — trainee/coach registration conflicts and batch operations
+- `concurrent_operation` — coach removal conflicts
 
 Copilot must not invent new concurrency error codes.
 
@@ -118,10 +117,10 @@ Copilot must assume:
 - **trainee_registrations** requires atomic writes  
 - **batch operations** must be fully atomic  
 
-### Required behavior:
-
-- Always read → validate → write inside the same lock  
-- Never read outside the lock if the result affects a write  
+-### Required behaviors:
+- Use `tryLock(5000)` — **never** `lock.waitLock()`
+- Always return a structured error (`concurrent_request`) on failure
+- Always release the lock in a `finally` block
 - Never write without a lock  
 - Never generate code that performs partial writes  
 

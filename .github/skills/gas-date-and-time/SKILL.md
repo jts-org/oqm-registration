@@ -63,7 +63,10 @@ Copilot must never write:
 ### Required serialization pattern:
 
 ```js
-const iso = Utilities.formatDate(dateObj, "Europe/Helsinki", "yyyy-MM-dd'T'HH:mm:ss'Z'");
+// If you need an ISO Zulu (UTC) timestamp:
+const isoUtc = Utilities.formatDate(dateObj, "UTC", "yyyy-MM-dd'T'HH:mm:ss'Z'");
+// If you need Europe/Helsinki-local ISO datetime (no Z suffix):
+const isoLocal = Utilities.formatDate(dateObj, "Europe/Helsinki", "yyyy-MM-dd'T'HH:mm:ss");
 ```
 
 For date‑only fields:
@@ -156,7 +159,10 @@ Copilot must:
 
 ```js
 const now = new Date();
-const createdAt = Utilities.formatDate(now, "Europe/Helsinki", "yyyy-MM-dd'T'HH:mm:ss'Z'");
+// Prefer explicit UTC for Z-suffixed timestamps:
+const createdAtUtc = Utilities.formatDate(now, "UTC", "yyyy-MM-dd'T'HH:mm:ss'Z'");
+// Or use Helsinki-local ISO without Z when storing local business-time:
+const createdAtLocal = Utilities.formatDate(now, "Europe/Helsinki", "yyyy-MM-dd'T'HH:mm:ss");
 ```
 
 ---

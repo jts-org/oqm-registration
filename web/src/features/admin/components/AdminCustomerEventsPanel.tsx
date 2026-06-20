@@ -6,7 +6,7 @@
 
 /**
  * @description Admin Events panel for creating a customer event and schedule rows.
- * @see .github/skills/wire-react-to-gas/SKILLS.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

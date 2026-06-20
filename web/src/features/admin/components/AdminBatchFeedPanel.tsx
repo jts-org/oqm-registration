@@ -7,7 +7,7 @@
 /**
  * @description Admin batch feed panel for transferring trainee paper registrations to GAS.
  * Uses row-based input with MUI DatePicker/TimePicker and submits all rows in one request.
- * @see .github/skills/wire-react-to-gas/SKILLS.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

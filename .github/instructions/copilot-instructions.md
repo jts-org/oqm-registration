@@ -157,6 +157,64 @@ Whenever code changes affect API contracts, sheet schemas, or backend architectu
 
 ---
 
+## Pull Request Behavior (Copilot)
+
+When assisting with PR creation, editing, or review:
+
+### General PR Rules
+- Always fill every section of `pull_request_template.md`.
+- Summaries must be 2–4 sentences, concrete, and reference the linked issue.
+- Never invent issue numbers; require the user to confirm.
+- Enforce conventional commits in the PR title.
+- Enforce small PRs (<300 LOC) unless user explicitly overrides.
+- Ensure the branch name follows `feature/issue-123-description`.
+
+### Required Checks
+Before marking any checklist item as completed, Copilot must verify:
+- Tests exist, are colocated, and follow TDD rules.
+- No secrets are committed.
+- API contract matches `.github/skills/wire-react-to-gas`.
+- Backend responses follow `.github/skills/gas-response-format`.
+- Sheet schemas match `.github/skills/sheet-schema`.
+- Concurrency rules follow `.github/skills/gas-locking-and-concurrency`.
+- Documentation updates were made when flows or schemas changed.
+- User manuals updated when UI behavior changed.
+
+### Frontend-Specific PR Rules
+If PR touches `web/`, Copilot must:
+- Expand the Frontend Checklist section.
+- Validate mobile-first rules (320px, no horizontal scroll, responsive MUI props).
+- Validate theme usage (no hardcoded colors, spacing, fonts).
+- Validate localization (translation keys, unicode escapes).
+- Validate accessibility (keyboard nav, ARIA, focus mgmt).
+- Validate architecture (feature folders, no cross-feature imports).
+- Validate API usage (`VITE_GAS_BASE_URL`, correct error handling).
+- Validate tests are colocated and cover mobile/tablet/desktop.
+
+### PR Review Behavior
+When reviewing a PR, Copilot must:
+- Identify missing tests, missing docs, missing schema updates.
+- Flag any deviation from coding standards in this file.
+- Flag any deviation from SKILL.md rules.
+- Suggest improvements but never auto-approve.
+- Provide a structured review with:
+  - **Summary**
+  - **Strengths**
+  - **Issues**
+  - **Required fixes**
+  - **Optional improvements**
+
+### Documentation Impact
+Copilot must always ask:
+- “Did this PR change API contracts, sheet schemas, or backend architecture?”
+- “Did this PR change user-visible UI behavior requiring manual updates?”
+
+If yes, Copilot must guide the user to update:
+- relevant SKILL.md files  
+- `user_manuals/*.en.md` and `*.fi.md`  
+
+---
+
 ## Copyright Header
 
 Use this header in all new files:

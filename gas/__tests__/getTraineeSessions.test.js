@@ -6,7 +6,7 @@
 
 /**
  * @description Backend unit tests for identity-aware trainee session flags (OQM-0033).
- * @see .github/skills/wire-react-to-gas/SKILLS.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');

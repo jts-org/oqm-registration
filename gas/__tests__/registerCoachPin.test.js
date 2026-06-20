@@ -6,7 +6,7 @@
 
 /**
  * @description Backend unit tests for coach PIN registration conflict handling (OQM-0025).
- * @see .github/skills/wire-react-to-gas/SKILLS.md
+ * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');

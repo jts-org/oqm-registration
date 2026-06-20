@@ -46,9 +46,8 @@ Copilot must use only these codes:
 - no_match_found  
 - pin_reserved  
 - name_already_exists  
-- concurrentRequest  
-- concurrent_operation  
-- concurrent_request  
+ - concurrent_request  
+ - concurrent_operation  
 - validation_failed  
 - validation_failed_age  
 - already_registered  
@@ -105,9 +104,9 @@ Copilot must follow these mappings:
 - Session full or taken → `already_taken`
 
 ### Concurrency
-- Lock acquisition failure → `concurrentRequest`
-- Coach removal conflict → `concurrent_operation`
-- Batch conflict → `concurrent_request`
+ - Lock acquisition failure → `concurrent_request`
+ - Coach removal conflict → `concurrent_operation`
+ - Batch conflict → `concurrent_request`
 
 Copilot must not create new mappings unless the skill is updated.
 
@@ -120,8 +119,8 @@ Copilot must not create new mappings unless the skill is updated.
 - Ensures sessionToken errors use `unauthorized` or `forbidden`  
 
 ### **gas-locking-and-concurrency**
-- Defines concurrency error codes  
-- Ensures lock failures map to `concurrentRequest`  
+ - Defines concurrency error codes  
+ - Ensures lock failures map to `concurrent_request`  
 
 ### **sheet-schema**
 - Defines validation errors for missing/invalid fields  
