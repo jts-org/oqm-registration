@@ -150,3 +150,11 @@ test('listSessionsSchedule_ sets active to false for FALSE value', () => {
   const result = sb.listSessionsSchedule_();
   assert.equal(result.schedules[0].active, false);
 });
+
+test('listSessionsSchedule_ preserves numeric 0 for weekdays_available', () => {
+  const sb = createSandbox();
+  sb.getSheetData = (_name) => [makeSheetRow({ 5: 0 })];
+
+  const result = sb.listSessionsSchedule_();
+  assert.equal(result.schedules[0].weekdays_available, '0');
+});

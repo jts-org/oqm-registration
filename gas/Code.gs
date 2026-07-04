@@ -2024,7 +2024,8 @@ function mapSessionScheduleRow_(row, tz) {
     session_type_alias: String(row[2] || ''),
     start_date: normalizeDateYmd_(row[3], tz),
     end_date: normalizeDateYmd_(row[4], tz),
-    weekdays_available: String(row[5] || ''),
+    // Preserve numeric 0 (Monday-only) instead of treating it as empty.
+    weekdays_available: String(row[5] ?? ''),
     start_time: normalizeTimeHm_(row[6], tz),
     end_time: normalizeTimeHm_(row[7], tz),
     location: String(row[8] || ''),
