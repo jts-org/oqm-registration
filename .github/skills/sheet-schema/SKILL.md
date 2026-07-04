@@ -297,6 +297,38 @@ Notes:
 
 ---
 
+## Sheet: `sessions_schedule` (OQM-0042)
+| Column | Name               | Type     |
+|--------|--------------------|----------|
+| A      | id                 | string   |
+| B      | session_type       | string   |
+| C      | session_type_alias | string   |
+| D      | start_date         | ISO-8601 |
+| E      | end_date           | ISO-8601 |
+| F      | weekdays_available | string   |
+| G      | start_time         | time     |
+| H      | end_time           | time     |
+| I      | location           | string   |
+| J      | location_alias     | string   |
+| K      | active             | boolean  |
+| L      | created_at         | ISO-8601 |
+| M      | updated_at         | ISO-8601 |
+
+Notes:
+- B: English session type name
+- C: Localized (Finnish) session type name (alias)
+- D/E: Active date range, `YYYY-MM-DD`
+- F: Mon=0 … Sun=6, comma-separated for multiple days (e.g., `"0,2,4"`); stored and returned as a string, never an array
+- G/H: Time values in `HH:MM` format; both optional but must be paired (both or neither)
+- I: Location name in English; optional
+- J: Location alias in Finnish; optional
+- K: `true` if this schedule is currently active
+- L: server-set at creation, never updated
+- M: server-set at creation and on every update
+- This sheet consolidates `sessions` and `weekly_schedule` (OQM-0007). Migration of existing participation flows is out of scope for OQM-0042.
+
+---
+
 # 7. Changelog, Migration, Deprecation, Localization
 
 (Your original content preserved.)

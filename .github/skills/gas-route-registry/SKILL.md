@@ -28,6 +28,10 @@ Common routes (implemented in Code.gs):
 - `registerCoachForSession`
 - `registerTraineeBatchForSessions`
 - `registerCustomerEventWithSchedule`
+- `listSessionsSchedule`
+- `addSessionSchedule`
+- `updateSessionSchedule`
+- `deleteSessionSchedule`
 
 Notes:
 - Keep this list in sync with `gas/Code.gs` when routes are added/removed.

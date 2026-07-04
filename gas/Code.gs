@@ -48,6 +48,10 @@ function doGet(e) {
       const data = getTraineeSessions_();
       return json_({ ok: true, data });
     }
+    if (route === 'listSessionsSchedule') {
+      const data = listSessionsSchedule_();
+      return json_({ ok: true, data });
+    }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
     return json_({ ok: false, error: String(err) }, 400);
@@ -192,6 +196,48 @@ function doPost(e) {
       }
       return json_({ ok: true, data: result });
     }
+    if (route === 'addSessionSchedule') {
+      const result = addSessionSchedule_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.scheduleAlreadyExists) {
+        return json_({ ok: false, error: 'schedule_already_exists' });
+      }
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'updateSessionSchedule') {
+      const result = updateSessionSchedule_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.noMatchFound) {
+        return json_({ ok: false, error: 'no_match_found' });
+      }
+      if (result.scheduleAlreadyExists) {
+        return json_({ ok: false, error: 'schedule_already_exists' });
+      }
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'deleteSessionSchedule') {
+      const result = deleteSessionSchedule_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.noMatchFound) {
+        return json_({ ok: false, error: 'no_match_found' });
+      }
+      return json_({ ok: true, data: { id: result.deletedId } });
+    }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
     return json_({ ok: false, error: String(err) }, 400);
@@ -248,7 +294,11 @@ function isAdminRoute_(route) {
   return [
     'getSettings',
     'registerTraineeBatchForSessions',
-    'registerCustomerEventWithSchedule'
+    'registerCustomerEventWithSchedule',
+    'listSessionsSchedule',
+    'addSessionSchedule',
+    'updateSessionSchedule',
+    'deleteSessionSchedule'
   ].indexOf(String(route || '')) !== -1;
 }
 
@@ -1919,4 +1969,283 @@ function getTraineeSessions_(traineeIdentity) {
 
   logToSheet('getTraineeSessions_() - returned ' + merged.length + ' sessions');
   return merged;
+}
+
+// ─── Sessions Schedule (OQM-0042) ────────────────────────────────────────────
+
+/**
+ * Validate a sessions_schedule payload.
+ * Returns '' on success, 'validation_failed' on any error.
+ */
+function validateSessionSchedulePayload_(payload, tz) {
+  if (!payload) return 'validation_failed';
+
+  const sessionType = String(payload.session_type || '').trim();
+  const sessionTypeAlias = String(payload.session_type_alias || '').trim();
+  const startDate = normalizeDateYmd_(payload.start_date, tz);
+  const endDate = normalizeDateYmd_(payload.end_date, tz);
+  const weekdays = String(payload.weekdays_available || '').trim();
+
+  if (!sessionType || !sessionTypeAlias) return 'validation_failed';
+  if (!startDate || !endDate) return 'validation_failed';
+  if (endDate < startDate) return 'validation_failed';
+
+  // weekdays_available: non-empty, comma-separated integers 0–6, no duplicates
+  if (!weekdays) return 'validation_failed';
+  const dayParts = weekdays.split(',');
+  const daySet = {};
+  for (var i = 0; i < dayParts.length; i++) {
+    const raw = dayParts[i].trim();
+    const d = Number(raw);
+    if (raw === '' || isNaN(d) || d < 0 || d > 6 || Math.floor(d) !== d) return 'validation_failed';
+    if (daySet[String(d)]) return 'validation_failed';
+    daySet[String(d)] = true;
+  }
+
+  // active must be boolean
+  if (typeof payload.active !== 'boolean') return 'validation_failed';
+
+  // start_time / end_time: optional but must be paired
+  const startTime = payload.start_time ? normalizeTimeHm_(payload.start_time, tz) : '';
+  const endTime = payload.end_time ? normalizeTimeHm_(payload.end_time, tz) : '';
+  if ((startTime && !endTime) || (!startTime && endTime)) return 'validation_failed';
+  if (startTime && endTime && endTime < startTime) return 'validation_failed';
+
+  return '';
+}
+
+/**
+ * Map a raw sheet row (0-indexed array) to a SessionScheduleRecord object.
+ */
+function mapSessionScheduleRow_(row, tz) {
+  return {
+    id: String(row[0] || ''),
+    session_type: String(row[1] || ''),
+    session_type_alias: String(row[2] || ''),
+    start_date: normalizeDateYmd_(row[3], tz),
+    end_date: normalizeDateYmd_(row[4], tz),
+    weekdays_available: String(row[5] || ''),
+    start_time: normalizeTimeHm_(row[6], tz),
+    end_time: normalizeTimeHm_(row[7], tz),
+    location: String(row[8] || ''),
+    location_alias: String(row[9] || ''),
+    active: row[10] === true || String(row[10]).toUpperCase() === 'TRUE',
+    created_at: String(row[11] || ''),
+    updated_at: String(row[12] || '')
+  };
+}
+
+/**
+ * List all rows in sessions_schedule (OQM-0042).
+ * Read-only — no lock required.
+ */
+function listSessionsSchedule_() {
+  const tz = Session.getScriptTimeZone();
+  const rows = getSheetData('sessions_schedule');
+  const schedules = rows.map(function(row) {
+    return mapSessionScheduleRow_(row, tz);
+  });
+  return { schedules: schedules };
+}
+
+/**
+ * Add one row to sessions_schedule (OQM-0042).
+ */
+function addSessionSchedule_(payload) {
+  const tz = Session.getScriptTimeZone();
+  if (validateSessionSchedulePayload_(payload, tz) !== '') {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const sheet = getSheetByName('sessions_schedule');
+    if (!sheet) throw new Error('Sheet not found: sessions_schedule');
+
+    const sessionType = String(payload.session_type || '').trim();
+    const sessionTypeAlias = String(payload.session_type_alias || '').trim();
+    const startDate = normalizeDateYmd_(payload.start_date, tz);
+    const endDate = normalizeDateYmd_(payload.end_date, tz);
+    const weekdays = String(payload.weekdays_available || '').trim();
+    const startTime = payload.start_time ? normalizeTimeHm_(payload.start_time, tz) : '';
+    const endTime = payload.end_time ? normalizeTimeHm_(payload.end_time, tz) : '';
+    const location = String(payload.location || '').trim();
+    const locationAlias = String(payload.location_alias || '').trim();
+    const active = payload.active !== false;
+
+    // Duplicate check: same session_type + weekdays + times + location, overlapping dates, active=true rows
+    const existing = getSheetData('sessions_schedule');
+    for (var i = 0; i < existing.length; i++) {
+      const row = existing[i];
+      const rowActive = row[10] === true || String(row[10]).toUpperCase() === 'TRUE';
+      if (!rowActive) continue;
+      const rowStart = normalizeDateYmd_(row[3], tz);
+      const rowEnd = normalizeDateYmd_(row[4], tz);
+      if (endDate < rowStart || startDate > rowEnd) continue;
+      if (String(row[1] || '').trim() === sessionType &&
+          String(row[5] || '').trim() === weekdays &&
+          normalizeTimeHm_(row[6], tz) === startTime &&
+          normalizeTimeHm_(row[7], tz) === endTime &&
+          String(row[8] || '').trim() === location) {
+        return { scheduleAlreadyExists: true };
+      }
+    }
+
+    const now = new Date().toISOString();
+    const id = String(Date.now());
+    sheet.appendRow([id, sessionType, sessionTypeAlias, startDate, endDate,
+                     weekdays, startTime, endTime, location, locationAlias,
+                     active, now, now]);
+
+    return {
+      schedule: {
+        id: id,
+        session_type: sessionType,
+        session_type_alias: sessionTypeAlias,
+        start_date: startDate,
+        end_date: endDate,
+        weekdays_available: weekdays,
+        start_time: startTime,
+        end_time: endTime,
+        location: location,
+        location_alias: locationAlias,
+        active: active,
+        created_at: now,
+        updated_at: now
+      }
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Update an existing row in sessions_schedule (OQM-0042).
+ * Never modifies id (col A) or created_at (col L).
+ */
+function updateSessionSchedule_(payload) {
+  const tz = Session.getScriptTimeZone();
+  const id = String(payload && payload.id ? payload.id : '').trim();
+  if (!id) return { validationFailed: true };
+  if (validateSessionSchedulePayload_(payload, tz) !== '') {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const sheet = getSheetByName('sessions_schedule');
+    if (!sheet) throw new Error('Sheet not found: sessions_schedule');
+
+    const existing = getSheetData('sessions_schedule');
+    var targetIndex = -1;
+    for (var i = 0; i < existing.length; i++) {
+      if (String(existing[i][0] || '') === id) {
+        targetIndex = i;
+        break;
+      }
+    }
+    if (targetIndex === -1) return { noMatchFound: true };
+
+    const sessionType = String(payload.session_type || '').trim();
+    const sessionTypeAlias = String(payload.session_type_alias || '').trim();
+    const startDate = normalizeDateYmd_(payload.start_date, tz);
+    const endDate = normalizeDateYmd_(payload.end_date, tz);
+    const weekdays = String(payload.weekdays_available || '').trim();
+    const startTime = payload.start_time ? normalizeTimeHm_(payload.start_time, tz) : '';
+    const endTime = payload.end_time ? normalizeTimeHm_(payload.end_time, tz) : '';
+    const location = String(payload.location || '').trim();
+    const locationAlias = String(payload.location_alias || '').trim();
+    const active = payload.active !== false;
+
+    // Duplicate check, excluding the row being updated
+    for (var j = 0; j < existing.length; j++) {
+      if (j === targetIndex) continue;
+      const row = existing[j];
+      const rowActive = row[10] === true || String(row[10]).toUpperCase() === 'TRUE';
+      if (!rowActive) continue;
+      const rowStart = normalizeDateYmd_(row[3], tz);
+      const rowEnd = normalizeDateYmd_(row[4], tz);
+      if (endDate < rowStart || startDate > rowEnd) continue;
+      if (String(row[1] || '').trim() === sessionType &&
+          String(row[5] || '').trim() === weekdays &&
+          normalizeTimeHm_(row[6], tz) === startTime &&
+          normalizeTimeHm_(row[7], tz) === endTime &&
+          String(row[8] || '').trim() === location) {
+        return { scheduleAlreadyExists: true };
+      }
+    }
+
+    const now = new Date().toISOString();
+    const createdAt = String(existing[targetIndex][11] || '');
+    const sheetRow = targetIndex + 2; // 1-based + header row offset
+
+    // Update columns B–K (2–11) and M (13); never touch A (id) or L (created_at)
+    sheet.getRange(sheetRow, 2, 1, 10).setValues([[
+      sessionType, sessionTypeAlias, startDate, endDate,
+      weekdays, startTime, endTime, location, locationAlias, active
+    ]]);
+    sheet.getRange(sheetRow, 13).setValue(now);
+
+    return {
+      schedule: {
+        id: id,
+        session_type: sessionType,
+        session_type_alias: sessionTypeAlias,
+        start_date: startDate,
+        end_date: endDate,
+        weekdays_available: weekdays,
+        start_time: startTime,
+        end_time: endTime,
+        location: location,
+        location_alias: locationAlias,
+        active: active,
+        created_at: createdAt,
+        updated_at: now
+      }
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Delete a row from sessions_schedule by id (OQM-0042).
+ */
+function deleteSessionSchedule_(payload) {
+  const id = String(payload && payload.id ? payload.id : '').trim();
+  if (!id) return { validationFailed: true };
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const sheet = getSheetByName('sessions_schedule');
+    if (!sheet) throw new Error('Sheet not found: sessions_schedule');
+
+    const existing = getSheetData('sessions_schedule');
+    var targetIndex = -1;
+    for (var i = 0; i < existing.length; i++) {
+      if (String(existing[i][0] || '') === id) {
+        targetIndex = i;
+        break;
+      }
+    }
+    if (targetIndex === -1) return { noMatchFound: true };
+
+    const sheetRow = targetIndex + 2; // 1-based + header row offset
+    sheet.deleteRow(sheetRow);
+    return { deletedId: id };
+  } finally {
+    lock.releaseLock();
+  }
 }

@@ -9,6 +9,9 @@ import type {
   BatchTraineeRegistrationResponse,
   CustomerEventWithScheduleRequest,
   CustomerEventWithScheduleResponse,
+  ListSessionsScheduleResponse,
+  SessionSchedulePayload,
+  SessionScheduleRecord,
 } from '../types';
 
 export interface AdminSession {
@@ -79,4 +82,98 @@ export async function registerCustomerEventWithSchedule(
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Customer event submission failed');
   return json.data as CustomerEventWithScheduleResponse;
+}
+
+// ─── Sessions Schedule (OQM-0042) ────────────────────────────────────────────
+
+/**
+ * Fetch all rows from sessions_schedule.
+ * GET route — passes sessionToken as a query parameter.
+ * Throws backend error code string as Error.message when request fails.
+ */
+export async function listSessionsSchedule(
+  sessionToken: string
+): Promise<ListSessionsScheduleResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const url = `${base}?route=listSessionsSchedule&sessionToken=${encodeURIComponent(sessionToken)}`;
+  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to load schedules');
+  return json.data as ListSessionsScheduleResponse;
+}
+
+/**
+ * Add one row to sessions_schedule.
+ * Throws backend error code string as Error.message when request fails.
+ */
+export async function addSessionSchedule(
+  sessionToken: string,
+  payload: SessionSchedulePayload
+): Promise<{ schedule: SessionScheduleRecord }> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'addSessionSchedule', payload, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to add schedule');
+  return json.data as { schedule: SessionScheduleRecord };
+}
+
+/**
+ * Update an existing row in sessions_schedule by id.
+ * Throws backend error code string as Error.message when request fails.
+ */
+export async function updateSessionSchedule(
+  sessionToken: string,
+  payload: SessionSchedulePayload
+): Promise<{ schedule: SessionScheduleRecord }> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'updateSessionSchedule', payload, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to update schedule');
+  return json.data as { schedule: SessionScheduleRecord };
+}
+
+/**
+ * Delete a row from sessions_schedule by id.
+ * Throws backend error code string as Error.message when request fails.
+ */
+export async function deleteSessionSchedule(
+  sessionToken: string,
+  id: string
+): Promise<{ id: string }> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'deleteSessionSchedule', payload: { id }, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to delete schedule');
+  return json.data as { id: string };
 }
