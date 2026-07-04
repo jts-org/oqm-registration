@@ -85,3 +85,44 @@ export interface CustomerEventWithScheduleResponse {
   scheduleRejectedCount: number;
   results: CustomerEventScheduleResult[];
 }
+
+// ─── Sessions Schedule (OQM-0042) ────────────────────────────────────────────
+
+/** One row from the sessions_schedule sheet. */
+export interface SessionScheduleRecord {
+  id: string;
+  session_type: string;
+  session_type_alias: string;
+  start_date: string;
+  end_date: string;
+  /** Comma-separated day numbers, e.g. "0,2,4". Mon=0 … Sun=6. */
+  weekdays_available: string;
+  start_time: string;
+  end_time: string;
+  location: string;
+  location_alias: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Payload for addSessionSchedule (id omitted) and updateSessionSchedule (id required). */
+export interface SessionSchedulePayload {
+  /** Required for updateSessionSchedule, omitted for addSessionSchedule. */
+  id?: string;
+  session_type: string;
+  session_type_alias: string;
+  start_date: string;
+  end_date: string;
+  weekdays_available: string;
+  start_time: string;
+  end_time: string;
+  location: string;
+  location_alias: string;
+  active: boolean;
+}
+
+/** Response shape for listSessionsSchedule. */
+export interface ListSessionsScheduleResponse {
+  schedules: SessionScheduleRecord[];
+}

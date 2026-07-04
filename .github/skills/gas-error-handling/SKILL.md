@@ -54,6 +54,7 @@ Copilot must use only these codes:
 - already_taken  
 - forbidden  
 - unauthorized  
+- schedule_already_exists  
 
 Copilot must not invent new error codes.
 

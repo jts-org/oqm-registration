@@ -39,6 +39,8 @@ import { useIsMobile } from '../../shared/hooks/useResponsive';
 
 import { AdminBatchFeedPanel } from '../../features/admin/components/AdminBatchFeedPanel';
 import { AdminCustomerEventsPanel } from '../../features/admin/components/AdminCustomerEventsPanel';
+import { AdminSessionsSchedulePanel } from '../../features/admin/components/AdminSessionsSchedulePanel';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 export interface AdminPageProps {
   /** Navigates back to the main view. */
@@ -46,7 +48,7 @@ export interface AdminPageProps {
   /** Current admin session token for protected admin routes. */
   sessionToken?: string;
 }
-type AdminSection = 'dashboard' | 'reports' | 'settings' | 'batchFeed' | 'events';
+type AdminSection = 'dashboard' | 'reports' | 'settings' | 'batchFeed' | 'events' | 'sessionsSchedule';
 
 type ReportTab = 'logs' | 'usage' | 'errors';
 
@@ -87,6 +89,11 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         label: t('adminView.events'),
         icon: <EventNoteIcon />,
       },
+      {
+        id: 'sessionsSchedule' as const,
+        label: t('adminSessionsSchedule.title'),
+        icon: <CalendarMonthIcon />,
+      },
     ],
     [t]
   );
@@ -120,6 +127,13 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         description: t('adminView.eventsDescription'),
         icon: <EventNoteIcon fontSize="large" color="primary" />,
         target: 'events' as const,
+      },
+      {
+        id: 'sessionsSchedule',
+        title: t('adminSessionsSchedule.dashboardCardTitle'),
+        description: t('adminSessionsSchedule.dashboardCardDescription'),
+        icon: <CalendarMonthIcon fontSize="large" color="primary" />,
+        target: 'sessionsSchedule' as const,
       },
     ],
     [t]
@@ -207,6 +221,10 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
 
   function renderEvents() {
     return <AdminCustomerEventsPanel sessionToken={sessionToken} />;
+  }
+
+  function renderSessionsSchedule() {
+    return <AdminSessionsSchedulePanel sessionToken={sessionToken} />;
   }
 
   function handleNavigate(section: AdminSection) {
@@ -299,6 +317,7 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         {activeSection === 'settings' && renderSettings()}
         {activeSection === 'batchFeed' && renderBatchFeed()}
         {activeSection === 'events' && renderEvents()}
+        {activeSection === 'sessionsSchedule' && renderSessionsSchedule()}
       </Box>
     </Box>
   );

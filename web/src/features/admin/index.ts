@@ -4,12 +4,23 @@
  */
 export { AdminLoginDialog } from './components/AdminLoginDialog';
 export { AdminBatchFeedPanel } from './components/AdminBatchFeedPanel';
-export { adminLogin, registerTraineeBatchForSessions } from './api/admin.api';
+export { AdminSessionsSchedulePanel } from './components/AdminSessionsSchedulePanel';
+export {
+  adminLogin,
+  registerTraineeBatchForSessions,
+  listSessionsSchedule,
+  addSessionSchedule,
+  updateSessionSchedule,
+  deleteSessionSchedule,
+} from './api/admin.api';
 export type {
-	AdminLoginDialogProps,
-	BatchSessionType,
-	BatchTraineeRegistrationRequest,
-	BatchTraineeRegistrationResponse,
-	BatchTraineeRegistrationResult,
-	BatchTraineeRegistrationRow,
+  AdminLoginDialogProps,
+  BatchSessionType,
+  BatchTraineeRegistrationRequest,
+  BatchTraineeRegistrationResponse,
+  BatchTraineeRegistrationResult,
+  BatchTraineeRegistrationRow,
+  SessionScheduleRecord,
+  SessionSchedulePayload,
+  ListSessionsScheduleResponse,
 } from './types';

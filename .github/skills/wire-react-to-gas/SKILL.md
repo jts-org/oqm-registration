@@ -108,6 +108,10 @@ Require: `sessionToken` with role `"admin"`
 |-------|--------|-------------|
 | registerTraineeBatchForSessions | POST | Batch trainee registration |
 | registerCustomerEventWithSchedule | POST | Customer event + schedule creation |
+| listSessionsSchedule | GET | Fetch all session schedule rows |
+| addSessionSchedule | POST | Add a session schedule row |
+| updateSessionSchedule | POST | Update an existing session schedule row |
+| deleteSessionSchedule | POST | Delete a session schedule row by id |
 
 ---
 
@@ -357,7 +361,159 @@ Copilot must automatically apply this skill whenever generating or modifying:
 
 ---
 
-# 11. Future Extensions
+# 11. Sessions Schedule Routes (OQM-0042)
+
+## 11.1 `listSessionsSchedule` (GET)
+
+### Request query params
+```
+route=listSessionsSchedule&sessionToken=<token>
+```
+
+### Success response
+```json
+{
+  "ok": true,
+  "data": {
+    "schedules": [
+      {
+        "id": "1718294400000",
+        "session_type": "Advanced",
+        "session_type_alias": "Edistynyt",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "weekdays_available": "0,2,4",
+        "start_time": "18:00",
+        "end_time": "19:30",
+        "location": "Dojo A",
+        "location_alias": "Sali A",
+        "active": true,
+        "created_at": "2026-01-01T00:00:00.000Z",
+        "updated_at": "2026-01-01T00:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 11.2 `addSessionSchedule` (POST)
+
+### Request
+```json
+{
+  "route": "addSessionSchedule",
+  "sessionToken": "...",
+  "payload": {
+    "session_type": "Advanced",
+    "session_type_alias": "Edistynyt",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31",
+    "weekdays_available": "0,2,4",
+    "start_time": "18:00",
+    "end_time": "19:30",
+    "location": "Dojo A",
+    "location_alias": "Sali A",
+    "active": true
+  }
+}
+```
+
+### Success response
+```json
+{ "ok": true, "data": { "schedule": { } } }
+```
+
+### Error responses
+```json
+{ "ok": false, "error": "validation_failed" }
+{ "ok": false, "error": "schedule_already_exists" }
+{ "ok": false, "error": "concurrent_request" }
+{ "ok": false, "error": "unauthorized" }
+```
+
+### Validation rules
+- `session_type`: required, non-empty string
+- `session_type_alias`: required, non-empty string
+- `start_date`: required, valid `YYYY-MM-DD`
+- `end_date`: required, valid `YYYY-MM-DD`, must be ≥ `start_date`
+- `weekdays_available`: required, non-empty comma-separated string; each value must be integer 0–6; no duplicates within the value
+- `start_time` / `end_time`: optional but must be paired; when provided must be valid `HH:MM`; `end_time` ≥ `start_time`
+- `location` / `location_alias`: optional
+- `active`: required boolean
+
+Duplicate check: same `session_type` + `weekdays_available` + `start_time` + `end_time` + `location` where `active = true`, within overlapping date ranges.
+
+---
+
+## 11.3 `updateSessionSchedule` (POST)
+
+### Request
+```json
+{
+  "route": "updateSessionSchedule",
+  "sessionToken": "...",
+  "payload": {
+    "id": "1718294400000",
+    "session_type": "Advanced",
+    "session_type_alias": "Edistynyt",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31",
+    "weekdays_available": "0,2,4",
+    "start_time": "18:00",
+    "end_time": "20:00",
+    "location": "Dojo B",
+    "location_alias": "Sali B",
+    "active": true
+  }
+}
+```
+
+### Success response
+```json
+{ "ok": true, "data": { "schedule": { } } }
+```
+
+### Error responses
+```json
+{ "ok": false, "error": "validation_failed" }
+{ "ok": false, "error": "no_match_found" }
+{ "ok": false, "error": "schedule_already_exists" }
+{ "ok": false, "error": "concurrent_request" }
+{ "ok": false, "error": "unauthorized" }
+```
+
+Behavior: updates columns B–K and M only. Never modifies `id` (A) or `created_at` (L).
+
+---
+
+## 11.4 `deleteSessionSchedule` (POST)
+
+### Request
+```json
+{
+  "route": "deleteSessionSchedule",
+  "sessionToken": "...",
+  "payload": { "id": "1718294400000" }
+}
+```
+
+### Success response
+```json
+{ "ok": true, "data": { "id": "1718294400000" } }
+```
+
+### Error responses
+```json
+{ "ok": false, "error": "no_match_found" }
+{ "ok": false, "error": "concurrent_request" }
+{ "ok": false, "error": "unauthorized" }
+```
+
+---
+
+# 12. Future Extensions
 
 This contract is versioned via Git.  
 Breaking changes must be documented here.
