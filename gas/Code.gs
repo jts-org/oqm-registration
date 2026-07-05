@@ -900,8 +900,7 @@ function getCoachAliasMap(coachLoginRows) {
  */
 function getCoachSessions_() {
 
-  const sessionsRows = getSheetData('sessions');
-  const weeklyScheduleRows = getSheetData('weekly_schedule');
+  const sessionsScheduleRows = getSheetData('sessions_schedule');
   const coachRegistrationsRowsData = getSheetData('coach_registrations');
   const coachLoginRows = getSheetData('coach_login');
 
@@ -939,38 +938,40 @@ function getCoachSessions_() {
     }
   });
 
-  // --- Build courseActivePeriods map (once) ---
-  // Sessions schema: [id, session_type, session_type_alias, start_date, end_date]
-  const courseActivePeriods = {};
-  sessionsRows.forEach(row => {
-    const sessionType = String(row[1] || '').toUpperCase();
-    const sessionTypeAlias = String(row[2] || '').toUpperCase();
-    const startDate = row[3];
-    const endDate = row[4];
-    if (sessionType && startDate && endDate) {
-      courseActivePeriods[sessionType] = {
-        sessionTypeAlias: sessionTypeAlias,
-        start: startDate instanceof Date ? startDate : new Date(startDate),
-        end: endDate instanceof Date ? endDate : new Date(endDate)
-      };
-    }
-  });
-
-  // --- Pre-parse weekly schedule rows (once) ---
-  // Schema: [id, session_type, weekday_available, start_time, end_time, location, active]
+  // --- Pre-parse session schedule rows (once) ---
+  // Schema: [id, session_type, session_type_alias, start_date, end_date, weekdays_available, start_time, end_time, location, location_alias, active]
+  const sessionAliasByType = {};
   const parsedSchedules = [];
-  weeklyScheduleRows.forEach(row => {
-    if (!getBooleanValue(row[6])) return; // skip inactive
-    const weekdays = String(row[2] || '').split(',').map(w => Number(w.trim()));
+  sessionsScheduleRows.forEach(row => {
+    if (!getBooleanValue(row[10])) return; // skip inactive
+
+    const sessionType = String(row[1] || '').trim();
+    const sessionTypeUpper = sessionType.toUpperCase();
+    if (!sessionTypeUpper) return;
+
+    const sessionTypeAlias = String(row[2] || '').trim();
+    if (!sessionAliasByType[sessionTypeUpper]) {
+      sessionAliasByType[sessionTypeUpper] = (sessionTypeAlias || sessionType).toUpperCase();
+    }
+
+    const weekdays = String(row[5] || '').split(',').map(w => Number(w.trim()));
     const weekdaySet = {};
     weekdays.forEach(w => { weekdaySet[w] = true; });
+
+    const startDateYmd = normalizeDateYmd_(row[3], tz);
+    const endDateYmd = normalizeDateYmd_(row[4], tz);
+    if (!startDateYmd || !endDateYmd) return;
+
     parsedSchedules.push({
       id: String(row[0]),
-      sessionType: String(row[1] || '').toUpperCase(),
+      sessionType: sessionTypeUpper,
+      sessionTypeAlias: (sessionTypeAlias || sessionType).toUpperCase(),
+      startDateYmd: startDateYmd,
+      endDateYmd: endDateYmd,
       weekdaySet: weekdaySet,
-      startTime: timeToStr(row[3], tz, 'HH:mm'),
-      endTime: timeToStr(row[4], tz, 'HH:mm'),
-      location: row[5] || ''
+      startTime: normalizeTimeHm_(row[6], tz),
+      endTime: normalizeTimeHm_(row[7], tz),
+      location: row[8] || ''
     });
   });
 
@@ -1009,9 +1010,7 @@ function getCoachSessions_() {
     for (var si = 0; si < parsedSchedules.length; si++) {
       var sched = parsedSchedules[si];
       if (!sched.weekdaySet[weekday]) continue;
-
-      var activePeriod = courseActivePeriods[sched.sessionType];
-      if (activePeriod && (sessionDate < activePeriod.start || sessionDate > activePeriod.end)) {
+      if (dateStr < sched.startDateYmd || dateStr > sched.endDateYmd) {
         continue;
       }
 
@@ -1022,7 +1021,7 @@ function getCoachSessions_() {
       sessions.push({
         id: sched.id + '_' + dateStr,
         session_type: sched.sessionType,
-        session_type_alias: activePeriod ? activePeriod.sessionTypeAlias : sched.sessionType,
+        session_type_alias: sched.sessionTypeAlias,
         date: dateStr,
         weekday: weekday,
         start_time: sched.startTime,
@@ -1039,9 +1038,7 @@ function getCoachSessions_() {
     // --- Free/sparring sessions for this date ---
     var sparringCoaches = freeSparringByDate[dateStr];
     if (sparringCoaches) {
-      var sparringAlias = courseActivePeriods['FREE/SPARRING']
-        ? courseActivePeriods['FREE/SPARRING'].sessionTypeAlias
-        : 'FREE/SPARRING';
+      var sparringAlias = sessionAliasByType['FREE/SPARRING'] || 'FREE/SPARRING';
       for (var fi = 0; fi < sparringCoaches.length; fi++) {
         var coach = sparringCoaches[fi];
         sessions.push({
@@ -1725,8 +1722,7 @@ function logToSheet(message) {
  * @returns {Array}
  */
 function getTraineeSessions_(traineeIdentity) {
-  const sessionsRows = getSheetData('sessions');
-  const weeklyScheduleRows = getSheetData('weekly_schedule');
+  const sessionsScheduleRows = getSheetData('sessions_schedule');
   const coachRegistrationsRows = getSheetData('coach_registrations');
   const campsRows = getSheetData('camps');
   const campSchedulesRows = getSheetData('camp_schedules');
@@ -1756,26 +1752,27 @@ function getTraineeSessions_(traineeIdentity) {
     sessionDateSet[ds] = true;
   }
 
-  // Sessions schema: [id, session_type, session_type_alias, start_date, end_date]
-  const sessionMetaByType = {};
-  sessionsRows.forEach(row => {
+  // sessions_schedule schema: [id, session_type, session_type_alias, start_date, end_date, weekdays_available, start_time, end_time, location, location_alias, active]
+  const sessionAliasByType = {};
+  const parsedSchedules = [];
+  sessionsScheduleRows.forEach(row => {
+    if (!getBooleanValue(row[10])) return;
+
     const sessionType = String(row[1] || '').trim();
     if (!sessionType) return;
-    const key = sessionType.toUpperCase();
-    sessionMetaByType[key] = {
-      sessionType: sessionType,
-      sessionTypeAlias: String(row[2] || '').trim() || sessionType,
-      start: row[3] instanceof Date ? row[3] : new Date(row[3]),
-      end: row[4] instanceof Date ? row[4] : new Date(row[4]),
-    };
-  });
 
-  // Weekly schedule schema: [id, session_type, weekdays_available, start_time, end_time, location, active]
-  const parsedSchedules = [];
-  weeklyScheduleRows.forEach(row => {
-    if (!getBooleanValue(row[6])) return;
+    const sessionTypeUpper = sessionType.toUpperCase();
+    const sessionTypeAlias = String(row[2] || '').trim() || sessionType;
+    if (!sessionAliasByType[sessionTypeUpper]) {
+      sessionAliasByType[sessionTypeUpper] = sessionTypeAlias;
+    }
+
+    const startDateYmd = normalizeDateYmd_(row[3], tz);
+    const endDateYmd = normalizeDateYmd_(row[4], tz);
+    if (!startDateYmd || !endDateYmd) return;
+
     const weekdaySet = {};
-    String(row[2] || '')
+    String(row[5] || '')
       .split(',')
       .map(part => Number(part.trim()))
       .filter(val => Number.isFinite(val))
@@ -1785,12 +1782,15 @@ function getTraineeSessions_(traineeIdentity) {
 
     parsedSchedules.push({
       id: String(row[0] || ''),
-      sessionType: String(row[1] || '').trim(),
-      sessionTypeUpper: String(row[1] || '').trim().toUpperCase(),
+      sessionType: sessionType,
+      sessionTypeAlias: sessionTypeAlias,
+      sessionTypeUpper: sessionTypeUpper,
+      startDateYmd: startDateYmd,
+      endDateYmd: endDateYmd,
       weekdaySet: weekdaySet,
-      startTime: timeToStr(row[3], tz, 'HH:mm'),
-      endTime: timeToStr(row[4], tz, 'HH:mm'),
-      location: String(row[5] || ''),
+      startTime: normalizeTimeHm_(row[6], tz),
+      endTime: normalizeTimeHm_(row[7], tz),
+      location: String(row[8] || ''),
     });
   });
 
@@ -1805,16 +1805,14 @@ function getTraineeSessions_(traineeIdentity) {
     for (var si = 0; si < parsedSchedules.length; si++) {
       var sched = parsedSchedules[si];
       if (!sched.weekdaySet[weekday]) continue;
-
-      var activePeriod = sessionMetaByType[sched.sessionTypeUpper];
-      if (activePeriod && (sessionDate < activePeriod.start || sessionDate > activePeriod.end)) {
+      if (dateStr < sched.startDateYmd || dateStr > sched.endDateYmd) {
         continue;
       }
 
       sessions.push({
         id: sched.id + '_' + dateStr,
         session_type: sched.sessionType,
-        session_type_alias: activePeriod ? activePeriod.sessionTypeAlias : sched.sessionType,
+        session_type_alias: sched.sessionTypeAlias,
         date: dateStr,
         start_time: sched.startTime,
         end_time: sched.endTime,
@@ -1837,12 +1835,12 @@ function getTraineeSessions_(traineeIdentity) {
     const dateStr = timeToStr(row[4], tz, 'yyyy-MM-dd');
     if (!sessionDateSet[dateStr]) return;
 
-    const sparringMeta = sessionMetaByType['FREE/SPARRING'];
+    const sparringAlias = sessionAliasByType['FREE/SPARRING'] || 'free/sparring';
 
     sessions.push({
       id: 'sparring_' + String(row[0] || '') + '_' + dateStr,
       session_type: 'free/sparring',
-      session_type_alias: sparringMeta ? sparringMeta.sessionTypeAlias : 'free/sparring',
+      session_type_alias: sparringAlias,
       date: dateStr,
       start_time: timeToStr(row[6], tz, 'HH:mm'),
       end_time: timeToStr(row[7], tz, 'HH:mm'),

@@ -16,6 +16,7 @@ _As a <role>, I want <capability> so that <benefit>._
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+- [ ] `learnings.md` updated if needed
 
 ## Relevant Skills
 (Select all that apply)
@@ -43,6 +44,9 @@ _As a <role>, I want <capability> so that <benefit>._
   @see .github/skills/gas-validation-rules/SKILL.md  
   @see .github/skills/gas-date-and-time/SKILL.md  
   @see .github/skills/gas-id-generation/SKILL.md
+
+- Continuous learning
+  @see .github/skills/continuous-learning/SKILL.md  
 
 ## Additional Notes
 Add screenshots, diagrams, or references if helpful.

@@ -5,7 +5,7 @@
  */
 
 /**
- * @description Backend unit tests for identity-aware trainee session flags (OQM-0033).
+ * @description Backend unit tests for getCoachSessions_ sessions_schedule migration (OQM-0044).
  * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 const test = require('node:test');
@@ -100,95 +100,47 @@ function createSandbox() {
   const codePath = path.join(__dirname, '..', 'Code.gs');
   const code = fs.readFileSync(codePath, 'utf8');
   vm.runInContext(code, sandbox, { filename: 'Code.gs' });
+  sandbox.logToSheet = () => {};
   return sandbox;
 }
 
-function buildSheetData(registrationRows) {
+test('getCoachSessions_ builds regular and free/sparring sessions from sessions_schedule', () => {
+  const sandbox = createSandbox();
   const today = todayYmd();
-  return {
+
+  const data = {
     sessions_schedule: [
-      ['schedule-basic', 'Basic', 'Basic', '2020-01-01', '2099-12-31', '0,1,2,3,4,5,6', '18:00', '19:00', 'Main Hall', '', true, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+      ['schedule-basic', 'Basic', 'Perus', '2020-01-01', '2099-12-31', '0,1,2,3,4,5,6', '18:00', '19:00', 'Main Hall', '', true, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+      ['schedule-sparring', 'FREE/SPARRING', 'VAPAASPARI', '2020-01-01', '2099-12-31', '0,1,2,3,4,5,6', '00:00', '00:00', '', '', true, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
     ],
-    coach_registrations: [],
+    coach_registrations: [
+      ['reg-basic', 'John', 'Doe', 'basic', today, true, '', '', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+      ['reg-spar', 'John', 'Doe', 'free/sparring', today, true, '16:00', '17:00', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+    ],
+    coach_login: [
+      ['coach-1', 'John', 'Doe', 'JD', '1234', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+    ],
     camps: [],
     camp_schedules: [],
-    trainee_registrations: registrationRows.map(row => [
-      row.id,
-      row.first_name,
-      row.last_name,
-      row.age_group,
-      row.underage_age,
-      row.session_type,
-      row.camp_session_id,
-      row.date || today,
-      row.start_time,
-      row.end_time,
-      true,
-      '2026-01-01T00:00:00.000Z',
-      '2026-01-01T00:00:00.000Z',
-    ]),
   };
-}
-
-function pickTodayBasicSession(sessions) {
-  return sessions.find(session => session.session_type === 'Basic' && session.date === todayYmd());
-}
-
-test('getTraineeSessions_ marks matching adult registration as trainee_registered', () => {
-  const sandbox = createSandbox();
-  const data = buildSheetData([
-    {
-      id: 'reg-1',
-      first_name: 'Jane',
-      last_name: 'Doe',
-      age_group: 'adult',
-      underage_age: '',
-      session_type: 'basic',
-      camp_session_id: '',
-      start_time: '18:00',
-      end_time: '19:00',
-    },
-  ]);
 
   sandbox.getSheetData = (sheetName) => data[sheetName] || [];
 
-  const sessions = sandbox.getTraineeSessions_({
-    first_name: 'Jane',
-    last_name: 'Doe',
-    age_group: 'adult',
-  });
+  const sessions = sandbox.getCoachSessions_();
 
-  const todaySession = pickTodayBasicSession(sessions);
-  assert.ok(todaySession, 'Expected a Basic session in the current 21-day window');
-  assert.equal(todaySession.trainee_registered, true);
-});
+  const regular = sessions.find(s => s.session_type === 'BASIC' && s.date === today && s.is_free_sparring === false);
+  assert.ok(regular, 'Expected regular BASIC session for today');
+  assert.equal(regular.session_type_alias, 'PERUS');
+  assert.equal(regular.coach_firstname, 'John');
+  assert.equal(regular.coach_lastname, 'Doe');
+  assert.equal(regular.coach_alias, 'JD');
+  assert.equal(regular.registration_id, 'reg-basic');
 
-test('getTraineeSessions_ requires matching underage_age for underage identity', () => {
-  const sandbox = createSandbox();
-  const data = buildSheetData([
-    {
-      id: 'reg-2',
-      first_name: 'Junior',
-      last_name: 'Doe',
-      age_group: 'underage',
-      underage_age: '12',
-      session_type: 'basic',
-      camp_session_id: '',
-      start_time: '18:00',
-      end_time: '19:00',
-    },
-  ]);
-
-  sandbox.getSheetData = (sheetName) => data[sheetName] || [];
-
-  const sessions = sandbox.getTraineeSessions_({
-    first_name: 'Junior',
-    last_name: 'Doe',
-    age_group: 'underage',
-    underage_age: 13,
-  });
-
-  const todaySession = pickTodayBasicSession(sessions);
-  assert.ok(todaySession, 'Expected a Basic session in the current 21-day window');
-  assert.notEqual(todaySession.trainee_registered, true);
+  const sparring = sessions.find(s => s.session_type === 'FREE/SPARRING' && s.date === today && s.is_free_sparring === true);
+  assert.ok(sparring, 'Expected free/sparring session for today');
+  assert.equal(sparring.session_type_alias, 'VAPAASPARI');
+  assert.equal(sparring.start_time, '16:00');
+  assert.equal(sparring.end_time, '17:00');
+  assert.equal(sparring.coach_alias, 'JD');
+  assert.equal(sparring.registration_id, 'reg-spar');
 });

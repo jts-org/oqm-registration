@@ -30,6 +30,10 @@ Agents (including GitHub Copilot) must follow these rules.
    Create a branch per issue (e.g., `feature/oqm-123-description`).  
    Open a PR only after review + CI pass.
 
+8. **Record Reusable Learnings**  
+   When solving a non-trivial, reusable problem, update `learnings.md`  
+   following `.github/skills/continuous-learning/skill.md`.
+
 ---
 
 # Architecture Overview
@@ -72,6 +76,8 @@ Backend uses **CLASP** for code sync; deployment is manual via Apps Script UI.
 - Documentation updated when UI behavior, flows, schemas, or API contracts change (see documentation-update skill)  
 - No secrets leaked  
 - Manual GAS deploy instructions followed (if backend changed)  
+- If a reusable pattern was discovered, update `learnings.md` per  
+  `.github/skills/continuous-learning/skill.md`
 
 ---
 
@@ -83,6 +89,8 @@ Backend uses **CLASP** for code sync; deployment is manual via Apps Script UI.
   `.github/skills/frontend-i18n/SKILL.md`  
 - Review API contract in  
   `.github/skills/wire-react-to-gas/SKILL.md`  
+- Review continuous learning rules in  
+  `.github/skills/continuous-learning/skill.md`
 
 ---
 
@@ -129,6 +137,12 @@ If blocked by CI or review, tag a maintainer and describe the issue.
 
 - `.github/skills/pr-review/SKILL.md`  
 - `.github/skills/documentation-update/SKILL.md`  
+
+---
+
+## Continuous Learning & Project Memory
+
+- `.github/skills/continuous-learning/skill.md`
 
 ---
 
