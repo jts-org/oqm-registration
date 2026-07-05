@@ -48,6 +48,9 @@ What happened instead?
 - Date/Time Logic  
   @see .github/skills/gas-date-and-time/SKILL.md
 
+- Continuous learning
+  @see .github/skills/continuous-learning/SKILL.md  
+
 ## Logs / Screenshots
 Attach relevant logs or screenshots.
 

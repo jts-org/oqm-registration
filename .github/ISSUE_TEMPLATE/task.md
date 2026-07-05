@@ -32,11 +32,15 @@ What is explicitly not included?
 - CI / Deployment  
   @see .github/skills/deploy-ci/SKILL.md
 
+- Continuous learning
+  @see .github/skills/continuous-learning/SKILL.md
+
 ## Acceptance Criteria
 - [ ] Task completed
 - [ ] No regressions
 - [ ] All relevant skills followed
 - [ ] Tests updated if needed
+- [ ] `learnings.md` updated if needed 
 
 ## Additional Notes
 Add any supporting information.

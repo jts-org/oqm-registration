@@ -8,6 +8,7 @@
 - [ ] Updated docs/skills if schema or flows changed
 - [ ] Global review checklist completed (`review-checklist.instructions.md`)
 - [ ] Frontend review checklist completed if PR includes frontend changes (`frontend.review-checklist.md`)
+- [ ] Discovered new reusable patterns are updated into `learnings.md` (`.github/skills/continuous-learning/skill.md`)
 
 ---
 
