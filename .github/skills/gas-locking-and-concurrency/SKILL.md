@@ -1,44 +1,37 @@
+```markdown
 ---
 name: gas-locking-and-concurrency
-description: >
-  Concurrency, locking, and race-condition prevention rules for the Google Apps
-  Script backend used by the OQM Registration system. Copilot must use this
-  skill whenever generating or modifying backend logic that writes to Sheets or
-  performs multi-step operations.
+description: Concurrency, locking, and race‑condition prevention rules for the OQM GAS backend. Copilot must apply this skill whenever generating or modifying backend logic that writes to Sheets or performs multi-step operations.
 license: MIT
 ---
 
 # GAS Locking & Concurrency Model
 
-Google Apps Script is single-threaded per execution, but multiple executions
-may run concurrently. This skill defines how Copilot must handle concurrency,
-locking, and race conditions when generating backend logic.
-
-The OQM backend uses **LockService** and **atomic write patterns** to ensure
-data integrity across coach, trainee, and admin operations.
+Google Apps Script allows concurrent executions.  
+This skill defines the authoritative locking and concurrency rules for the OQM backend.  
+All multi-step write operations must be **atomic**, **lock-protected**, and **race‑condition safe**.
 
 ---
 
 ## 1. When to Use Locks
 
-Copilot must use `LockService.getScriptLock()` when generating logic that:
+Copilot must use `LockService.getScriptLock()` for any logic that:
 
 - writes to Sheets  
-- modifies rows that must remain consistent  
-- performs multi-step operations that must be atomic  
-- checks for uniqueness (PINs, names, session registrations)  
+- modifies rows requiring consistency  
+- performs multi-step read → validate → write sequences  
+- checks uniqueness (PINs, names, IDs, registrations)  
 - prevents duplicate registrations  
 - prevents overlapping session writes  
 - prevents concurrent modifications to the same sheet  
 
-### Examples from the OQM backend
-
+Examples (existing OQM backend):
 - `registerTraineePin_`  
 - `registerCoachForSession_`  
 - `registerTraineeBatchForSessions_`  
 - `registerCustomerEventWithSchedule_`  
 
-These functions already use locks and Copilot must follow the same pattern.
+Copilot must follow these patterns exactly.
 
 ---
 
@@ -58,53 +51,49 @@ try {
 }
 ```
 
-### Required behaviors:
-
-- Use `tryLock(5000)` — **never** `lock.waitLock()`
-- Always return a structured error (`concurrentRequest`) on failure
-- Always release the lock in a `finally` block
-- Never swallow lock failures silently
-- Never nest locks
-- Never wrap entire route handlers in locks
-- Never lock read-only operations
-- Never lock login/sessionToken validation
+Rules:
+- use `tryLock(5000)` — **never** `waitLock()`  
+- return structured error on failure  
+- release lock in `finally`  
+- never swallow lock failures  
+- never nest locks  
+- never lock entire route handlers  
+- never lock read-only operations  
+- never lock login/sessionToken validation  
 
 ---
 
 ## 3. What Must Be Inside the Lock
 
-Copilot must place the following inside the critical section:
-
-- reading sheet rows that must remain consistent  
-- checking uniqueness (PIN, name, session)  
-- validating overlapping sessions  
+Inside the critical section:
+- reading rows that must remain consistent  
+- uniqueness checks (PIN, name, ID)  
+- overlap validation  
 - writing new rows  
 - updating existing rows  
-- generating IDs for new rows  
+- generating timestamp/incremental IDs  
 - writing timestamps  
-- any read → validate → write sequence that must be atomic  
+- any atomic read → validate → write sequence  
 
-### What must NOT be inside the lock:
-
+Outside the lock:
 - logging  
 - slow operations  
 - external API calls  
 - JSON serialization  
-- large loops not related to the critical write  
+- large unrelated loops  
 - sessionToken validation  
 - permission checks  
-- expensive filtering or mapping  
 
 ---
 
 ## 4. Concurrency Error Codes
 
-Copilot must use the backend’s established error codes:
+Copilot must use only:
 
-- `concurrent_request` — trainee/coach registration conflicts and batch operations
-- `concurrent_operation` — coach removal conflicts
+- `concurrent_request` — registration conflicts, batch operations  
+- `concurrent_operation` — coach removal conflicts  
 
-Copilot must not invent new concurrency error codes.
+No new concurrency error codes may be invented.
 
 ---
 
@@ -112,102 +101,95 @@ Copilot must not invent new concurrency error codes.
 
 Copilot must assume:
 
-- **coach_login** and **trainee_login** require uniqueness checks  
-- **coach_registrations** requires atomic writes  
-- **trainee_registrations** requires atomic writes  
-- **batch operations** must be fully atomic  
+- `coach_login` and `trainee_login` require uniqueness checks  
+- `coach_registrations` requires atomic writes  
+- `trainee_registrations` requires atomic writes  
+- batch operations must be fully atomic  
 
--### Required behaviors:
-- Use `tryLock(5000)` — **never** `lock.waitLock()`
-- Always return a structured error (`concurrent_request`) on failure
-- Always release the lock in a `finally` block
-- Never write without a lock  
-- Never generate code that performs partial writes  
+Rules:
+- always use `tryLock(5000)`  
+- always return structured error on lock failure  
+- never write without a lock  
+- never perform partial writes  
 
 ---
 
 ## 6. Additional Backend Concurrency Rules (Copilot-only)
 
-These rules come from repository-wide instructions and must be enforced here:
-
 ### 6.1 No global mutable state
-- No global arrays, objects, or counters  
-- No caching outside CacheService  
-- No global variables used for write coordination  
+- no global arrays, objects, counters  
+- no caching outside CacheService  
+- no global coordination variables  
 
 ### 6.2 No alternative locking mechanisms
-- No manual sleep loops  
-- No retry loops  
-- No custom lock implementations  
+- no manual sleep loops  
+- no retry loops  
+- no custom lock implementations  
 
 ### 6.3 No optimistic concurrency
-- All write operations must be pessimistic (lock first, then read/validate/write)
+- all write operations must be pessimistic  
+- lock first → then read/validate/write  
 
 ### 6.4 No multi-lock patterns
-- Only one script-level lock may be used  
-- Never lock multiple sheets separately  
+- only one script-level lock allowed  
+- never lock multiple sheets separately  
 
 ---
 
 ## 7. Interaction With Other Skills
 
-### **security-secrets**
-- Ensures that locking does not expose secrets or tokens.
-- Ensures that concurrency errors do not leak sensitive data.
+### security-secrets
+Ensures concurrency errors never leak sensitive data.
 
-### **auth-flow**
-- Ensures that login flows do not require locks.
-- Ensures that sessionToken validation happens outside locks.
+### auth-flow
+SessionToken validation must occur outside locks.
 
-### **sheet-schema**
-- Ensures that locked operations use correct columns and sheet structures.
+### sheet-schema
+Ensures locked operations use correct columns and structures.
 
-### **gas-sheet-operations**
-- Ensures that read/validate/write sequences follow schema rules.
+### gas-sheet-operations
+Ensures atomic read → validate → write sequences.
 
-### **wire-react-to-gas**
-- Ensures that concurrency errors are returned in the correct API format.
+### wire-react-to-gas
+Ensures concurrency errors follow strict API format.
 
-### **deploy-ci**
-- Ensures that concurrency behavior is preserved across deployments.
+### deploy-ci
+Ensures concurrency behavior remains stable across deployments.
 
 ---
 
 ## 8. Required Behavior for Copilot
 
-When Copilot generates GAS backend code:
-
-- Always use locks for multi-step write operations  
-- Always use `tryLock(5000)` with a fallback error  
-- Always release locks in `finally`  
-- Never generate nested locks  
-- Never generate long-running code inside locks  
-- Never generate code that writes to Sheets without a lock  
-- Never assume that Apps Script prevents concurrent execution automatically  
-- Never generate code that reads outside the lock when the result affects a write  
+Copilot must:
+- use locks for all multi-step write operations  
+- use `tryLock(5000)` with fallback error  
+- release locks in `finally`  
+- never generate nested locks  
+- never place long-running code inside locks  
+- never write to Sheets without a lock  
+- never assume Apps Script prevents concurrency automatically  
+- never read outside the lock when the result affects a write  
 
 ---
 
 ## 9. Prohibited Behavior
 
 Copilot must not:
-
-- generate `waitLock()` (blocks indefinitely)  
+- generate `waitLock()`  
 - generate lockless write operations  
-- generate locks around read-only operations  
-- generate locks around login/sessionToken logic  
-- generate locks around external API calls  
-- generate locks that wrap the entire route handler  
-- generate new concurrency error codes  
-- generate optimistic concurrency patterns  
-- generate global mutable state used for coordination  
+- lock read-only operations  
+- lock login/sessionToken logic  
+- lock external API calls  
+- lock entire route handlers  
+- invent new concurrency error codes  
+- use optimistic concurrency  
+- use global mutable state for coordination  
 
 ---
 
 ## 10. Future Extensions
 
-This skill describes the current concurrency model. Copilot must not assume that
-locking strategies, sheet structures, or write patterns are fixed. New sheets,
-new atomic operations, or new concurrency mechanisms may be added without
-breaking this skill.
-
+Concurrency rules may expand.  
+Copilot must not assume fixed locking strategies or sheet structures.  
+New atomic operations or concurrency mechanisms may be added without breaking this skill.
+```

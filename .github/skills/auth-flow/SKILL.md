@@ -1,111 +1,107 @@
+```markdown
 ---
 name: auth-flow
-description: >
-  Authentication and identity flow for the OQM application. Defines how
-  coach, trainee, and admin identities are verified, how session tokens
-  are created, and how roles are enforced. Copilot must use this skill
-  whenever generating or modifying authentication-related logic.
+description: Authentication and identity flow for the OQM application. Defines identity models, sessionToken rules, login flows, route access control, error codes, and frontend/backend responsibilities. Copilot must apply this skill whenever generating or modifying authentication logic.
 ---
 
 # Authentication Flow (OQM)
 
-This skill describes the current authentication model used by the OQM
-Google Apps Script backend and the corresponding frontend API clients.
-It covers PIN-based identity, password-based login, role-based sessions,
-and error conventions. This skill describes the *current* model and does
-not restrict future extensions such as new roles, token types, or login
-mechanisms.
+Mandate-first description of the current authentication model used by the OQM GAS backend and frontend API clients. Covers PIN identity, password identity, sessionToken, role enforcement, and error conventions. Future extensions allowed.
 
 ---
 
 ## 1. Identity Models
 
-The system uses two identity mechanisms:
+The system uses two identity mechanisms.
 
-### A) PIN-Based Identity (Coach & Trainee)
+### A) PIN Identity (Coach & Trainee)
 - PINs are **not secrets**.
-- PINs identify a person in Sheets:
-  - coach_login
-  - trainee_login
+- PINs identify rows in Sheets:
+  - `coach_login`
+  - `trainee_login`
 - PINs must be unique across both sheets.
 - PINs must never grant access to protected routes.
-- PIN-based login always returns a **sessionToken**.
+- PIN login always returns a **sessionToken**.
 
-### B) Password-Based Identity (Coach & Admin)
-- COACH_PASSWORD and ADMIN_PASSWORD are stored in Script Properties.
-- Passwords are validated only in backend:
-  - coachLogin(mode: "password")
-  - adminLogin
-- Password-based login always returns a **sessionToken**.
+### B) Password Identity (Coach & Admin)
+- `COACH_PASSWORD` and `ADMIN_PASSWORD` stored in Script Properties.
+- Validated only in backend:
+  - `coachLogin(mode: "password")`
+  - `adminLogin`
+- Password login always returns a **sessionToken**.
 
 ---
 
 ## 2. Session Token Model (sessionToken)
 
-sessionToken is the only authorization mechanism for protected routes.
+sessionToken is the **only** authorization mechanism for protected routes.
 
 ### Creation
-sessionToken is created by:
-- coachLogin (PIN or password)
-- adminLogin
+Created by:
+- `coachLogin` (PIN or password)
+- `adminLogin`
 
 ### Storage
-sessionToken is stored in CacheService:
-```js
+Stored in CacheService:
+```
 session:<token>
 ```
 
 ### Session Object
-A session contains:
-- role: "coach" or "admin"
-- subject: coach id or "admin"
-- createdAt: ISO timestamp
+- `role`: `"coach"` or `"admin"`
+- `subject`: coach id or `"admin"`
+- `createdAt`: ISO timestamp
 
 ### Expiration
-Sessions expire after `SESSION_TTL_SECONDS` (currently 8 hours).
+TTL = `SESSION_TTL_SECONDS` (8 hours = 28800 seconds).
+Define in backend constants (for example in `gas/Code.gs`) and keep frontend `expiresInSeconds` aligned.
 
 ### Frontend Rules
-- Frontend must never store sessionToken permanently.
-- Frontend must pass sessionToken explicitly in each request.
-- Frontend must never attempt to validate sessionToken locally.
+- Never store sessionToken permanently.
+- Always pass sessionToken explicitly.
+- Never validate sessionToken locally.
 
 ---
 
 ## 3. Login Flows
 
-### A) Coach Login (PIN Mode)
+### A) Coach Login (PIN)
 Route:
 ```js
 POST { route: "coachLogin", payload: { mode: "pin", pin } }
 ```
 
-Backend steps:
-1. verifyCoachPin_(pin)
-2. If match → createSession_("coach", coachId)
+Backend:
+1. `verifyCoachPin_(pin)`
+2. If match → `createSession_("coach", coachId)`
 3. Return:
-  ```json
-  { session: { sessionToken, role, expiresInSeconds }, coachData }
-  ```
+```json
+{ session: { sessionToken, role, expiresInSeconds }, coachData }
+```
 
 Errors:
-- no_match_found
+- `no_match_found`
 
-### B) Coach Login (Password Mode)
+---
+
+### B) Coach Login (Password)
 Route:
 ```js
 POST { route: "coachLogin", payload: { mode: "password", password } }
 ```
 
-Backend steps:
-1. Compare password with COACH_PASSWORD
-2. If match → createSession_("coach", "")
+Backend:
+1. Compare with `COACH_PASSWORD`
+2. If match → `createSession_("coach", "")`
 3. Return:
-  ```js
-  { session: { sessionToken, role, expiresInSeconds }, coachData: null }
-  ```
+```json
+{ session: { sessionToken, role, expiresInSeconds }, coachData: null }
+```
 
 Errors:
-- invalid_credentials
+- `invalid_credentials`
+
+---
 
 ### C) Admin Login
 Route:
@@ -113,12 +109,14 @@ Route:
 POST { route: "adminLogin", payload: { password } }
 ```
 
-Backend steps:
-1. Compare password with ADMIN_PASSWORD
-2. If match → createSession_("admin", "admin")
+Backend:
+1. Compare with `ADMIN_PASSWORD`
+2. If match → `createSession_("admin", "admin")`
 
 Errors:
-- invalid_credentials
+- `invalid_credentials`
+
+---
 
 ### D) Trainee PIN Verification
 Route:
@@ -126,39 +124,28 @@ Route:
 POST { route: "verifyTraineePin", payload: { pin } }
 ```
 
-Backend steps:
-1. Check trainee_login
-2. If not found → check coach_login (fallback)
-3. Return trainee-shaped data
+Backend:
+1. Check `trainee_login`
+2. If not found → fallback to `coach_login` (legacy compatibility path only)
+3. Return trainee-shaped data for matching identity
+
+Notes:
+- This route verifies identity only; it does not issue a sessionToken.
+- `registerTraineePin` does not use this fallback.
 
 Errors:
-- no_match_found
+- `no_match_found`
 
 ---
 
 ## 4. Route Access Control
 
-Copilot must follow the backend’s route classification:
+Canonical route list and access levels are defined in `wire-react-to-gas` (Route Access Matrix).
 
-### Public Routes (no sessionToken required)
-- listItems
-- createItem
-- registerCoachPin
-- verifyCoachPin
-- getTraineeSessions (GET or POST)
-- registerTraineeForSession
-- registerTraineePin
-- verifyTraineePin
-
-### Coach Routes (sessionToken with role coach or admin)
-- getCoachSessions
-- registerCoachForSession
-- removeCoachFromSession
-
-### Admin Routes (sessionToken with role admin)
-- getSettings
-- registerTraineeBatchForSessions
-- registerCustomerEventWithSchedule
+Role policy remains:
+- public routes require no sessionToken
+- coach routes allow `coach` and `admin`
+- admin routes allow only `admin`
 
 ---
 
@@ -188,21 +175,21 @@ function authorize_(e, route, body) {
 
 ## 6. Error Code Conventions
 
-Copilot must use the backend’s established error codes:
-- invalid_password
-- invalid_credentials
-- no_match_found
-- pin_reserved
-- name_already_exists
-- concurrent_request
-- validation_failed
-- validation_failed_age
-- already_registered
-- already_taken
-- forbidden
-- unauthorized
+Copilot must use backend error codes:
+- invalid_password  
+- invalid_credentials  
+- no_match_found  
+- pin_reserved  
+- name_already_exists  
+- concurrent_request  
+- validation_failed  
+- validation_failed_age  
+- already_registered  
+- already_taken  
+- forbidden  
+- unauthorized  
 
-Error responses must always be:
+Error responses must be:
 ```json
 { ok: false, error: "<error_code>" }
 ```
@@ -212,11 +199,10 @@ Error responses must always be:
 ## 7. Frontend/Backend Responsibility Boundary
 
 ### Frontend must:
-- Never validate PINs.
-- Never validate passwords.
+- Never validate PINs or passwords.
 - Never validate sessionToken.
 - Always pass sessionToken explicitly.
-- Handle backend error codes as Error(message).
+- Handle backend error codes as `Error(message)`.
 
 ### Backend must:
 - Validate all credentials.
@@ -228,62 +214,50 @@ Error responses must always be:
 
 ---
 
-### 8. Future Extensions
-This skill describes the current authentication model.
+## 8. Future Extensions
 
-Copilot must not assume that roles, token formats, or authentication flows are fixed.
-
-New roles, token types, or authentication mechanisms may be added without breaking this skill.
+This skill describes the current authentication model.  
+Copilot must not assume roles, token formats, or login mechanisms are fixed.  
+New roles, token types, or identity flows may be added without breaking this skill.
 
 ---
 
 ## Automatic References
 
-Copilot must automatically apply this authentication model whenever generating
-or modifying login flows, identity verification, session creation, or frontend
-API clients that interact with authentication routes.
+Copilot must apply this skill when generating or modifying:
 
-### When to Apply This Skill
+- coachLogin / adminLogin logic  
+- verifyCoachPin / verifyTraineePin  
+- PIN identity flows  
+- password identity flows  
+- sessionToken creation/consumption  
+- frontend API clients for login or identity verification  
+- backend logic mapping sheet rows to identity objects  
+- authentication-related error handling  
 
-Copilot must reference this skill when:
+---
 
-- generating coachLogin or adminLogin logic
-- generating verifyCoachPin or verifyTraineePin logic
-- generating PIN-based identity flows
-- generating password-based login flows
-- creating or consuming sessionToken objects
-- generating frontend API clients for login or identity verification
-- generating backend logic that maps sheet rows to identity objects
-- reasoning about error codes related to authentication
+## Interaction With Other Skills
 
-### How This Skill Interacts With Other Skills
+### security-secrets
+Secures login flows, sessionToken validation, and secret handling.
 
-- **security-secrets**  
-  Ensures that login flows are secure, sessionToken is validated correctly,
-  and no sensitive data is leaked. auth-flow describes *what happens* during
-  login; security-secrets describes *how it must be secured*.
+### sheet-schema
+Defines structure of `coach_login` and `trainee_login` sheets.
 
-- **sheet-schema**  
-  Provides the structure of coach_login and trainee_login sheets used for
-  PIN-based identity. Copilot must use the schema when reading or writing
-  identity rows.
+### wire-react-to-gas
+Ensures payload shapes, error codes, and sessionToken handling match backend contract.
 
-- **wire-react-to-gas**  
-  Ensures that login-related API calls match the backend contract, including
-  payload shapes, error codes, and sessionToken handling.
+---
 
-### Required Behavior
+## Required Behavior Summary
 
 When Copilot generates authentication-related code:
 
-- It must always return sessionToken for successful login.
-- It must never validate PINs or passwords on the frontend.
-- It must always use backend routes for identity verification.
-- It must use the correct error codes defined by the backend.
-- It must never assume that roles or login mechanisms are fixed.
+- Always return sessionToken on successful login.  
+- Never validate PINs or passwords on frontend.  
+- Always use backend routes for identity verification.  
+- Always use correct backend error codes.  
+- Never assume roles or login mechanisms are fixed.
 
-### Future Extensions
-
-This skill describes the current authentication model. Copilot must not assume
-that roles, login methods, or identity mechanisms are fixed. New roles, login
-types, or identity flows may be added without breaking this skill.
+```

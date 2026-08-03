@@ -134,8 +134,17 @@ Whenever code changes affect API contracts, sheet schemas, or backend architectu
   - API contracts
   - sheet schemas
   - backend architecture
+- Keep contract ownership split stable to reduce drift:
+  - `.github/skills/wire-react-to-gas` is the detailed request/response contract source.
+  - `.github/skills/gas-route-registry` is the method-qualified route inventory.
+  - When routes change, update both surfaces in the same task/PR.
 - Add rationale and test outline to PRs.
 - Keep instructions developer-focused; keep skills Copilot-focused.
+
+### Scripted Validation Notes
+
+- In Git Bash inline Node snippets, avoid `!` expressions (history expansion can corrupt checks).
+- Prefer explicit comparisons such as `includes(...)===false`.
 
 ---
 

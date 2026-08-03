@@ -1,42 +1,32 @@
+```markdown
 ---
 name: gas-date-and-time
-description: >
-  Rules for handling dates, times, timestamps, timezones, and ISO-8601
-  serialization in the OQM Google Apps Script backend. Copilot must use this
-  skill whenever generating or modifying date/time logic.
+description: Rules for handling dates, times, timestamps, timezones, and ISO‑8601 serialization in the OQM GAS backend. Copilot must apply this skill whenever generating or modifying date/time logic.
 license: MIT
 ---
 
 # GAS Date & Time Rules
 
-This skill defines how Copilot must handle dates, times, timestamps, and
-timezone‑sensitive operations in the OQM backend.  
-All date/time logic must be **deterministic**, **ISO‑8601 compliant**, and
-**Europe/Helsinki** aware.
-
-Copilot must treat this skill as the authoritative source for all temporal
-behavior.
+Authoritative temporal model for the OQM backend.  
+All date/time logic must be **deterministic**, **ISO‑8601 compliant**, and **Europe/Helsinki** aware.
 
 ---
 
-# 1. Timezone Rules (Strict)
+## 1. Timezone Rules (Strict)
 
 Copilot must:
-
-- always assume **Europe/Helsinki** as the business timezone  
-- never rely on the server’s default timezone  
+- always use **Europe/Helsinki** as business timezone  
+- never rely on server default timezone  
 - never assume UTC unless explicitly converting  
-- always convert Date objects to ISO‑8601 strings before writing to Sheets  
-- always parse ISO‑8601 strings when reading from Sheets  
+- always convert Date objects to ISO‑8601 before writing to Sheets  
+- always parse ISO‑8601 when reading from Sheets  
 
-### Required timezone behavior:
-
+Required timezone constant:
 ```js
 const tz = "Europe/Helsinki";
 ```
 
-Copilot must use this timezone for:
-
+Timezone applies to:
 - formatting  
 - parsing  
 - comparisons  
@@ -45,158 +35,147 @@ Copilot must use this timezone for:
 
 ---
 
-# 2. ISO‑8601 Serialization Rules
+## 2. ISO‑8601 Serialization Rules
 
-All dates and times written to Sheets must be:
+All dates/times written to Sheets must be:
 
-- ISO‑8601 date: `"YYYY-MM-DD"`  
-- ISO‑8601 datetime: `"YYYY-MM-DDTHH:mm:ss.sssZ"`  
-- time: `"HH:mm"` or `"HH:mm:ss"` depending on schema  
+- date: `"YYYY-MM-DD"`  
+- datetime (UTC): `"YYYY-MM-DDTHH:mm:ss.sssZ"`  
+- datetime (local): `"YYYY-MM-DDTHH:mm:ss"`  
+- time: `"HH:mm"` or `"HH:mm:ss"` per schema  
 
 Copilot must never write:
-
-- locale‑formatted dates  
-- GAS Date objects directly  
+- locale-formatted dates  
+- raw GAS Date objects  
 - timestamps without timezone  
-- ambiguous formats like `"1/2/2026"`  
+- ambiguous formats (`"1/2/2026"`, `"2.1.26"`, etc.)
 
-### Required serialization pattern:
-
+Required patterns:
 ```js
-// If you need an ISO Zulu (UTC) timestamp:
+// UTC Zulu timestamp
 const isoUtc = Utilities.formatDate(dateObj, "UTC", "yyyy-MM-dd'T'HH:mm:ss'Z'");
-// If you need Europe/Helsinki-local ISO datetime (no Z suffix):
+
+// Helsinki-local ISO datetime (no Z)
 const isoLocal = Utilities.formatDate(dateObj, "Europe/Helsinki", "yyyy-MM-dd'T'HH:mm:ss");
-```
 
-For date‑only fields:
-
-```js
+// Date-only
 const isoDate = Utilities.formatDate(dateObj, "Europe/Helsinki", "yyyy-MM-dd");
 ```
 
 ---
 
-# 3. Parsing Rules
+## 3. Parsing Rules
 
 When reading from Sheets:
 
-- if value is a string → treat as ISO‑8601  
-- if value is a number → treat as Google Sheets serial date  
-- if value is empty → treat as null  
+- string → treat as ISO‑8601  
+- number → treat as Google Sheets serial date  
+- empty → null  
 
-### Required parsing pattern:
-
+Required parsing:
 ```js
 function parseSheetDate(value) {
   if (!value) return null;
   if (typeof value === "string") return new Date(value);
-  if (typeof value === "number") return new Date(Math.round((value - 25569) * 86400 * 1000));
+  if (typeof value === "number") {
+    return new Date(Math.round((value - 25569) * 86400 * 1000));
+  }
   return null;
 }
 ```
 
 Copilot must never:
-
 - assume Sheets stores dates as strings  
 - assume Sheets stores dates as numbers  
 - parse using locale formats  
 
 ---
 
-# 4. Date & Time Validation Rules
+## 4. Date & Time Validation Rules
 
 Copilot must validate:
-
-- date format is valid ISO‑8601  
-- time format is valid (`HH:mm` or `HH:mm:ss`)  
-- start_time < end_time  
-- start_date ≤ end_date  
-- date is within session/camp/event ranges  
+- ISO‑8601 date format  
+- ISO‑8601 time format  
+- `start_time < end_time`  
+- `start_date ≤ end_date`  
+- date within session/camp/event ranges  
 - no overlapping sessions for same trainee/coach  
 
-### Required behavior:
-
-- all comparisons must use Date objects  
-- all comparisons must be timezone‑aware  
-- all validation must occur **inside locks** when writes occur  
+Rules:
+- comparisons must use Date objects  
+- comparisons must be timezone-aware  
+- validation must occur **inside locks** when writes occur  
 
 ---
 
-# 5. Overlap Detection Rules
+## 5. Overlap Detection Rules
 
-Copilot must detect overlaps using:
-
+Required overlap logic:
 ```js
 const overlap = (startA < endB) && (startB < endA);
 ```
 
 Rules:
-
 - comparisons must use Date objects  
 - comparisons must use Europe/Helsinki timezone  
 - comparisons must include both date and time  
-- comparisons must be strict (no equal endpoints unless allowed)  
+- comparisons must be strict unless schema allows equality  
 
 Copilot must never:
-
 - compare raw strings  
 - compare times without dates  
 - compare dates without times  
 
 ---
 
-# 6. Timestamp Rules
+## 6. Timestamp Rules
 
 Copilot must:
-
 - always write `created_at` and `updated_at` in ISO‑8601  
 - always update `updated_at` on modification  
 - never modify `created_at`  
 - generate timestamps **inside locks**  
 
-### Required pattern:
-
+Required patterns:
 ```js
 const now = new Date();
-// Prefer explicit UTC for Z-suffixed timestamps:
+
+// UTC Z-suffix
 const createdAtUtc = Utilities.formatDate(now, "UTC", "yyyy-MM-dd'T'HH:mm:ss'Z'");
-// Or use Helsinki-local ISO without Z when storing local business-time:
+
+// Helsinki-local business-time
 const createdAtLocal = Utilities.formatDate(now, "Europe/Helsinki", "yyyy-MM-dd'T'HH:mm:ss");
 ```
 
 ---
 
-# 7. Interaction With Other Skills
+## 7. Interaction With Other Skills
 
-### **sheet-schema**
-- Defines which fields are dates, times, or timestamps  
-- Defines required formats  
+### sheet-schema
+Defines which fields are dates, times, timestamps, and required formats.
 
-### **gas-sheet-operations**
-- Ensures dates/times are written in correct order  
-- Ensures read → validate → write atomicity  
+### gas-sheet-operations
+Ensures correct read → validate → write order and atomicity.
 
-### **gas-validation-rules**
-- Uses date/time rules for session overlap, age groups, and ranges  
+### gas-validation-rules
+Uses date/time rules for session overlap, age groups, ranges.
 
-### **gas-locking-and-concurrency**
-- Ensures timestamp generation happens inside locks  
+### gas-locking-and-concurrency
+Ensures timestamp generation and writes occur inside locks.
 
-### **gas-response-format**
-- Ensures date/time values in responses are ISO‑8601  
+### gas-response-format
+Ensures API responses return ISO‑8601 values.
 
-### **wire-react-to-gas**
-- Ensures frontend receives consistent date/time formats  
+### wire-react-to-gas
+Ensures frontend receives consistent date/time formats.
 
 ---
 
-# 8. Prohibited Behavior
+## 8. Prohibited Behavior
 
 Copilot must not:
-
 - write locale-formatted dates  
-- write GAS Date objects directly  
+- write raw GAS Date objects  
 - write timestamps without timezone  
 - write ambiguous formats  
 - parse using locale formats  
@@ -207,10 +186,9 @@ Copilot must not:
 
 ---
 
-# 9. Required Behavior for Copilot
+## 9. Required Behavior for Copilot
 
-When generating date/time logic, Copilot must:
-
+Copilot must:
 - always use Europe/Helsinki timezone  
 - always serialize to ISO‑8601  
 - always parse Sheets values safely  
@@ -221,9 +199,8 @@ When generating date/time logic, Copilot must:
 
 ---
 
-# 10. Future Extensions
+## 10. Future Extensions
 
 Date/time rules may expand.  
-Any change to date formats, timezone handling, or serialization must be added
-here before Copilot is allowed to generate new date/time logic.
-
+Any change to formats, timezone handling, or serialization must be added here before Copilot may generate new date/time logic.
+```

@@ -1,31 +1,22 @@
+```markdown
 ---
 name: setup-gas-webapp
-description: >
-  Setup instructions and architectural rules for the Google Apps Script backend
-  used by the OQM Registration system. Copilot must use this skill whenever
-  generating or modifying GAS project structure, CLASP workflows, or Web App
-  deployment steps.
+description: Setup instructions and architectural rules for the OQM Google Apps Script backend. Copilot must apply this skill whenever generating or modifying GAS project structure, CLASP workflows, or Web App deployment steps.
 license: MIT
 ---
 
 # Setup: Apps Script Web App + CLASP (gas/)
 
-This skill defines the **only valid** setup, deployment, and configuration
-model for the OQM Google Apps Script backend.  
-Copilot must treat this skill as authoritative for:
+Authoritative setup and deployment model for the OQM GAS backend.  
+Defines CLASP usage, project structure, Web App deployment, Script Properties, and frontend integration boundaries.
 
-- CLASP usage  
-- project structure  
-- Web App deployment  
-- Script Properties configuration  
-- frontend environment variable setup  
-- backend/frontend integration boundaries  
+Copilot must follow these rules for all backend setup or deployment logic.
 
 ---
 
-# 1. Install & Login CLASP
+## 1. Install & Login CLASP
 
-Copilot must always use this pattern:
+Required pattern:
 
 ```bash
 npm i -g @google/clasp
@@ -33,14 +24,13 @@ clasp login
 ```
 
 Rules:
-
 - CLASP is used **only** for pushing code, never for publishing or deploying.  
-- Copilot must never generate automated CLASP login or token scripts.  
-- Copilot must never generate CI workflows that run CLASP.  
+- never generate automated CLASP login/token scripts  
+- never generate CI workflows that run CLASP  
 
 ---
 
-# 2. Initialize Local GAS Project
+## 2. Initialize Local GAS Project
 
 Required pattern:
 
@@ -50,14 +40,13 @@ clasp create --title "OQM Registration" --type standalone
 ```
 
 Rules:
-
-- Project type must be **standalone**.  
-- Copilot must never generate container-bound scripts.  
-- Copilot must never generate multiple clasp.json files.  
+- project type must be **standalone**  
+- never generate container-bound scripts  
+- never generate multiple `clasp.json` files  
 
 ---
 
-# 3. Push & Version
+## 3. Push & Version
 
 Required pattern:
 
@@ -67,68 +56,61 @@ clasp version "initial"
 ```
 
 Rules:
-
-- `clasp push` uploads code to Apps Script.  
-- `clasp version` creates a version label.  
-- Copilot must never generate `clasp deploy`.  
-- Copilot must never generate automated versioning.  
+- `clasp push` uploads code  
+- `clasp version` creates version labels  
+- never generate `clasp deploy`  
+- never generate automated versioning  
 
 ---
 
-# 4. Deploy as Web App (Apps Script UI)
+## 4. Deploy as Web App (Manual Only)
 
 Deployment must always be done **manually** in the Apps Script UI.
 
 Required settings:
-
 - Execute as: **Me**  
-- Who has access: **Anyone** (or domain)  
+- Who has access: **Anyone** (or domain)
 
 Required steps:
-
 1. Open Apps Script UI  
 2. Deploy → New Deployment → Web App  
 3. Set correct permissions  
-4. Copy the `/exec` URL  
-5. Paste it into frontend `.env.local` as:
+4. Copy `/exec` URL  
+5. Paste into `.env.local`:
 
 ```
 VITE_GAS_BASE_URL="https://script.google.com/macros/s/.../exec"
 ```
 
 Rules:
-
-- Copilot must never generate automated Web App deployment.  
-- Copilot must never assume the structure of the Web App URL.  
-- Copilot must never embed the URL directly in code.  
-- Copilot must always instruct the user to update `.env.local` manually.  
+- never generate automated Web App deployment  
+- never assume URL structure  
+- never embed URL directly in code  
+- always instruct manual update of `.env.local`  
 
 ---
 
-# 5. Script Properties (Apps Script → Project Settings)
+## 5. Script Properties (Project Settings)
 
 Required Script Properties:
-
-- `SHEET_ID` — Spreadsheet ID  
-- `COACH_PASSWORD` — Coach password  
-- `ADMIN_PASSWORD` — Admin password  
+- `SHEET_ID`  
+- `COACH_PASSWORD`  
+- `ADMIN_PASSWORD`
 
 Legacy (must not be used):
-
-- `API_TOKEN`  
+- `API_TOKEN`
 
 Rules:
-
-- Copilot must never generate code that writes Script Properties programmatically.  
-- Copilot must never log Script Properties.  
-- Copilot must never expose Script Properties in API responses.  
-- Copilot must never store Script Properties in frontend code.  
+- never write Script Properties programmatically  
+- never log Script Properties  
+- never expose Script Properties in API responses  
+- never store Script Properties in frontend code  
 
 ---
 
-# 6. Backend Project Structure (gas/)
+## 6. Backend Project Structure (gas/)
 
-Copilot must enforce this structure:
+Required structure:
 
 ```
 gas/
@@ -146,89 +128,84 @@ gas/
 ```
 
 Rules:
-
-- Route handlers must live in `routes/`.  
-- Shared logic must live in `core/`.  
-- No circular dependencies.  
-- No global mutable state.  
-- No HTML output.  
-- No alternative routing models.  
+- route handlers live in `routes/`  
+- shared logic lives in `core/`  
+- no circular dependencies  
+- no global mutable state  
+- no HTML output  
+- no alternative routing models  
 
 ---
 
-# 7. Frontend Integration Rules
+## 7. Frontend Integration Rules
 
 Copilot must enforce:
-
-- Only `VITE_GAS_BASE_URL` is required in `.env.local`.  
-- Frontend must never store secrets.  
-- Frontend must never store sessionToken permanently.  
-- Frontend must always pass `sessionToken` explicitly in each request.  
-- Frontend must never validate PINs or passwords locally.  
+- only `VITE_GAS_BASE_URL` is required in `.env.local`  
+- frontend must never store secrets  
+- frontend must never store sessionToken permanently  
+- frontend must always pass sessionToken explicitly  
+- frontend must never validate PINs or passwords locally  
 
 Rules:
-
-- Copilot must always generate fetch() calls using the unified API contract:  
+- always generate fetch calls using unified API contract:
   ```
   { route, payload, sessionToken }
   ```
-- Copilot must never generate direct Google API calls from frontend.  
-- Copilot must never generate frontend code that reads Script Properties.  
+- never generate direct Google API calls from frontend  
+- never generate frontend code that reads Script Properties  
 
 ---
 
-# 8. Interaction With Other Skills
+## 8. Interaction With Other Skills
 
-### **security-secrets**
-Ensures Script Properties are secure and never exposed.
+### security-secrets
+Protects Script Properties and sessionToken handling.
 
-### **wire-react-to-gas**
-Ensures API contract matches deployed backend.
+### wire-react-to-gas
+Defines canonical API contract and request/response shapes.
 
-### **gas-backend-architecture**
-Ensures doGet/doPost follow correct routing and response format.
+### gas-backend-architecture
+Ensures correct routing, doGet/doPost behavior, and response format.
 
-### **deploy-ci**
-Ensures GAS deployment is always manual.
+### deploy-ci
+Ensures GAS deployment is always manual and separate from frontend.
 
-### **sheet-schema**
+### sheet-schema
 Ensures backend connects to correct Sheets via `SHEET_ID`.
 
 ---
 
-# 9. Required Behavior for Copilot
+## 9. Required Behavior for Copilot
 
-When generating setup or deployment instructions, Copilot must:
-
+Copilot must:
 - treat GAS as a **separate deploy target**  
 - never generate automated GAS deployment  
 - always instruct manual Web App deployment  
 - always instruct copying `/exec` URL to `.env.local`  
-- always instruct setting Script Properties manually  
-- always use CLASP only for pushing code  
+- always instruct manual Script Properties setup  
+- use CLASP only for pushing code  
 - never generate CI workflows that deploy GAS  
-- never combine frontend and backend deploys  
+- never combine frontend + backend deploys  
 
 ---
 
-# 10. Prohibited Behavior
+## 10. Prohibited Behavior
 
 Copilot must not:
-
 - generate CI workflows that deploy GAS  
 - generate automated versioning or publishing  
 - generate code that modifies Script Properties  
 - generate Web App URLs  
-- assume Web App URL structure  
+- assume URL structure  
 - generate container-bound scripts  
 - generate alternative deployment models  
-- generate backend code that depends on frontend build steps  
+- generate backend code depending on frontend build steps  
 
 ---
 
-# 11. Future Extensions
+## 11. Future Extensions
 
-This skill describes the current GAS setup model.  
+Setup rules may expand.  
 Copilot must not assume Apps Script, CLASP, or Web App deployment are fixed.  
 New backend platforms or deployment strategies may be added without breaking this skill.
-
+```

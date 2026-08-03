@@ -1,149 +1,124 @@
-# Copilot Continuous Learning Skill (Project-Specific)
+```markdown
+---
+name: continuous-learning
+description: Capture high‑value learnings, promote reusable patterns into durable instruction surfaces, retract invalid guidance, and append compressed repo‑level promotion evidence when durable surfaces change.
+license: Proprietary. LICENSE.txt has complete terms.
+metadata:
+  author: mimir-system
+  version: "1.0.0"
+---
 
-This file defines how GitHub Copilot should continuously learn from solved technical problems in this project.  
-Copilot must treat this file as a project-specific knowledge base and follow all rules below when reading, updating, or suggesting updates to `learnings.md`.
+# Continuous Learning
 
-This project uses:
-- React + Vite (frontend)
-- Google Apps Script (backend)
-- Google Sheets (data storage)
+Entry point for converting session learnings into durable, compact guidance.  
+Detailed compaction workflow lives in `references/learn-and-compact.prompt.md`.
 
-Copilot must follow all rules below.
+Keep this skill short, mandate‑first, and composable.
 
 ---
 
-# 1. Purpose of This Skill
+## 1. When To Use
 
-Copilot should maintain a project-specific continuous learning system.  
-All reusable technical learnings must be stored in `learnings.md` at the project root.
+Trigger this skill when:
 
-Copilot must:
-- Append new learnings when appropriate.
-- Reuse existing learnings when solving similar problems.
-- Keep the file structured, readable, and consistent.
-- Avoid storing sensitive or proprietary data.
-
----
-
-# 2. When Copilot Should Record a Learning
-
-Copilot should add a new learning ONLY when all conditions are met:
-
-- The problem required non-trivial reasoning.
-- The solution is reusable in this project’s architecture.
-- The pattern is likely to appear again in React, Vite, GAS, or Sheets.
-- The learning does not contain sensitive data.
-- The learning is not a trivial syntax fix.
-- The learning is not a one-off hack.
-
-Copilot should NOT record learnings for:
-- Typos, missing imports, or simple syntax errors.
-- Project-specific quirks that won’t repeat.
-- Full code patches or large code blocks.
-- Anything containing secrets, IDs, tokens, or private data.
+- Non‑trivial feature or refactor work completed  
+- Agents repeated the same mistake or violated a constraint  
+- New reusable pattern, convention, or gotcha discovered  
+- Instructions feel outdated, noisy, contradictory, or duplicated  
+- Track completion produced `lessons.md` with reusable learnings  
 
 ---
 
-# 3. How Copilot Should Record a Learning
+## 2. What This Skill Does
 
-Each learning must be added under the correct section in `learnings.md` and follow this exact format:
-
-### [Short Title of the Learning]
-**Problem Pattern:**  
-Short description of the issue Copilot solved.
-
-**Context Pattern:**  
-Minimal code snippet or structural pattern (indented code block).
-
-    // minimal snippet showing the pattern
-
-**Solution Summary:**  
-One-sentence distilled fix.
-
-**Reasoning:**  
-Why this fix works (1–2 sentences).
-
-**Tags:**  
-`react`, `vite`, `gas`, `sheets`, `performance`, `api`, etc.
-
-**Reusability Notes:**  
-When Copilot should apply this learning again.
-
-Copilot must:
-- Use short, clear titles.
-- Keep entries concise.
-- Use only indented code blocks (no fenced blocks).
-- Avoid storing full files or long patches.
-- Append new learnings at the bottom of the correct section.
+1. Captures learnings in `mimir/tracks/{track}/lessons.md`  
+2. Filters for reusable, high‑signal guidance  
+3. Promotes compact rules into `AGENTS.md` or instruction files  
+4. Retracts outdated or invalidated guidance  
+5. Appends one compressed event to repo‑root `continuous-learning.log.md` when durable surfaces changed  
+6. Creates or updates skills when a pattern deserves its own reusable reference  
 
 ---
 
-# 4. How Copilot Should Reuse Learnings
+## 3. Two Layers
 
-When Copilot encounters a new problem:
+### Layer 1: Capture
+- Record corrections, decisions, discoveries, and gotchas in `lessons.md` during execution.  
+- Capture proactively, not only after user corrections.
 
-1. Identify the relevant section (React, GAS, Sheets, Cross-Cutting).
-2. Scan existing learnings for similar patterns.
-3. Match based on:
-   - Problem description
-   - Code structure
-   - Tags
-4. Suggest reuse:
-   “This resembles a previous learning: [title]. The recommended pattern is…”
-5. Adapt the solution to the current context.
-6. If the new case generalizes the pattern, refine the existing learning.
-
-Copilot must NOT:
-- Apply learnings blindly.
-- Suggest irrelevant patterns.
-- Overwrite existing learnings unless refinement is clearly needed.
+### Layer 2: Curate
+- Promote only reusable patterns into instruction files.  
+- Keep `lessons.md` as the primary learning artifact.  
+- Repo‑root log is for **promotion/retraction evidence only**.
 
 ---
 
-# 5. Sections Copilot Must Maintain in `learnings.md`
+## 4. Core Decision Rules
 
-Copilot must keep learnings organized under these sections:
-
-# Frontend: React + Vite
-## State Management & React Patterns
-## Component Architecture & Reusability
-## Async Data Fetching & API Integration
-## Performance Optimizations
-
-# Backend: Google Apps Script (GAS)
-## Sheet Read/Write Patterns
-## Data Validation & Sanitization
-## Performance & Quotas
-
-# Data Layer: Google Sheets
-## Schema Design & Sheet Organization
-## Avoiding Race Conditions
-
-# Cross-Cutting Learnings
-## API Contract Patterns
-## Security & Permissions
-## Deployment & Versioning
-
-Copilot may add new subsections if a new category of reusable learning emerges.
+- Promote rules that prevent repeated mistakes or clarify constraints.  
+- Retract rules that are outdated, disproven, or replaced.  
+- Do not promote one‑off fixes unless they generalize.  
+- One authoritative location per concept; reference instead of duplicating.  
+- Append repo‑log entry **only** when durable surfaces changed.  
+- No repo‑log entries for:
+  - no‑op runs  
+  - track‑only captures  
+  - review artifacts  
+  - formatting‑only churn  
 
 ---
 
-# 6. Copilot Behavior Rules
+## 5. References
 
-Copilot must:
-- Treat this file as authoritative project knowledge.
-- Keep formatting consistent.
-- Maintain readability and structure.
-- Never delete existing learnings unless instructed by the user.
-- Never store sensitive or proprietary data.
-- Never store full code files.
-- Never store secrets, IDs, or tokens.
+- **learn-and-compact.prompt.md**  
+  Full workflow: read instructions → categorize learnings → compact → validate → log.
 
-Copilot should:
-- Append new learnings immediately after solving a reusable problem.
-- Reference this file when suggesting solutions.
-- Refine learnings when patterns evolve.
+- **mimir-best-practices/references/error-recovery.md**  
+  Protocol for proactive lesson capture, stop‑and‑replan triggers, and re‑entry cycles.
 
 ---
 
-# End of Skill Definition
+## 6. Minimal Workflow
+
+1. Gather input from:
+   - `lessons.md`  
+   - session observations  
+   - current instruction surfaces  
+
+2. Separate reusable guidance from track‑local noise.  
+3. Run the learn‑and‑compact workflow.  
+4. Append one compressed repo‑log entry **only** if durable surfaces changed.  
+5. Update only the correct files; keep entry points lean.  
+6. Report what changed and what was intentionally deferred.
+
+---
+
+## 7. Outputs
+
+- Updated `AGENTS.md` or instruction files  
+- New or revised skills when patterns deserve a home  
+- Updated repo‑root `continuous-learning.log.md` when promotion/retraction occurred  
+- Compacted guidance with reduced duplication  
+- Short summary of promoted, removed, or deferred items  
+
+---
+
+## 8. Integration Notes
+
+- This skill pairs with Mimir’s mandatory Learning Phase at track completion.  
+- All orchestrators invoking this skill must follow the same repo‑log behavior.  
+- Agents should capture learnings proactively during execution.  
+- Re‑entry cycles process only new learnings since the previous pass.
+
+---
+
+## 9. Success Criteria
+
+- Instruction quality improves without expanding into noisy prose.  
+- Entry‑point files remain concise and navigational.  
+- High‑value learnings become easier for future agents to apply.  
+- Repo‑log stays append‑only, month‑bucketed, and limited to durable changes.  
+- Invalid guidance does not remain in circulation.
+
+Keep the entry point compact. Put detailed execution guidance in `references/`.
+```

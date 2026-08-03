@@ -1,15 +1,14 @@
+```markdown
 ---
 name: frontend-api-client
-description: >
-  Defines the API client rules, fetch wrapper behavior, sessionToken handling,
-  error parsing, and integration with the GAS backend. Copilot must use this
-  skill whenever generating or modifying API calls.
+description: Defines API client rules, fetch wrapper behavior, sessionToken handling, error parsing, and integration with the GAS backend. Copilot must use this skill whenever generating or modifying API calls.
 license: MIT
 ---
 
 # Frontend API Client
 
-This skill defines the **only valid** API client model for the OQM frontend.
+Authoritative API client model for the OQM React frontend.  
+Copilot must follow this contract for all API calls.
 
 ---
 
@@ -17,7 +16,7 @@ This skill defines the **only valid** API client model for the OQM frontend.
 
 Copilot must:
 
-- read API URL from `VITE_GAS_BASE_URL`  
+- read base URL from `VITE_GAS_BASE_URL`  
 - never hardcode URLs  
 - never assume URL structure  
 
@@ -37,8 +36,8 @@ All requests must follow:
 
 Rules:
 
-- sessionToken required for protected routes  
-- payload required for POST  
+- `sessionToken` required for protected routes  
+- `payload` required for POST  
 - GET uses query params  
 
 ---
@@ -47,11 +46,11 @@ Rules:
 
 Copilot must:
 
-- use `redirect: 'follow'`  
-- use `Content-Type: 'text/plain;charset=utf-8'`  
-- stringify body manually  
+- use `redirect: "follow"`  
+- set `Content-Type: "text/plain;charset=utf-8"`  
+- manually stringify body  
 - parse JSON responses  
-- handle `{ ok, data, error }`  
+- handle strict `{ ok, data, error }` format  
 
 ---
 
@@ -59,7 +58,7 @@ Copilot must:
 
 Copilot must:
 
-- show inline errors for validation  
+- show inline errors for validation failures  
 - show toast for network errors  
 - never crash the app  
 
@@ -69,7 +68,7 @@ Copilot must:
 
 Copilot must:
 
-- read tokens from sessionStorage  
+- read tokens from `sessionStorage`  
 - never store tokens permanently  
 - clear tokens on unauthorized  
 - redirect to login  
@@ -80,23 +79,24 @@ Copilot must:
 
 Copilot must:
 
-- always use correct request shape  
-- always include sessionToken when required  
-- always parse strict response format  
-- never invent new fields  
+- use correct request shape  
+- include `sessionToken` when required  
+- parse strict response format  
+- never invent fields  
 - never bypass API contract  
 
 ---
 
 # 7. Interaction With Other Skills
 
-- **wire-react-to-gas** — API contract  
-- **frontend-architecture** — API folder structure  
-- **frontend-performance** — efficient API usage  
+- **wire-react-to-gas** — authoritative API contract  
+- **frontend-architecture** — correct folder placement  
+- **frontend-performance** — efficient usage  
 - **security-secrets** — token handling rules  
 
 ---
 
 # 8. Future Extensions
 
-API rules may expand.
+API rules may expand; structure must remain stable.
+```

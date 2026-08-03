@@ -1,38 +1,67 @@
+```markdown
 ---
 name: gas-route-registry
-description: >
-  Registry and mapping of GAS routes implemented in `gas/Code.gs`. This file is
-  a lightweight reference for agents and maintainers to find canonical route
-  names and expected payload/response shapes. For full API contract, see
-  `wire-react-to-gas`.
+description: Canonical registry of GAS routes implemented in `gas/Code.gs`. Provides route names and high-level intent. Full payload/response contracts live in `wire-react-to-gas`.
 license: MIT
 ---
 
 # GAS Route Registry (Reference)
 
-This file lists the canonical routes implemented in `gas/Code.gs`. It is
-intended as a short index — authoritative request/response shapes live in
-`wire-react-to-gas`.
+Authoritative index of backend routes implemented in `gas/Code.gs`.  
+This file is intentionally lightweight — full API contract details (payloads, response shapes, error codes, session requirements) live in **wire-react-to-gas**.
 
-Common routes (implemented in Code.gs):
+Keep this list in sync with actual routes in `gas/Code.gs`.
 
-- `coachLogin`
-- `adminLogin`
-- `verifyCoachPin`
-- `verifyTraineePin`
-- `registerCoachPin`
+---
+
+## Authentication & Identity
+
+- `coachLogin`  
+- `adminLogin`  
+- `verifyCoachPin`  
+- `verifyTraineePin`  
+- `registerCoachPin`  
 - `registerTraineePin`
-- `getTraineeSessions`
-- `getCoachSessions`
-- `registerTraineeForSession`
-- `registerCoachForSession`
-- `registerTraineeBatchForSessions`
+
+---
+
+## Sessions & Registration
+
+- `getTraineeSessions`  
+- `getCoachSessions`  
+- `registerTraineeForSession`  
+- `registerCoachForSession`  
+- `registerTraineeBatchForSessions`  
 - `registerCustomerEventWithSchedule`
-- `listSessionsSchedule`
-- `addSessionSchedule`
-- `updateSessionSchedule`
+
+---
+
+## Session Schedule Management
+
+- `listSessionsSchedule`  
+- `addSessionSchedule`  
+- `updateSessionSchedule`  
 - `deleteSessionSchedule`
 
-Notes:
-- Keep this list in sync with `gas/Code.gs` when routes are added/removed.
-- Use `wire-react-to-gas` for payload and response contract details.
+---
+
+## Account Management
+
+- `listCoachAccounts` (GET)  
+- `listTraineeAccounts` (GET)  
+- `createCoachAccount` (POST)  
+- `createTraineeAccount` (POST)  
+- `updateCoachAccount` (POST)  
+- `updateTraineeAccount` (POST)  
+- `deleteCoachAccount` (POST)  
+- `deleteTraineeAccount` (POST)
+
+---
+
+## Notes
+
+- This registry is an index only — **wire-react-to-gas** defines canonical request/response shapes, error codes, and sessionToken requirements.  
+- Update this file whenever routes are added, removed, or renamed in `gas/Code.gs`.  
+- Route classification (public, coach, admin) is defined in **auth-flow**.
+
+```
