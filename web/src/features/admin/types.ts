@@ -126,3 +126,76 @@ export interface SessionSchedulePayload {
 export interface ListSessionsScheduleResponse {
   schedules: SessionScheduleRecord[];
 }
+
+/** One row from coach_login exposed in admin account list. */
+export interface CoachAccountRecord {
+  id: string;
+  firstname: string;
+  lastname: string;
+  alias: string;
+  pin: string;
+  created_at: string;
+  last_activity: string;
+}
+
+/** One row from trainee_login exposed in admin account list. */
+export interface TraineeAccountRecord {
+  id: string;
+  firstname: string;
+  lastname: string;
+  age: string;
+  pin: string;
+  created_at: string;
+  last_activity: string;
+}
+
+/** Response shape for listCoachAccounts. */
+export interface ListCoachAccountsResponse {
+  accounts: CoachAccountRecord[];
+}
+
+/** Response shape for listTraineeAccounts. */
+export interface ListTraineeAccountsResponse {
+  accounts: TraineeAccountRecord[];
+}
+
+/** Payload for createCoachAccount route. */
+export interface CreateCoachAccountPayload {
+  firstname: string;
+  lastname: string;
+  alias: string;
+  pin: string;
+}
+
+/** Payload for updateCoachAccount route. */
+export interface UpdateCoachAccountPayload extends CreateCoachAccountPayload {
+  id: string;
+}
+
+/** Payload for createTraineeAccount route. */
+export interface CreateTraineeAccountPayload {
+  firstname: string;
+  lastname: string;
+  age: string;
+  pin: string;
+}
+
+/** Payload for updateTraineeAccount route. */
+export interface UpdateTraineeAccountPayload extends CreateTraineeAccountPayload {
+  id: string;
+}
+
+/** Response shape for createCoachAccount and updateCoachAccount. */
+export interface CoachAccountWriteResponse {
+  account: CoachAccountRecord;
+}
+
+/** Response shape for createTraineeAccount and updateTraineeAccount. */
+export interface TraineeAccountWriteResponse {
+  account: TraineeAccountRecord;
+}
+
+/** Response shape for delete account routes. */
+export interface DeleteAccountResponse {
+  id: string;
+}

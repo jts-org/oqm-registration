@@ -90,4 +90,24 @@ describe('AdminPage', () => {
     expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Add row' })).toBeInTheDocument();
   });
+
+  it('opens account management section from drawer navigation', async () => {
+    render(<AdminPage onBack={vi.fn()} sessionToken="token-1" />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Account management' }));
+
+    expect(screen.getByRole('heading', { name: 'Account management' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Coach accounts' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Trainee accounts' })).toBeInTheDocument();
+  });
+
+  it('opens account management section from dashboard card action', async () => {
+    render(<AdminPage onBack={vi.fn()} sessionToken="token-1" />);
+
+    const openButtons = screen.getAllByRole('button', { name: 'Open' });
+    await userEvent.click(openButtons[0]);
+
+    expect(screen.getByRole('heading', { name: 'Account management' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Coach accounts' })).toBeInTheDocument();
+  });
 });

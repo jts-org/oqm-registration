@@ -35,10 +35,12 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import MenuIcon from '@mui/icons-material/Menu';
 import IconButton from '@mui/material/IconButton';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import { useIsMobile } from '../../shared/hooks/useResponsive';
 
 import { AdminBatchFeedPanel } from '../../features/admin/components/AdminBatchFeedPanel';
 import { AdminCustomerEventsPanel } from '../../features/admin/components/AdminCustomerEventsPanel';
+import { AdminAccountListPanel } from '../../features/admin/components/AdminAccountListPanel';
 import { AdminSessionsSchedulePanel } from '../../features/admin/components/AdminSessionsSchedulePanel';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
@@ -48,7 +50,14 @@ export interface AdminPageProps {
   /** Current admin session token for protected admin routes. */
   sessionToken?: string;
 }
-type AdminSection = 'dashboard' | 'reports' | 'settings' | 'batchFeed' | 'events' | 'sessionsSchedule';
+type AdminSection =
+  | 'dashboard'
+  | 'reports'
+  | 'settings'
+  | 'batchFeed'
+  | 'events'
+  | 'sessionsSchedule'
+  | 'accounts';
 
 type ReportTab = 'logs' | 'usage' | 'errors';
 
@@ -80,6 +89,11 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         icon: <SettingsIcon />,
       },
       {
+        id: 'accounts' as const,
+        label: t('adminView.accountManagement'),
+        icon: <ManageAccountsIcon />,
+      },
+      {
         id: 'batchFeed' as const,
         label: t('adminView.batchFeed'),
         icon: <UploadFileIcon />,
@@ -105,7 +119,7 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         title: t('adminView.userManagementTitle'),
         description: t('adminView.userManagementDescription'),
         icon: <PeopleIcon fontSize="large" color="primary" />,
-        target: 'settings' as const,
+        target: 'accounts' as const,
       },
       {
         id: 'reports',
@@ -219,6 +233,10 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
     return <AdminBatchFeedPanel sessionToken={sessionToken} />;
   }
 
+  function renderAccounts() {
+    return <AdminAccountListPanel sessionToken={sessionToken} />;
+  }
+
   function renderEvents() {
     return <AdminCustomerEventsPanel sessionToken={sessionToken} />;
   }
@@ -316,6 +334,7 @@ export function AdminPage({ onBack, sessionToken = '' }: AdminPageProps) {
         {activeSection === 'reports' && renderReports()}
         {activeSection === 'settings' && renderSettings()}
         {activeSection === 'batchFeed' && renderBatchFeed()}
+        {activeSection === 'accounts' && renderAccounts()}
         {activeSection === 'events' && renderEvents()}
         {activeSection === 'sessionsSchedule' && renderSessionsSchedule()}
       </Box>
