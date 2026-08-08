@@ -1,24 +1,20 @@
+```markdown
 ---
 name: frontend-architecture
-description: >
-  Defines the folder structure, architectural rules, routing model, providers,
-  and feature-based organization for the OQM React frontend. Copilot must use
-  this skill whenever generating or modifying frontend structure, routing,
-  providers, or feature modules.
+description: Defines the folder structure, architectural rules, routing model, providers, and feature-based organization for the OQM React frontend. Copilot must use this skill whenever generating or modifying frontend structure, routing, providers, or feature modules.
 license: MIT
 ---
 
 # Frontend Architecture (web/)
 
-This skill defines the **only valid** architecture for the OQM React frontend.
-Copilot must follow this structure whenever generating or modifying frontend
-code, folders, routing, or providers.
+Authoritative architecture for the OQM React frontend.  
+Copilot must follow this structure for all frontend code, folders, routing, and providers.
 
 ---
 
-# 1. Project Structure (Authoritative)
+# 1. Project Structure
 
-```
+```plaintext
 web/
   src/
     app/
@@ -35,44 +31,37 @@ web/
     assets/
 ```
 
-Copilot must never generate alternative top-level structures.
+Copilot must not generate alternative top-level structures.
 
 ---
 
 # 2. App Shell (src/app/)
 
-Contains global providers, layout, and routing.
-
-### Required structure:
-
-```
+Required:
+```plaintext
 src/app/
   providers/
     router.tsx
     theme.tsx
     query-client.tsx
-  layout/
-    AppLayout.tsx
-  routes/
-    index.tsx
+  layout/AppLayout.tsx
+  routes/index.tsx
   store/ (optional)
   App.tsx
 ```
 
 Rules:
-
-- Providers must wrap the entire app.  
-- Routing must be defined in `src/app/routes/index.tsx`.  
-- AppLayout must contain global layout elements only.  
-- No business logic in AppLayout or App.tsx.  
+- Providers wrap the entire app.  
+- Routing defined only in `routes/index.tsx`.  
+- `AppLayout` contains global layout only.  
+- No business logic in `AppLayout` or `App.tsx`.
 
 ---
 
-# 3. Feature-Based Folders (src/features/)
+# 3. Features (src/features/)
 
-Each feature must follow:
-
-```
+Structure:
+```plaintext
 src/features/<feature>/
   components/
   hooks/
@@ -82,20 +71,18 @@ src/features/<feature>/
 ```
 
 Rules:
-
-- Business logic lives in hooks.  
-- UI pieces live in components.  
-- API calls live in api/.  
-- Types live in types.ts.  
-- index.ts exports controlled public API.  
+- Business logic → `hooks/`.  
+- UI → `components/`.  
+- API calls → `api/`.  
+- Types → `types.ts`.  
+- `index.ts` exposes a controlled public API.
 
 ---
 
-# 4. Shared Building Blocks (src/shared/)
+# 4. Shared (src/shared/)
 
-Reusable, non-domain-specific components:
-
-```
+Generic, non-domain-specific code:
+```plaintext
 src/shared/
   components/
   ui/
@@ -105,40 +92,36 @@ src/shared/
 ```
 
 Rules:
-
-- shared/ must never import from features/.  
-- shared/ must contain only generic, reusable code.  
+- `shared/` must not import from `features/`.  
+- Contains only generic reusable code.
 
 ---
 
 # 5. Pages (src/pages/)
 
-Pages compose features; they must not contain business logic.
-
-```
-src/pages/
-  Home/
-  Dashboard/
-  Settings/
-```
+Pages compose features; no business logic.
 
 Rules:
-
 - Pages import feature components.  
-- Pages must not contain API calls or state logic.  
+- Pages must not contain API calls or state/business logic.
 
 ---
 
 # 6. Widgets (src/widgets/)
 
-Widgets combine multiple features into reusable compositions.
+Reusable compositions combining multiple features.
 
-```
+Examples:
+```plaintext
 src/widgets/
   UserMenu/
   NotificationsPanel/
   Sidebar/
 ```
+
+Rules:
+- Widgets can compose multiple features and shared components.  
+- Widgets must not own domain-specific business rules.
 
 ---
 
@@ -146,26 +129,16 @@ src/widgets/
 
 Static assets and global CSS.
 
-```
-src/assets/
-  images/
-  icons/
-  fonts/
-  styles/
-```
-
 Rules:
-
 - Use MUI theme tokens for component styling.  
-- Use global CSS only for resets and typography.  
+- Global CSS only for resets and typography.
 
 ---
 
 # 8. Libraries (src/lib/)
 
 Infrastructure-level code:
-
-```
+```plaintext
 src/lib/
   api/
   http/
@@ -174,36 +147,39 @@ src/lib/
 ```
 
 Rules:
-
-- lib/ must not import from features/.  
-- lib/ is used across the entire app.  
+- `lib/` must not import from `features/`.  
+- Used across the entire app (cross-cutting infrastructure).
 
 ---
 
-# 9. Required Behavior for Copilot
+# 9. Copilot Required Behavior
 
 Copilot must:
 
-- always generate code inside the correct folder  
-- never place business logic in pages  
-- never place UI logic in hooks  
-- never create new top-level folders  
-- always follow feature-based architecture  
-- always use controlled exports via index.ts  
+- Generate code in the correct folder according to this architecture.  
+- Avoid business logic in `pages/`.  
+- Avoid UI logic in `hooks/`.  
+- Not create new top-level folders.  
+- Follow feature-based organization.  
+- Use controlled exports via `index.ts` in features and shared modules.
 
 ---
 
 # 10. Interaction With Other Skills
 
-- **frontend-api-client** — API layer rules  
-- **frontend-ux-and-accessibility** — UI rules  
-- **frontend-responsive-design** — layout rules  
-- **frontend-i18n** — localization rules  
-- **frontend-performance** — optimization rules  
-- **wire-react-to-gas** — API contract rules  
+This architecture works together with:
+
+- `frontend-api-client`  
+- `frontend-ux-and-accessibility`  
+- `frontend-responsive-design`  
+- `frontend-i18n`  
+- `frontend-performance`  
+- `wire-react-to-gas`
 
 ---
 
 # 11. Future Extensions
 
-New features may be added, but folder structure must remain stable.
+Folder structure must remain stable.  
+Any future extensions must preserve this top-level architecture.
+```

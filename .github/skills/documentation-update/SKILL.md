@@ -1,109 +1,107 @@
+```markdown
+---
+name: documentation-update
+description: Rules for detecting and drafting required documentation updates for manuals, SKILL.md files, and developer docs when UI, flows, API contracts, schemas, or backend logic change.
+license: MIT
+---
+
 # SKILL: Documentation Update
 
-## Purpose
-This skill defines how Copilot must detect when documentation updates are required and how Copilot must draft those updates. It applies to:
-
+Defines how Copilot detects when documentation updates are required and how Copilot drafts those updates.  
+Applies to:
 - user manuals (`user_manuals/*.en.md`, `user_manuals/*.fi.md`)
 - SKILL.md files
-- developer-facing docs when architecture, flows, or schemas change
+- developer-facing docs (architecture, flows, schemas)
 
-This skill ensures documentation stays synchronized with UI behavior, API contracts, sheet schemas, and backend logic.
-
----
-
-## When to Apply
-Activate this skill whenever:
-
-- a PR changes UI behavior
-- a PR changes user-visible flows
-- a PR changes API request/response shapes
-- a PR changes sheet schemas or column order
-- a PR changes backend architecture or error codes
-- the user asks for documentation updates
-- the user asks “what needs updating in manuals?”
-- the PR Review Skill identifies documentation impact
+Ensures documentation stays synchronized with UI behavior, API contracts, sheet schemas, and backend logic.
 
 ---
 
-## Detection Rules
+# 1. When to Apply
 
-Copilot must treat documentation updates as required when **any** of the following occur:
+Activate whenever:
+- PR changes UI behavior or user-visible flows  
+- PR changes API request/response shapes  
+- PR changes sheet schemas or column order  
+- PR changes backend architecture or error codes  
+- user asks for documentation updates  
+- user asks “what needs updating in manuals?”  
+- PR Review Skill identifies documentation impact  
 
-### UI Behavior Changes
-- new UI elements added
-- labels, buttons, or text changed
-- validation rules changed
-- navigation flow changed
-- error messages changed
-- loaders, modals, or notifications changed
-- mobile/tablet/desktop behavior changed
+---
 
-### API Contract Changes
-- request payload shape changed
-- response shape changed
-- new fields added
-- fields removed or renamed
-- error codes changed
-- route behavior changed
+# 2. Detection Rules
 
-### Sheet Schema Changes
-- column order changed
-- new columns added
-- columns removed or renamed
-- validation rules changed
-- write logic changed
+Documentation updates are **required** when any of the following change:
 
-### Backend Architecture Changes
-- concurrency rules changed
-- locking behavior changed
-- new routes added
-- error handling changed
-- data flow changed
+## UI Behavior
+- new UI elements  
+- changed labels/buttons/text  
+- changed validation rules  
+- changed navigation flow  
+- changed error messages  
+- changed loaders/modals/notifications  
+- changed mobile/tablet/desktop behavior  
 
-If any of these are detected, Copilot must:
+## API Contract
+- changed payload shape  
+- changed response shape  
+- added/removed/renamed fields  
+- changed error codes  
+- changed route behavior  
 
+## Sheet Schema
+- changed column order  
+- added/removed/renamed columns  
+- changed validation rules  
+- changed write logic  
+
+## Backend Architecture
+- changed concurrency rules  
+- changed locking behavior  
+- new routes  
+- changed error handling  
+- changed data flow  
+
+If any detected:
 1. Mark documentation updates as **Required Fixes** in PR review  
-2. Generate draft updates for manuals and SKILL.md files  
-3. Ask the user to confirm or refine the drafts  
+2. Generate draft updates for manuals + SKILL.md  
+3. Ask user to confirm or refine  
 
 ---
 
-## Documentation Update Procedure
+# 3. Documentation Update Procedure
 
-When documentation updates are required, Copilot must follow this process:
-
-### Step 1 — Identify Impact
+## Step 1 — Identify Impact
 Summarize what changed and why documentation must be updated.
 
-### Step 2 — Determine Which Docs Are Affected
-Copilot must map changes to documentation targets:
+## Step 2 — Determine Affected Docs
+Map changes to targets:
+- UI → user manuals (en + fi)  
+- API → SKILL.md + developer docs  
+- sheet schema → SKILL.md + developer docs  
+- backend architecture → SKILL.md + developer docs  
 
-- UI behavior → user manuals (en + fi)
-- API contract → SKILL.md + developer docs
-- sheet schema → SKILL.md + developer docs
-- backend architecture → SKILL.md + developer docs
+## Step 3 — Generate Draft Updates
 
-### Step 3 — Generate Draft Updates
-Copilot must produce:
+### User Manuals (EN + FI)
+- user-focused explanation  
+- expected outcomes  
+- error recovery steps  
+- screenshot placeholders (`[screenshot: ...]`)  
+- step-by-step instructions  
+- no technical jargon  
 
-#### For user manuals:
-- user-focused explanation of new behavior
-- expected outcomes
-- error recovery steps
-- screenshot placeholders (e.g., `[screenshot: new form layout]`)
-- step-by-step instructions
-- no technical jargon
+### SKILL.md Files
+- technical explanation of new rules  
+- updated procedures  
+- updated payload/response definitions  
+- updated schema definitions  
+- updated error codes  
+- updated architectural constraints  
 
-#### For SKILL.md files:
-- technical explanation of new rules
-- updated procedures
-- updated payload/response definitions
-- updated schema definitions
-- updated error codes
-- updated architectural constraints
-
-### Step 4 — Insert “Manual Impact” Note for PR
-Copilot must generate a PR-ready note:
+## Step 4 — PR “Manual Impact” Note
+Copilot must generate:
 
 ```
 ## Manual Impact
@@ -115,61 +113,47 @@ Changes:
 - <list of behavior changes>
 ```
 
-### Step 5 — Ask for Confirmation
+## Step 5 — Ask for Confirmation
 Copilot must ask:
-
-- “Should I refine or expand the manual updates?”
-- “Do you want me to generate the Finnish version as well?”
-- “Should I update the related SKILL.md files?”
+- “Should I refine or expand the manual updates?”  
+- “Do you want the Finnish version as well?”  
+- “Should I update the related SKILL.md files?”  
 
 ---
 
-## Output Format
+# 4. Output Format
 
 When generating documentation updates, Copilot must output:
 
-### 1. Summary of Impact
-Short explanation of what changed.
-
-### 2. Updated English Manual Section
-User-focused, step-by-step, non-technical.
-
-### 3. Updated Finnish Manual Section
-Same content, translated and localized.
-
-### 4. Updated SKILL.md Section (if needed)
-Technical, developer-focused.
-
-### 5. Manual Impact Note for PR
-As described above.
+1. **Summary of Impact**  
+2. **Updated English Manual Section**  
+3. **Updated Finnish Manual Section**  
+4. **Updated SKILL.md Section (if needed)**  
+5. **Manual Impact Note for PR**  
 
 ---
 
-## Rules for User Manuals
+# 5. Rules for User Manuals
 
 Copilot must ensure:
-
-- manuals remain user-focused, not technical
-- instructions describe what the user sees and does
-- expected outcomes are included
-- error recovery steps are included
-- Finnish characters use unicode escapes if required by repo conventions
-- tone is simple, clear, and non-developer
-
----
-
-## If No Documentation Is Needed
-If Copilot detects no user-visible or architectural changes, it must state:
-
-“No documentation updates required.”
+- user-focused, non-technical tone  
+- instructions describe what user sees/does  
+- expected outcomes included  
+- error recovery steps included  
+- Finnish characters use unicode escapes if required  
+- simple, clear language  
 
 ---
 
-## If Context Is Missing
-If the user asks for documentation updates but provides no diff or description, Copilot must request:
-
-- the PR description
-- the changed files
-- the relevant code snippets
+# 6. If No Documentation Is Needed
+If no user-visible or architectural changes:
+**“No documentation updates required.”**
 
 ---
+
+# 7. If Context Is Missing
+If user asks for documentation updates without diff or description, Copilot must request:
+- PR description  
+- changed files  
+- relevant code snippets  
+```

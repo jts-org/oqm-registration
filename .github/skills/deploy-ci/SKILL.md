@@ -1,66 +1,52 @@
+```markdown
 ---
 name: deploy-ci
-description: >
-  CI, build validation, and GitHub Pages deployment rules for the OQM
-  Registration frontend. Copilot must use this skill whenever generating or
-  modifying CI workflows, build pipelines, caching rules, or deployment steps.
+description: CI, build validation, and GitHub Pages deployment rules for the OQM Registration frontend. Authoritative model for CI workflows, Vite builds, SPA routing, caching, and separation of frontend/backend deploys.
 license: MIT
 ---
 
-# SKILL: CI & GH Pages Deploy
+# CI & GitHub Pages Deploy
 
-This skill defines the **only valid** CI/CD and deployment model for the OQM
-Registration frontend.  
-Copilot must treat this skill as authoritative for:
-
-- GitHub Actions workflows  
-- Vite build validation  
-- GitHub Pages deployment  
-- SPA routing rules  
-- caching strategy  
-- separation of frontend and backend deploys  
+Authoritative CI/CD model for the OQM Registration frontend.  
+Defines build validation, GitHub Pages deploy, SPA routing, caching, troubleshooting, rollback, and strict separation of frontend and backend deploys.
 
 ---
 
-# 1. CI Build Validation
+## 1. CI Build Validation
 
-Before pushing to production, Copilot must always include a local build
-validation step:
+Local validation before pushing:
 
 ```bash
 cd web
-npm run build    # TypeScript check + Vite build
-npm run preview  # Serve dist/ locally
-# Test thoroughly before pushing
+npm run build      # TypeScript + Vite build
+npm run preview    # Serve dist/ locally
 ```
 
 Rules:
-
-- CI must run TypeScript checks and Vite build.  
+- CI must run TypeScript checks + Vite build.  
 - CI must never skip build validation.  
-- CI must never deploy unvalidated builds.  
+- CI must never deploy unvalidated builds.
 
 ---
 
-# 2. GitHub Pages Deployment (Frontend Only)
+## 2. GitHub Pages Deployment (Frontend Only)
 
-The frontend is deployed to GitHub Pages.  
-The backend (GAS) is **never** deployed via CI.
+Frontend deploys to GitHub Pages.  
+Backend (GAS) is **always manual**.
 
-Copilot must enforce:
-
-- frontend and backend are separate deploy targets  
-- GitHub Pages deploy affects only the Vite SPA  
-- GAS deploy is always manual  
+Rules:
+- Frontend and backend are separate deploy targets.  
+- GitHub Pages deploy affects only the Vite SPA.  
+- GAS deploy is never automated.
 
 ---
 
-# 3. SPA Client-Side Routing Configuration
+## 3. SPA Routing (GitHub Pages)
 
-GitHub Pages does not support server-side routing.  
-Copilot must always generate SPA rewrite rules.
+GitHub Pages has no server-side routing.  
+Copilot must always generate SPA rewrite logic.
 
-## Required 404.html Redirect
+### Required `404.html` Redirect
 
 ```yaml
 - name: Setup GitHub Pages SPA redirects
@@ -76,7 +62,7 @@ Copilot must always generate SPA rewrite rules.
     </html>' > dist/404.html
 ```
 
-## Alternative (index.html)
+### Optional `index.html` Redirect
 
 ```html
 <script>
@@ -91,151 +77,131 @@ Copilot must always generate SPA rewrite rules.
 ```
 
 Rules:
-
-- Copilot must always include SPA rewrite logic.  
-- Copilot must never generate server-side routing for GitHub Pages.  
+- SPA rewrite logic is mandatory.  
+- Never generate server-side routing for GitHub Pages.
 
 ---
 
-# 4. Caching Strategy
+## 4. Caching Strategy
 
 Vite uses content-hashed assets.  
-Copilot must enforce correct caching:
+Copilot must enforce correct caching.
 
-## Entry Point (`index.html`)
-
-```http
+### `index.html`
+```
 Cache-Control: no-cache, no-store, must-revalidate
 ```
 
-## Hashed Assets (`/assets/*.js`, `/assets/*.css`)
-
-```http
+### Hashed Assets (`/assets/*.js`, `/assets/*.css`)
+```
 Cache-Control: public, max-age=31536000, immutable
 ```
 
 Rules:
-
-- index.html must never be cached aggressively  
-- hashed assets must use long-term immutable caching  
-- Copilot must never generate caching rules that break SPA routing  
+- `index.html` must never be cached aggressively.  
+- Hashed assets must use immutable caching.  
+- Never generate caching rules that break SPA routing.
 
 ---
 
-# 5. Deployment Steps (Frontend + Backend Separation)
+## 5. Deployment Steps (Frontend + Backend Separation)
 
-## 1. Validate locally
-
+### 1. Validate locally
 ```bash
 cd web
 npm run build && npm run preview
 ```
 
-## 2. Frontend build
-
+### 2. Frontend build
 ```bash
 cd web && npm run build
 ```
 
-## 3. Backend push (manual step)
-
+### 3. Backend push (manual)
 ```bash
 cd gas && clasp push
 ```
 
-## 4. Web App deploy (manual)
-
+### 4. Web App deploy (manual)
 - Deploy via Apps Script UI  
 - Copy new `/exec` URL  
-- Paste into `.env.local` as `VITE_GAS_BASE_URL`  
+- Update `.env.local` → `VITE_GAS_BASE_URL`
 
 Rules:
-
-- Copilot must never generate automated GAS deployment.  
-- Copilot must never combine frontend and backend deploys.  
+- Never automate GAS deployment.  
+- Never combine frontend + backend deploys.
 
 ---
 
-# 6. Troubleshooting
+## 6. Troubleshooting
 
-Copilot must include these rules when generating troubleshooting steps:
+Copilot must include:
 
 - **404 on refresh** → SPA rewrites missing  
-- **Old code after deploy** → index.html cached  
-- **clasp auth issues** → run `clasp login`  
-- **Vite build errors** → run `tsc --noEmit`  
-- **CORS issues** → check GAS Web App permissions  
+- **Old code after deploy** → `index.html` cached  
+- **clasp auth issues** → `clasp login`  
+- **Vite build errors** → `tsc --noEmit`  
+- **CORS issues** → check GAS Web App permissions
 
 ---
 
-# 7. Rollback
+## 7. Rollback
 
-Copilot must generate rollback steps in this form:
+Rollback steps:
 
-- Restore from git:  
+- Restore via git:  
   `git checkout <previous-commit>`  
-- Re-deploy old build from `dist/` backup  
+- Re-deploy old `dist/` build  
 - Revert GAS deployment via Apps Script UI version history  
 
 Rules:
-
-- Copilot must never generate automated rollback for GAS.  
+- Never generate automated GAS rollback.
 
 ---
 
-# 8. Required Behavior for Copilot
+## 8. Required Behavior for Copilot
 
-When generating CI/CD or deployment logic, Copilot must:
+Copilot must:
 
-- treat frontend and backend as separate deploy targets  
+- treat frontend + backend as separate deploy targets  
 - never deploy GAS automatically  
 - never generate workflows that push GAS code  
-- never generate workflows that modify Apps Script versions  
+- never modify Apps Script versions in CI  
 - always include SPA rewrite rules  
-- ensure index.html is not cached  
-- ensure hashed assets use immutable caching  
-- never leak environment variables or secrets  
+- ensure correct caching (index.html no-cache, assets immutable)  
+- never leak env vars or secrets  
 - always include local build validation  
-- never assume GitHub Pages is the only hosting target  
+- never assume GitHub Pages is the only hosting provider
 
 ---
 
-# 9. Prohibited Behavior
+## 9. Prohibited Behavior
 
 Copilot must not:
 
-- generate CI workflows that deploy GAS  
-- combine frontend and backend deploy steps  
+- deploy GAS in CI  
+- combine frontend + backend deploy steps  
 - generate caching rules that break SPA routing  
 - skip build validation  
 - expose `.env` values in CI logs  
-- assume a fixed hosting provider  
-- generate alternative deployment models  
+- assume fixed hosting provider  
+- generate alternative deployment models
 
 ---
 
-# 10. Interaction With Other Skills
+## 10. Interaction With Other Skills
 
-### **vite-react-performance**
-Ensures build output is optimized; this skill ensures it is deployed correctly.
-
-### **wire-react-to-gas**
-Ensures correct GAS URL is propagated to `.env.local`.
-
-### **security-secrets**
-Ensures no secrets leak in CI logs or artifacts.
-
-### **auth-flow**
-Ensures login/session flows work after deploy.
-
-### **setup-gas-webapp**
-Ensures backend deploy remains manual and separate.
+- **vite-react-performance** — ensures optimized build output  
+- **wire-react-to-gas** — ensures correct GAS URL in `.env.local`  
+- **security-secrets** — prevents secret leakage in CI  
+- **auth-flow** — ensures login/session flows work after deploy  
+- **setup-gas-webapp** — enforces manual backend deploy
 
 ---
 
-# 11. Future Extensions
+## 11. Future Extensions
 
 This skill describes the current CI/CD model.  
-Copilot must not assume GitHub Pages, GAS, or Vite are fixed deployment tools.  
+Copilot must not assume GitHub Pages, GAS, or Vite are fixed.  
 New hosting providers or pipelines may be added without breaking this skill.
-
+```

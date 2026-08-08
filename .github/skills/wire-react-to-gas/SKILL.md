@@ -1,44 +1,26 @@
+```markdown
 ---
 name: wire-react-to-gas
-description: >
-  Unified API contract for wiring the React frontend to the Google Apps Script
-  backend, including authentication, route access levels, validation rules,
-  request/response shapes, and sessionToken handling. Copilot must use this
-  skill whenever generating or modifying any logic that passes data between the
-  React frontend and the GAS backend.
+description: Unified API contract for wiring the React frontend to the GAS backend: authentication, route access levels, validation rules, request/response shapes, and sessionToken handling. Copilot must use this skill whenever generating or modifying logic passing data between React and GAS.
 license: MIT
 ---
 
 # SKILL: Wire React to GAS API
 
-Unified API Contract for OQM Registration Frontend ↔ Apps Script Backend.  
-This skill defines the **only valid** request/response shapes, authentication
-model, route access rules, and sessionToken behavior.
+Authoritative API contract for OQM Registration Frontend ↔ Apps Script Backend.  
+Defines the **only valid** request/response shapes, authentication model, route access rules, and sessionToken behavior.
 
-Copilot must treat this skill as the authoritative API contract.
+Copilot must always reference this skill for any frontend↔backend logic.
 
 ---
 
 # 1. Purpose & Scope
 
-This skill ensures:
+Ensures consistent request/response shapes, predictable authentication, correct sessionToken handling,
+route access correctness, payload stability, and cross-skill compatibility.
 
-- consistent request/response shapes  
-- predictable authentication behavior  
-- correct sessionToken handling  
-- correct route access levels  
-- correct payload shapes  
-- correct error handling  
-- compatibility with all backend skills  
-
-Copilot must always reference this skill when generating:
-
-- frontend API clients  
-- backend route handlers  
-- TypeScript request/response types  
-- sessionToken logic  
-- fetch() wrappers  
-- error handling logic  
+Apply this skill for frontend API clients, backend route handlers, request/response types, fetch wrappers,
+sessionToken logic, and API error handling.
 
 ---
 
@@ -47,23 +29,22 @@ Copilot must always reference this skill when generating:
 ## 2.1 Overview
 
 - No shared API secret in frontend  
-- Trainee flow is public  
-- Coach/Admin flows require sessionToken  
-- Tokens are issued by login routes  
-- Tokens expire after 8 hours (28800 seconds)  
-- Tokens must be validated on backend before route handlers  
+- Trainee flow: public  
+- Coach/Admin flows: require sessionToken  
+- Tokens issued by login routes  
+- Tokens expire after 8 hours (28800s)  
+- Backend must validate tokens before handlers
 
-## 2.2 Token Storage Rules (Frontend)
+## 2.2 Token Storage (Frontend)
 
-- Store tokens in **sessionStorage**, never localStorage  
+- Store in **sessionStorage**, never localStorage  
 - Keys:
   - `oqm_coach_session_token`
   - `oqm_admin_session_token`
 
-On unauthorized backend response:
-
+On unauthorized response:
 - clear token  
-- redirect to login  
+- redirect to login
 
 ---
 
@@ -76,21 +57,17 @@ On unauthorized backend response:
 | listItems | GET | List items |
 | createItem | POST | Create item |
 | registerCoachPin | POST | Register coach PIN |
-| getTraineeSessions | GET/POST | Anonymous or identity-based trainee session loading |
+| getTraineeSessions | GET/POST | Anonymous or identity-based session loading |
 | registerTraineePin | POST | Register trainee PIN |
 | registerTraineeForSession | POST | Register trainee for a session |
 
-**Legacy / Compatibility**
-
-- `verifyCoachPin` and `verifyTraineePin` are supported for backward compatibility.
-  Prefer `coachLogin` and current login/verification flows for new implementations.
-  If legacy routes are used, document the reason and treat them as compatibility-only.
+**Legacy**: `verifyCoachPin`, `verifyTraineePin` supported for compatibility only. Prefer modern login flows.
 
 ---
 
 ## 3.2 Coach-Protected Routes
 
-Require: `sessionToken` with role `"coach"`
+Require: `sessionToken` with role `"coach"`.
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -102,16 +79,24 @@ Require: `sessionToken` with role `"coach"`
 
 ## 3.3 Admin-Protected Routes
 
-Require: `sessionToken` with role `"admin"`
+Require: `sessionToken` with role `"admin"`.
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| registerTraineeBatchForSessions | POST | Batch trainee registration |
-| registerCustomerEventWithSchedule | POST | Customer event + schedule creation |
-| listSessionsSchedule | GET | Fetch all session schedule rows |
-| addSessionSchedule | POST | Add a session schedule row |
-| updateSessionSchedule | POST | Update an existing session schedule row |
-| deleteSessionSchedule | POST | Delete a session schedule row by id |
+| registerTraineeBatchForSessions | POST | Batch registration |
+| registerCustomerEventWithSchedule | POST | Event + schedule creation |
+| listSessionsSchedule | GET | Fetch schedule rows |
+| listCoachAccounts | GET | Fetch coach account rows |
+| listTraineeAccounts | GET | Fetch trainee account rows |
+| addSessionSchedule | POST | Add schedule row |
+| updateSessionSchedule | POST | Update schedule row |
+| deleteSessionSchedule | POST | Delete schedule row |
+| createCoachAccount | POST | Create coach login account |
+| createTraineeAccount | POST | Create trainee login account |
+| updateCoachAccount | POST | Update coach login account |
+| updateTraineeAccount | POST | Update trainee login account |
+| deleteCoachAccount | POST | Delete coach login account |
+| deleteTraineeAccount | POST | Delete trainee login account |
 
 ---
 
@@ -128,26 +113,10 @@ Issue session tokens.
 
 # 4. Global Response Contract (Strict)
 
-Copilot must use the **backend-wide response format**:
+Response objects must follow `gas-response-format` exactly:
 
-## Success
-
-```json
-{ "ok": true, "data": ... }
-```
-
-## Error
-
-```json
-{ "ok": false, "error": "<error_code>" }
-```
-
-Copilot must never generate:
-
-- nested error objects  
-- `{ message: "..." }`  
-- `{ status: "error" }`  
-- `{ success: false }`  
+- success: `{ "ok": true, "data": ... }`
+- error: `{ "ok": false, "error": "<error_code>" }`
 
 Error codes are defined in `gas-error-handling`.
 
@@ -155,7 +124,7 @@ Error codes are defined in `gas-error-handling`.
 
 # 5. Request Contract
 
-All requests must follow:
+All requests:
 
 ```json
 {
@@ -166,11 +135,10 @@ All requests must follow:
 ```
 
 Rules:
-
-- `route` is required  
-- `payload` is required for POST  
-- `sessionToken` is required for protected routes  
-- GET requests pass payload via query params  
+- `route` required  
+- `payload` required for POST  
+- `sessionToken` required for protected routes  
+- GET uses query params
 
 ---
 
@@ -178,85 +146,25 @@ Rules:
 
 ## 6.1 Coach Login
 
-### PIN Mode
+Request payload:
+- PIN mode: `{ mode: "pin", pin }`
+- Password mode: `{ mode: "password", password }`
 
-```json
-{
-  "route": "coachLogin",
-  "payload": { "mode": "pin", "pin": "1234" }
-}
-```
-
-### Password Mode
-
-```json
-{
-  "route": "coachLogin",
-  "payload": { "mode": "password", "password": "..." }
-}
-```
-
-### Success Response
-
-```json
-{
-  "ok": true,
-  "data": {
-    "session": {
-      "sessionToken": "...",
-      "role": "coach",
-      "expiresInSeconds": 28800
-    },
-    "coachData": {
-      "id": "1718294400000",
-      "firstname": "...",
-      "lastname": "...",
-      "alias": "...",
-      "pin": "...",
-      "created_at": "ISO-8601",
-      "last_activity": "ISO-8601"
-    }
-  }
-}
-```
+Success data shape:
+- `session`: `{ sessionToken, role: "coach", expiresInSeconds }`
+- `coachData`: coach identity object for PIN mode, `null` for password mode
 
 ---
 
 ## 6.2 Coach PIN Registration
 
-### Request
+Request payload:
+- `{ firstname, lastname, alias, pin, password }`
 
-```json
-{
-  "route": "registerCoachPin",
-  "payload": {
-    "firstname": "John",
-    "lastname": "Doe",
-    "alias": "JD",
-    "pin": "1234",
-    "password": "coach-password"
-  }
-}
-```
-
-### Success
-
-```json
-{
-  "ok": true,
-  "data": {
-    "id": "1718294400001",
-    "firstname": "John",
-    "lastname": "Doe",
-    "alias": "JD",
-    "pin": "1234",
-    "created_at": "ISO-8601"
-  }
-}
-```
+Success data shape:
+- `{ id, firstname, lastname, alias, pin, created_at }`
 
 ### Errors
-
 - invalid_password  
 - pin_reserved  
 - mismatching_aliases  
@@ -267,47 +175,85 @@ Rules:
 
 ## 6.3 Admin Login
 
-### Request
+Request payload:
+- `{ password }`
 
-```json
-{
-  "route": "adminLogin",
-  "payload": { "password": "..." }
-}
-```
-
-### Success
-
-```json
-{
-  "ok": true,
-  "data": {
-    "session": {
-      "sessionToken": "...",
-      "role": "admin",
-      "expiresInSeconds": 28800
-    }
-  }
-}
-```
+Success data shape:
+- `session`: `{ sessionToken, role: "admin", expiresInSeconds }`
 
 ---
 
 ## 6.4 Admin Batch Trainee Registration (OQM‑0034)
 
-(Your original content preserved, corrected to strict response format.)
+Must follow global request contract with admin `sessionToken` and return strict `{ ok, data }` or `{ ok, error }`.
+Payload and domain constraints are defined by backend validation and `sheet-schema`.
 
 ---
 
 ## 6.5 Admin Customer Event + Schedule (OQM‑0035)
 
-(Your original content preserved, corrected to strict response format.)
+Must follow global request contract with admin `sessionToken` and return strict `{ ok, data }` or `{ ok, error }`.
+Payload and domain constraints are defined by backend validation and `sheet-schema`.
 
 ---
 
 ## 6.6 Get Trainee Sessions (OQM‑0033)
 
-(Your original content preserved.)
+Supports anonymous and identity-based loading under public-route rules.
+Return shape remains strict and route-specific fields must align with backend handlers.
+
+---
+
+## 6.7 Admin Account Management (feature-admin-account-crud)
+
+All account routes require admin `sessionToken` and strict response envelope.
+
+### List Routes (GET)
+
+- `listCoachAccounts`
+  - Query: `route=listCoachAccounts&sessionToken=<token>`
+  - Success data: `{ accounts: CoachAccountRecord[] }`
+- `listTraineeAccounts`
+  - Query: `route=listTraineeAccounts&sessionToken=<token>`
+  - Success data: `{ accounts: TraineeAccountRecord[] }`
+
+### Create Routes (POST)
+
+- `createCoachAccount`
+  - Payload: `{ firstname, lastname, alias, pin }`
+  - Success data: `{ account: CoachAccountRecord }`
+  - Errors: `validation_failed`, `concurrent_request`, `pin_reserved`, `unauthorized`
+- `createTraineeAccount`
+  - Payload: `{ firstname, lastname, age, pin }`
+  - Success data: `{ account: TraineeAccountRecord }`
+  - Errors: `validation_failed`, `concurrent_request`, `pin_reserved`, `unauthorized`
+
+### Update Routes (POST)
+
+- `updateCoachAccount`
+  - Payload: `{ id, firstname, lastname, alias, pin }`
+  - Success data: `{ account: CoachAccountRecord }`
+  - Errors: `validation_failed`, `concurrent_request`, `no_match_found`, `pin_reserved`, `forbidden`, `unauthorized`
+- `updateTraineeAccount`
+  - Payload: `{ id, firstname, lastname, age, pin }`
+  - Success data: `{ account: TraineeAccountRecord }`
+  - Errors: `validation_failed`, `concurrent_request`, `no_match_found`, `pin_reserved`, `forbidden`, `unauthorized`
+
+### Delete Routes (POST)
+
+- `deleteCoachAccount`
+  - Payload: `{ id }`
+  - Success data: `{ id }`
+  - Errors: `validation_failed`, `concurrent_request`, `no_match_found`, `forbidden`, `unauthorized`
+- `deleteTraineeAccount`
+  - Payload: `{ id }`
+  - Success data: `{ id }`
+  - Errors: `validation_failed`, `concurrent_request`, `no_match_found`, `forbidden`, `unauthorized`
+
+### Account Record Shapes
+
+- `CoachAccountRecord`: `{ id, firstname, lastname, alias, pin, created_at, last_activity }`
+- `TraineeAccountRecord`: `{ id, firstname, lastname, age, pin, created_at, last_activity }`
 
 ---
 
@@ -317,204 +263,91 @@ Rules:
 - COACH_PASSWORD  
 - ADMIN_PASSWORD  
 
-Copilot must never write new Script Properties.
+Copilot must **never** write new Script Properties.
 
 ---
 
 # 8. Frontend Integration Rules
 
-- Only `VITE_GAS_BASE_URL` is required  
+- Only `VITE_GAS_BASE_URL` required  
 - Admin token → `sessionStorage.oqm_admin_session_token`  
 - Coach token → `sessionStorage.oqm_coach_session_token`  
-- All protected routes must include `sessionToken`  
-- Remove all usage of `VITE_API_TOKEN`  
+- Protected routes must include `sessionToken`  
+- Remove all `VITE_API_TOKEN` usage
 
 ---
 
 # 9. Required Behavior for Copilot
 
-When generating API-related code, Copilot must:
+Copilot must:
 
 - use correct route names  
 - use correct payload shapes  
 - include sessionToken when required  
 - use strict response format  
-- parse `{ ok, data, error }` correctly  
-- never invent new routes  
-- never invent new fields  
-- never change route names  
-- never change payload shapes  
-- never change response shapes  
+- parse `{ ok, data, error }`  
+- never invent routes, fields, shapes  
+- never change route/payload/response shapes
 
 ---
 
 # 10. Automatic References
 
-Copilot must automatically apply this skill whenever generating or modifying:
+Copilot must apply this skill when generating/modifying:
 
 - frontend API clients  
-- backend route handlers  
+- backend handlers  
 - request/response types  
 - sessionToken logic  
-- fetch() wrappers  
-- error handling logic  
+- fetch wrappers  
+- error handling
 
 ---
 
-# 11. Sessions Schedule Routes (OQM-0042)
+# 11. Sessions Schedule Routes (OQM‑0042)
 
-## 11.1 `listSessionsSchedule` (GET)
+## 11.1 Shared Fields
 
-### Request query params
-```
-route=listSessionsSchedule&sessionToken=<token>
-```
+Schedule payload fields:
+- `session_type`, `session_type_alias`, `start_date`, `end_date`, `weekdays_available`, `start_time`,
+  `end_time`, `location`, `location_alias`, `active`
+- `id` required for update/delete
 
-### Success response
-```json
-{
-  "ok": true,
-  "data": {
-    "schedules": [
-      {
-        "id": "1718294400000",
-        "session_type": "Advanced",
-        "session_type_alias": "Edistynyt",
-        "start_date": "2026-01-01",
-        "end_date": "2026-12-31",
-        "weekdays_available": "0,2,4",
-        "start_time": "18:00",
-        "end_time": "19:30",
-        "location": "Dojo A",
-        "location_alias": "Sali A",
-        "active": true,
-        "created_at": "2026-01-01T00:00:00.000Z",
-        "updated_at": "2026-01-01T00:00:00.000Z"
-      }
-    ]
-  }
-}
-```
+Validation rules:
+- required for create/update: `session_type`, `session_type_alias`, `start_date`, `end_date`, `weekdays_available`, `active`
+- `end_date >= start_date`
+- `weekdays_available`: comma-separated integers in `0..6`, no duplicates
+- `start_time` and `end_time`: optional but paired, valid `HH:MM`, `end_time >= start_time`
 
----
+## 11.2 `listSessionsSchedule` (GET)
 
-## 11.2 `addSessionSchedule` (POST)
+- Query: `route=listSessionsSchedule&sessionToken=<token>`
+- Success data: `{ schedules: SessionSchedule[] }`
+- Errors: `unauthorized`
 
-### Request
-```json
-{
-  "route": "addSessionSchedule",
-  "sessionToken": "...",
-  "payload": {
-    "session_type": "Advanced",
-    "session_type_alias": "Edistynyt",
-    "start_date": "2026-01-01",
-    "end_date": "2026-12-31",
-    "weekdays_available": "0,2,4",
-    "start_time": "18:00",
-    "end_time": "19:30",
-    "location": "Dojo A",
-    "location_alias": "Sali A",
-    "active": true
-  }
-}
-```
+## 11.3 `addSessionSchedule` (POST)
 
-### Success response
-```json
-{ "ok": true, "data": { "schedule": { } } }
-```
+- Request: route + admin `sessionToken` + schedule payload (without `id`)
+- Success data: `{ schedule }`
+- Errors: `validation_failed`, `schedule_already_exists`, `concurrent_request`, `unauthorized`
 
-### Error responses
-```json
-{ "ok": false, "error": "validation_failed" }
-{ "ok": false, "error": "schedule_already_exists" }
-{ "ok": false, "error": "concurrent_request" }
-{ "ok": false, "error": "unauthorized" }
-```
+## 11.4 `updateSessionSchedule` (POST)
 
-### Validation rules
-- `session_type`: required, non-empty string
-- `session_type_alias`: required, non-empty string
-- `start_date`: required, valid `YYYY-MM-DD`
-- `end_date`: required, valid `YYYY-MM-DD`, must be ≥ `start_date`
-- `weekdays_available`: required, non-empty comma-separated string; each value must be integer 0–6; no duplicates within the value
-- `start_time` / `end_time`: optional but must be paired; when provided must be valid `HH:MM`; `end_time` ≥ `start_time`
-- `location` / `location_alias`: optional
-- `active`: required boolean
+- Request: route + admin `sessionToken` + schedule payload with `id`
+- Success data: `{ schedule }`
+- Errors: `validation_failed`, `no_match_found`, `schedule_already_exists`, `concurrent_request`, `unauthorized`
+- Behavior: updates mutable schedule fields; never modifies `id` or `created_at`
 
-Duplicate check: same `session_type` + `weekdays_available` + `start_time` + `end_time` + `location` where `active = true`, within overlapping date ranges.
+## 11.5 `deleteSessionSchedule` (POST)
 
----
-
-## 11.3 `updateSessionSchedule` (POST)
-
-### Request
-```json
-{
-  "route": "updateSessionSchedule",
-  "sessionToken": "...",
-  "payload": {
-    "id": "1718294400000",
-    "session_type": "Advanced",
-    "session_type_alias": "Edistynyt",
-    "start_date": "2026-01-01",
-    "end_date": "2026-12-31",
-    "weekdays_available": "0,2,4",
-    "start_time": "18:00",
-    "end_time": "20:00",
-    "location": "Dojo B",
-    "location_alias": "Sali B",
-    "active": true
-  }
-}
-```
-
-### Success response
-```json
-{ "ok": true, "data": { "schedule": { } } }
-```
-
-### Error responses
-```json
-{ "ok": false, "error": "validation_failed" }
-{ "ok": false, "error": "no_match_found" }
-{ "ok": false, "error": "schedule_already_exists" }
-{ "ok": false, "error": "concurrent_request" }
-{ "ok": false, "error": "unauthorized" }
-```
-
-Behavior: updates columns B–K and M only. Never modifies `id` (A) or `created_at` (L).
-
----
-
-## 11.4 `deleteSessionSchedule` (POST)
-
-### Request
-```json
-{
-  "route": "deleteSessionSchedule",
-  "sessionToken": "...",
-  "payload": { "id": "1718294400000" }
-}
-```
-
-### Success response
-```json
-{ "ok": true, "data": { "id": "1718294400000" } }
-```
-
-### Error responses
-```json
-{ "ok": false, "error": "no_match_found" }
-{ "ok": false, "error": "concurrent_request" }
-{ "ok": false, "error": "unauthorized" }
-```
+- Request: route + admin `sessionToken` + `{ id }`
+- Success data: `{ id }`
+- Errors: `no_match_found`, `concurrent_request`, `unauthorized`
 
 ---
 
 # 12. Future Extensions
 
-This contract is versioned via Git.  
+Versioned via Git.  
 Breaking changes must be documented here.
-
+```

@@ -7,11 +7,20 @@
 import type {
   BatchTraineeRegistrationRequest,
   BatchTraineeRegistrationResponse,
+  CoachAccountWriteResponse,
   CustomerEventWithScheduleRequest,
   CustomerEventWithScheduleResponse,
+  CreateCoachAccountPayload,
+  CreateTraineeAccountPayload,
+  DeleteAccountResponse,
+  ListCoachAccountsResponse,
   ListSessionsScheduleResponse,
+  ListTraineeAccountsResponse,
   SessionSchedulePayload,
   SessionScheduleRecord,
+  TraineeAccountWriteResponse,
+  UpdateCoachAccountPayload,
+  UpdateTraineeAccountPayload,
 } from '../types';
 
 export interface AdminSession {
@@ -176,4 +185,178 @@ export async function deleteSessionSchedule(
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Failed to delete schedule');
   return json.data as { id: string };
+}
+
+/**
+ * Fetch coach accounts for admin account management list view.
+ */
+export async function listCoachAccounts(
+  sessionToken: string
+): Promise<ListCoachAccountsResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const url = `${base}?route=listCoachAccounts&sessionToken=${encodeURIComponent(sessionToken)}`;
+  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to load coach accounts');
+  return json.data as ListCoachAccountsResponse;
+}
+
+/**
+ * Fetch trainee accounts for admin account management list view.
+ */
+export async function listTraineeAccounts(
+  sessionToken: string
+): Promise<ListTraineeAccountsResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const url = `${base}?route=listTraineeAccounts&sessionToken=${encodeURIComponent(sessionToken)}`;
+  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to load trainee accounts');
+  return json.data as ListTraineeAccountsResponse;
+}
+
+/**
+ * Create one coach login account from admin panel.
+ */
+export async function createCoachAccount(
+  sessionToken: string,
+  payload: CreateCoachAccountPayload
+): Promise<CoachAccountWriteResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'createCoachAccount', payload, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to create coach account');
+  return json.data as CoachAccountWriteResponse;
+}
+
+/**
+ * Create one trainee login account from admin panel.
+ */
+export async function createTraineeAccount(
+  sessionToken: string,
+  payload: CreateTraineeAccountPayload
+): Promise<TraineeAccountWriteResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'createTraineeAccount', payload, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to create trainee account');
+  return json.data as TraineeAccountWriteResponse;
+}
+
+/**
+ * Update one coach login account from admin panel.
+ */
+export async function updateCoachAccount(
+  sessionToken: string,
+  payload: UpdateCoachAccountPayload
+): Promise<CoachAccountWriteResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'updateCoachAccount', payload, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to update coach account');
+  return json.data as CoachAccountWriteResponse;
+}
+
+/**
+ * Update one trainee login account from admin panel.
+ */
+export async function updateTraineeAccount(
+  sessionToken: string,
+  payload: UpdateTraineeAccountPayload
+): Promise<TraineeAccountWriteResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'updateTraineeAccount', payload, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to update trainee account');
+  return json.data as TraineeAccountWriteResponse;
+}
+
+/**
+ * Delete one coach login account from admin panel.
+ */
+export async function deleteCoachAccount(
+  sessionToken: string,
+  id: string
+): Promise<DeleteAccountResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'deleteCoachAccount', payload: { id }, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to delete coach account');
+  return json.data as DeleteAccountResponse;
+}
+
+/**
+ * Delete one trainee login account from admin panel.
+ */
+export async function deleteTraineeAccount(
+  sessionToken: string,
+  id: string
+): Promise<DeleteAccountResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  if (!sessionToken) throw new Error('Unauthorized');
+
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'deleteTraineeAccount', payload: { id }, sessionToken }),
+  });
+
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to delete trainee account');
+  return json.data as DeleteAccountResponse;
 }

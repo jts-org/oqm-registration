@@ -1,3 +1,15 @@
+# Ignore everything under tracks
+# tracks/*
+
+# Allow dir1
+# !tracks/dir1/
+
+# Ignore everything inside dir1
+# tracks/dir1/*
+
+# Allow only this file
+# !tracks/dir1/shareme.md
+
 # Node
 node_modules/
 dist/
@@ -23,3 +35,7 @@ Thumbs.db
 /.vscode/
 id_*_jts_org
 id_*_jts_org.pub
+
+# AI
+.github/agents/
+tracks/*

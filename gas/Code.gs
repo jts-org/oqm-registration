@@ -52,6 +52,14 @@ function doGet(e) {
       const data = listSessionsSchedule_();
       return json_({ ok: true, data });
     }
+    if (route === 'listCoachAccounts') {
+      const data = listCoachAccounts_();
+      return json_({ ok: true, data });
+    }
+    if (route === 'listTraineeAccounts') {
+      const data = listTraineeAccounts_();
+      return json_({ ok: true, data });
+    }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
     return json_({ ok: false, error: String(err) }, 400);
@@ -238,6 +246,102 @@ function doPost(e) {
       }
       return json_({ ok: true, data: { id: result.deletedId } });
     }
+    if (route === 'createCoachAccount') {
+      const result = createCoachAccount_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.pinReserved) {
+        return json_({ ok: false, error: 'pin_reserved' });
+      }
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'createTraineeAccount') {
+      const result = createTraineeAccount_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.pinReserved) {
+        return json_({ ok: false, error: 'pin_reserved' });
+      }
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'updateCoachAccount') {
+      const result = updateCoachAccount_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.noMatchFound) {
+        return json_({ ok: false, error: 'no_match_found' });
+      }
+      if (result.pinReserved) {
+        return json_({ ok: false, error: 'pin_reserved' });
+      }
+      if (result.forbidden) {
+        return json_({ ok: false, error: 'forbidden' });
+      }
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'updateTraineeAccount') {
+      const result = updateTraineeAccount_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.noMatchFound) {
+        return json_({ ok: false, error: 'no_match_found' });
+      }
+      if (result.pinReserved) {
+        return json_({ ok: false, error: 'pin_reserved' });
+      }
+      if (result.forbidden) {
+        return json_({ ok: false, error: 'forbidden' });
+      }
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'deleteCoachAccount') {
+      const result = deleteCoachAccount_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.noMatchFound) {
+        return json_({ ok: false, error: 'no_match_found' });
+      }
+      if (result.forbidden) {
+        return json_({ ok: false, error: 'forbidden' });
+      }
+      return json_({ ok: true, data: result });
+    }
+    if (route === 'deleteTraineeAccount') {
+      const result = deleteTraineeAccount_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      if (result.noMatchFound) {
+        return json_({ ok: false, error: 'no_match_found' });
+      }
+      if (result.forbidden) {
+        return json_({ ok: false, error: 'forbidden' });
+      }
+      return json_({ ok: true, data: result });
+    }
     return json_({ ok: false, error: 'Unknown route' });
   } catch (err) {
     return json_({ ok: false, error: String(err) }, 400);
@@ -296,9 +400,17 @@ function isAdminRoute_(route) {
     'registerTraineeBatchForSessions',
     'registerCustomerEventWithSchedule',
     'listSessionsSchedule',
+    'listCoachAccounts',
+    'listTraineeAccounts',
     'addSessionSchedule',
     'updateSessionSchedule',
-    'deleteSessionSchedule'
+    'deleteSessionSchedule',
+    'createCoachAccount',
+    'createTraineeAccount',
+    'updateCoachAccount',
+    'updateTraineeAccount',
+    'deleteCoachAccount',
+    'deleteTraineeAccount'
   ].indexOf(String(route || '')) !== -1;
 }
 
@@ -442,6 +554,364 @@ function listSettings_() {
     updated_at: String(r[4]),
     purpose: String(r[5])
   }));
+}
+
+function listCoachAccounts_() {
+  const values = getSheetData('coach_login');
+  const accounts = values.filter(r => r[0]).map(r => ({
+    id: String(r[0]),
+    firstname: String(r[1]),
+    lastname: String(r[2]),
+    alias: String(r[3]),
+    pin: String(r[4]),
+    created_at: String(r[5]),
+    last_activity: String(r[6])
+  }));
+  return { accounts: accounts };
+}
+
+function listTraineeAccounts_() {
+  const values = getSheetData('trainee_login');
+  const accounts = values.filter(r => r[0]).map(r => ({
+    id: String(r[0]),
+    firstname: String(r[1]),
+    lastname: String(r[2]),
+    age: String(r[3]),
+    pin: String(r[4]),
+    created_at: String(r[5]),
+    last_activity: String(r[6])
+  }));
+  return { accounts: accounts };
+}
+
+function mapCoachAccountRow_(row) {
+  return {
+    id: String(row[0] || ''),
+    firstname: String(row[1] || ''),
+    lastname: String(row[2] || ''),
+    alias: String(row[3] || ''),
+    pin: String(row[4] || ''),
+    created_at: String(row[5] || ''),
+    last_activity: String(row[6] || '')
+  };
+}
+
+function mapTraineeAccountRow_(row) {
+  return {
+    id: String(row[0] || ''),
+    firstname: String(row[1] || ''),
+    lastname: String(row[2] || ''),
+    age: String(row[3] || ''),
+    pin: String(row[4] || ''),
+    created_at: String(row[5] || ''),
+    last_activity: String(row[6] || '')
+  };
+}
+
+function normalizeNameKeyPart_(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function hasRelatedRegistrationByName_(sheetName, firstname, lastname) {
+  const first = normalizeNameKeyPart_(firstname);
+  const last = normalizeNameKeyPart_(lastname);
+  if (!first || !last) return false;
+
+  const rows = getSheetData(sheetName);
+  return rows.some(row =>
+    normalizeNameKeyPart_(row[1]) === first &&
+    normalizeNameKeyPart_(row[2]) === last
+  );
+}
+
+function isPinReservedAcrossAccounts_(pin, excludeCoachId, excludeTraineeId) {
+  const pinValue = String(pin || '').trim();
+  if (!pinValue) {
+    return false;
+  }
+
+  const coachRows = getSheetData('coach_login');
+  const coachTaken = coachRows.some(row => {
+    const rowId = String(row[0] || '');
+    const rowPin = String(row[4] || '').trim();
+    if (!rowId || !rowPin) return false;
+    if (excludeCoachId && rowId === String(excludeCoachId)) return false;
+    return rowPin === pinValue;
+  });
+  if (coachTaken) return true;
+
+  const traineeRows = getSheetData('trainee_login');
+  return traineeRows.some(row => {
+    const rowId = String(row[0] || '');
+    const rowPin = String(row[4] || '').trim();
+    if (!rowId || !rowPin) return false;
+    if (excludeTraineeId && rowId === String(excludeTraineeId)) return false;
+    return rowPin === pinValue;
+  });
+}
+
+function createCoachAccount_(payload) {
+  const firstname = String(payload && payload.firstname ? payload.firstname : '').trim();
+  const lastname = String(payload && payload.lastname ? payload.lastname : '').trim();
+  const alias = String(payload && payload.alias ? payload.alias : '').trim();
+  const pin = String(payload && payload.pin ? payload.pin : '').trim();
+
+  if (!firstname || !lastname || !pin) {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    if (isPinReservedAcrossAccounts_(pin)) {
+      return { pinReserved: true };
+    }
+
+    const sheet = getSheetByName('coach_login');
+    if (!sheet) {
+      throw new Error('Sheet not found: coach_login');
+    }
+
+    const id = Utilities.getUuid();
+    const now = new Date().toISOString();
+    const row = [id, firstname, lastname, alias, pin, now, ''];
+    sheet.appendRow(row);
+
+    return { account: mapCoachAccountRow_(row) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function createTraineeAccount_(payload) {
+  const firstname = String(payload && payload.firstname ? payload.firstname : '').trim();
+  const lastname = String(payload && payload.lastname ? payload.lastname : '').trim();
+  const age = String(payload && payload.age ? payload.age : '').trim();
+  const pin = String(payload && payload.pin ? payload.pin : '').trim();
+
+  if (!firstname || !lastname || !age || !pin) {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    if (isPinReservedAcrossAccounts_(pin)) {
+      return { pinReserved: true };
+    }
+
+    const sheet = getSheetByName('trainee_login');
+    if (!sheet) {
+      throw new Error('Sheet not found: trainee_login');
+    }
+
+    const id = Utilities.getUuid();
+    const now = new Date().toISOString();
+    const row = [id, firstname, lastname, age, pin, now, ''];
+    sheet.appendRow(row);
+
+    return { account: mapTraineeAccountRow_(row) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function updateCoachAccount_(payload) {
+  const id = String(payload && payload.id ? payload.id : '').trim();
+  const firstname = String(payload && payload.firstname ? payload.firstname : '').trim();
+  const lastname = String(payload && payload.lastname ? payload.lastname : '').trim();
+  const alias = String(payload && payload.alias ? payload.alias : '').trim();
+  const pin = String(payload && payload.pin ? payload.pin : '').trim();
+
+  if (!id || !firstname || !lastname || !pin) {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const rows = getSheetData('coach_login');
+    const index = rows.findIndex(row => String(row[0] || '') === id);
+    if (index === -1) {
+      return { noMatchFound: true };
+    }
+
+    const existing = rows[index];
+    const existingFirstname = String(existing[1] || '');
+    const existingLastname = String(existing[2] || '');
+    const nameChanged =
+      normalizeNameKeyPart_(existingFirstname) !== normalizeNameKeyPart_(firstname) ||
+      normalizeNameKeyPart_(existingLastname) !== normalizeNameKeyPart_(lastname);
+
+    if (nameChanged && hasRelatedRegistrationByName_('coach_registrations', existingFirstname, existingLastname)) {
+      return { forbidden: true };
+    }
+
+    if (isPinReservedAcrossAccounts_(pin, id, '')) {
+      return { pinReserved: true };
+    }
+
+    const sheet = getSheetByName('coach_login');
+    if (!sheet) {
+      throw new Error('Sheet not found: coach_login');
+    }
+
+    const sheetRow = index + 2;
+    sheet.getRange(sheetRow, 2, 1, 4).setValues([[firstname, lastname, alias, pin]]);
+
+    const updated = [
+      existing[0],
+      firstname,
+      lastname,
+      alias,
+      pin,
+      existing[5],
+      existing[6]
+    ];
+    return { account: mapCoachAccountRow_(updated) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function updateTraineeAccount_(payload) {
+  const id = String(payload && payload.id ? payload.id : '').trim();
+  const firstname = String(payload && payload.firstname ? payload.firstname : '').trim();
+  const lastname = String(payload && payload.lastname ? payload.lastname : '').trim();
+  const age = String(payload && payload.age ? payload.age : '').trim();
+  const pin = String(payload && payload.pin ? payload.pin : '').trim();
+
+  if (!id || !firstname || !lastname || !age || !pin) {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const rows = getSheetData('trainee_login');
+    const index = rows.findIndex(row => String(row[0] || '') === id);
+    if (index === -1) {
+      return { noMatchFound: true };
+    }
+
+    const existing = rows[index];
+    const existingFirstname = String(existing[1] || '');
+    const existingLastname = String(existing[2] || '');
+    const nameChanged =
+      normalizeNameKeyPart_(existingFirstname) !== normalizeNameKeyPart_(firstname) ||
+      normalizeNameKeyPart_(existingLastname) !== normalizeNameKeyPart_(lastname);
+
+    if (nameChanged && hasRelatedRegistrationByName_('trainee_registrations', existingFirstname, existingLastname)) {
+      return { forbidden: true };
+    }
+
+    if (isPinReservedAcrossAccounts_(pin, '', id)) {
+      return { pinReserved: true };
+    }
+
+    const sheet = getSheetByName('trainee_login');
+    if (!sheet) {
+      throw new Error('Sheet not found: trainee_login');
+    }
+
+    const sheetRow = index + 2;
+    sheet.getRange(sheetRow, 2, 1, 4).setValues([[firstname, lastname, age, pin]]);
+
+    const updated = [
+      existing[0],
+      firstname,
+      lastname,
+      age,
+      pin,
+      existing[5],
+      existing[6]
+    ];
+    return { account: mapTraineeAccountRow_(updated) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function deleteCoachAccount_(payload) {
+  const id = String(payload && payload.id ? payload.id : '').trim();
+  if (!id) {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const rows = getSheetData('coach_login');
+    const index = rows.findIndex(row => String(row[0] || '') === id);
+    if (index === -1) {
+      return { noMatchFound: true };
+    }
+
+    const existing = rows[index];
+    if (hasRelatedRegistrationByName_('coach_registrations', existing[1], existing[2])) {
+      return { forbidden: true };
+    }
+
+    const sheet = getSheetByName('coach_login');
+    if (!sheet) {
+      throw new Error('Sheet not found: coach_login');
+    }
+
+    sheet.deleteRow(index + 2);
+    return { id: id };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function deleteTraineeAccount_(payload) {
+  const id = String(payload && payload.id ? payload.id : '').trim();
+  if (!id) {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+
+  try {
+    const rows = getSheetData('trainee_login');
+    const index = rows.findIndex(row => String(row[0] || '') === id);
+    if (index === -1) {
+      return { noMatchFound: true };
+    }
+
+    const existing = rows[index];
+    if (hasRelatedRegistrationByName_('trainee_registrations', existing[1], existing[2])) {
+      return { forbidden: true };
+    }
+
+    const sheet = getSheetByName('trainee_login');
+    if (!sheet) {
+      throw new Error('Sheet not found: trainee_login');
+    }
+
+    sheet.deleteRow(index + 2);
+    return { id: id };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function createItem_(payload) {
