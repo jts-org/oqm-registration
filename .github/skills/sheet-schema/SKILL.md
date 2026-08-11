@@ -120,6 +120,17 @@ All schemas preserved exactly.
 
 ---
 
+## Sheet: `Messages` (OQM-0046)
+| Col | Name      | Type     |
+|-----|-----------|----------|
+| A   | id        | string   |
+| B   | timestamp | ISO-8601 |
+| C   | type      | string   |
+| D   | from      | string   |
+| E   | message   | string   |
+
+---
+
 ## Sheet: `sessions` (OQM-0007)
 | Col | Name               | Type     |
 |-----|--------------------|----------|

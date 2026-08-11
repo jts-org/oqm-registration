@@ -15,6 +15,7 @@
  *  - POST { route: "removeCoachFromSession", payload: { firstname, lastname, session_type, date } } — remove coach from a session (OQM-0009)
  *  - POST { route: "registerTraineePin", payload: { firstname, lastname, age, pin } } — register a new trainee PIN code (OQM-0016)
  *  - POST { route: "verifyTraineePin", payload: { pin } } — verify a trainee PIN against trainee_login sheet (OQM-0016)
+ *  - POST { route: "sendFeedback", payload: { type: "feedback"|"bug_report"|"support_request", from, message } } — store feedback, bug reports, or support requests in the Messages sheet and notify support (OQM-0046)
  *  - POST { route: "registerTraineeForSession", payload: { first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time, end_time } } — register trainee for a session (OQM-0014)
  *  - POST { route: "registerTraineeBatchForSessions", payload: { rows: [{ first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time?, end_time? }] }, sessionToken } — admin batch trainee registrations (OQM-0034)
  *  - POST { route: "registerCustomerEventWithSchedule", payload: { event, event_alias, instructor, start_date, end_date, schedules: [{ session_name, session_name_alias, date, start_time, end_time }] }, sessionToken } — admin customer event + schedule creation (OQM-0035)
@@ -164,6 +165,16 @@ function doPost(e) {
         return json_({ ok: false, error: 'no_match_found' });
       }
       return json_({ ok: true, data: traineeData });
+    }
+    if (route === 'sendFeedback') {
+      const result = sendFeedback_(payload);
+      if (result.validationFailed) {
+        return json_({ ok: false, error: 'validation_error' });
+      }
+      if (result.concurrentRequest) {
+        return json_({ ok: false, error: 'concurrent_request' });
+      }
+      return json_({ ok: true });
     }
     if (route === 'registerTraineeForSession') {
       const result = registerTraineeForSession_(payload);
@@ -382,7 +393,8 @@ function isPublicRoute_(route) {
     'getTraineeSessions',
     'registerTraineeForSession',
     'registerTraineePin',
-    'verifyTraineePin'
+    'verifyTraineePin',
+    'sendFeedback'
   ].indexOf(String(route || '')) !== -1;
 }
 
@@ -1160,6 +1172,56 @@ function verifyTraineePin_(payload) {
     created_at: String(coachRow[5]),
     last_activity: String(coachRow[6])
   };
+}
+
+/**
+ * Accept feedback, bug reports, or support requests and persist them to the Messages sheet.
+ * Writes the row atomically, then sends a support notification email.
+ * Email failures are logged but do not roll back the sheet write.
+ * Schema: id, timestamp, type, from, message (columns A–E)
+ * See SKILL.sheet-schema.md for full schema definition.
+ * See SKILL.wire-react-to-gas.md for API contract (OQM-0046).
+ */
+function sendFeedback_(payload) {
+  const normalizedType = String(payload && payload.type ? payload.type : '').trim();
+  const from = String(payload && payload.from ? payload.from : '').trim();
+  const message = String(payload && payload.message ? payload.message : '');
+
+  if (normalizedType !== 'feedback' && normalizedType !== 'bug_report' && normalizedType !== 'support_request') {
+    return { validationFailed: true };
+  }
+  if (!from || message.trim().length === 0 || message.length > 500) {
+    return { validationFailed: true };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { concurrentRequest: true };
+  }
+  try {
+    const sheet = getSheetByName('Messages');
+    if (!sheet) {
+      throw new Error('Sheet not found: Messages');
+    }
+
+    const id = Utilities.getUuid();
+    const now = new Date().toISOString();
+    sheet.appendRow([id, now, normalizedType, from, message]);
+
+    try {
+      MailApp.sendEmail({
+        to: 'webmaster@oulunkickboxing.fi',
+        subject: 'OQM ' + normalizedType.replace('_', ' '),
+        body: `Type: ${normalizedType}\nFrom: ${from}\n\n${message}`
+      });
+    } catch (mailErr) {
+      logToSheet(`sendFeedback email failed: ${String(mailErr)}`);
+    }
+
+    return { success: true };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**

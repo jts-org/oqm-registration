@@ -60,6 +60,7 @@ On unauthorized response:
 | getTraineeSessions | GET/POST | Anonymous or identity-based session loading |
 | registerTraineePin | POST | Register trainee PIN |
 | registerTraineeForSession | POST | Register trainee for a session |
+| sendFeedback | POST | Send feedback or a bug report; no sessionToken required |
 
 **Legacy**: `verifyCoachPin`, `verifyTraineePin` supported for compatibility only. Prefer modern login flows.
 

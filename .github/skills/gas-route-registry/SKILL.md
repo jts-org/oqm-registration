@@ -22,6 +22,7 @@ Keep this list in sync with actual routes in `gas/Code.gs`.
 - `verifyTraineePin`  
 - `registerCoachPin`  
 - `registerTraineePin`
+- `sendFeedback` (public; no `sessionToken` required)
 
 ---
 

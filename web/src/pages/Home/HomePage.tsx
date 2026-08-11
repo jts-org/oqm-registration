@@ -15,6 +15,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import SportsMmaIcon from '@mui/icons-material/SportsMma';
 import SportsMartialArtsIcon from '@mui/icons-material/SportsMartialArts';
+import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
@@ -30,6 +31,7 @@ import oqmCompactLogo from '../../assets/OQM_compact_logo.svg';
 import reactLogo from '../../assets/logo.svg';
 import okbLogo from '../../assets/okb_logo_transparent.png';
 import viteLogo from '../../assets/500px-Vitejs-logo.svg.png';
+import { FeedbackDialog } from '../../features/feedback/components/FeedbackDialog';
 import { RoleCard } from './RoleCard';
 
 const LANGUAGE_SESSION_KEY = 'oqm_language';
@@ -57,6 +59,7 @@ export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin }: Hom
   const theme = useTheme();
   const [coachDialogOpen, setCoachDialogOpen] = useState(false);
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>(() => normalizeLanguage(i18n.language));
   const currentYear = new Date().getFullYear();
 
@@ -162,6 +165,12 @@ export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin }: Hom
             description={t('mainView.manualsDescription')}
             onClick={onGoManuals}
           />
+          <RoleCard
+            icon={<FeedbackOutlinedIcon fontSize="large" />}
+            title={t('mainView.feedback')}
+            description={t('mainView.feedbackDescription')}
+            onClick={() => setFeedbackDialogOpen(true)}
+          />
         </Stack>
       </Container>
 
@@ -236,6 +245,11 @@ export function HomePage({ onGoTrainee, onGoManuals, onGoCoach, onGoAdmin }: Hom
           onGoAdmin(sessionToken);
         }}
         onCancel={() => setAdminDialogOpen(false)}
+      />
+
+      <FeedbackDialog
+        open={feedbackDialogOpen}
+        onClose={() => setFeedbackDialogOpen(false)}
       />
     </Box>
   );

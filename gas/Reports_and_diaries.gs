@@ -5,8 +5,8 @@
     ["training_diary_basic_underage", "underage", "basic", "basic_underage"],
     ["training_diary_free_sparring_adults", "adult", "free/sparring", "free_sparring_adults"],
     ["training_diary_free_sparring_underage", "underage", "free/sparring", "free_sparring_underage"],
-    ["training_diary_fitness_adults", "adult", "fittness", "fitness_adults"],
-    ["training_diary_fitness_underage", "underage", "fittness", "fitness_underage"],
+    ["training_diary_fitness_adults", "adult", "fitness", "fitness_adults"],
+    ["training_diary_fitness_underage", "underage", "fitness", "fitness_underage"],
     ["training_diary_camp_adults", "adult", "camp", "camp_adults"],
     ["training_diary_camp_underage", "underage", "camp", "camp_underage"]
   ];

@@ -91,6 +91,19 @@ describe('HomePage', () => {
     expect(within(getRoleCardButton('Admin')).getByText('Admin')).toBeInTheDocument();
   });
 
+  it('renders feedback role card', () => {
+    render(<HomePage {...defaultProps} />);
+    expect(screen.getByText('Share feedback or report a bug about the app.')).toBeInTheDocument();
+    expect(within(getRoleCardButton('Feedback')).getByText('Feedback')).toBeInTheDocument();
+  });
+
+  it('opens feedback PIN dialog when the feedback role card is clicked', async () => {
+    render(<HomePage {...defaultProps} />);
+    await userEvent.click(getRoleCardButton('Feedback'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Verify your PIN')).toBeInTheDocument();
+  });
+
   it('calls onGoTrainee when the trainee role card is clicked', async () => {
     const onGoTrainee = vi.fn();
     render(<HomePage {...defaultProps} onGoTrainee={onGoTrainee} />);

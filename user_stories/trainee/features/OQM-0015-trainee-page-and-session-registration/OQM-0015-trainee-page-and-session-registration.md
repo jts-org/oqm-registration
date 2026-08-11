@@ -116,7 +116,7 @@ As a trainee, I want to register for a training session, so that my participatio
             - regular sessions: id from `weekly_schedule` sheet + '_' + session date
             - free/sparring sessions: 'sparring_' + id from `coach_registrations` sheet + '_' + free/sparring session date
         - session_type
-            - values: 'advanced' | 'fittness' | 'basic' | 'free/sparring' | `session_name` from `camp_shedules` sheet
+            - values: 'advanced' | 'fitness' | 'basic' | 'free/sparring' | `session_name` from `camp_shedules` sheet
         - session_type_alias
             - `session_type_alias` from `sessions` sheet or `session_name` from `camp_shedules` sheet
         - date

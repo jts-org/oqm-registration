@@ -97,3 +97,13 @@ Expected result:
 - Registering a PIN makes repeated registrations faster.
 - Keep your PIN private.
 - If the page seems outdated, use Refresh data before retrying actions.
+
+## Send feedback, report a bug, or request support
+1. On the Home page, select Feedback.
+2. Enter your registered PIN code.
+3. Choose whether you are sending feedback, a bug report, or a support request.
+4. Write your message and select Send.
+
+Expected result:
+- Your feedback is stored for support review.
+- OQM support receives a notification email.
