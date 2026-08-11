@@ -97,3 +97,13 @@ Odotettu tulos:
 - PIN-koodin rekisteröinti nopeuttaa toistuvia ilmoittautumisia.
 - Pidä PIN-koodisi yksityisenä.
 - Jos näkymä näyttää vanhaa tietoa, käytä Päivitä tiedot.
+
+## Lähetä palautetta, raportoi virheestä tai pyydä tukea
+1. Valitse etusivulla Palaute.
+2. Syötä rekisteröity PIN-koodisi.
+3. Valitse, haluatko lähettää palautetta, vikailmoituksen vai tukipyynnön.
+4. Kirjoita viesti ja valitse Lähetä.
+
+Odotettu tulos:
+- Palautteesi tallentuu tukea varten.
+- OQM-tuki saa ilmoitusviestin sähköpostiin.

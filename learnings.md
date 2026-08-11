@@ -40,6 +40,25 @@ Apply this pattern to all GAS row-to-object mappers for columns that can contain
 ### Error Handling & Retries
 ### Structuring GAS for Maintainability
 
+### Public feedback routes with side effects
+**Problem Pattern:**
+A feedback route must both persist data and notify support without letting mail failures roll back the stored message.
+
+**Context Pattern:**
+A single handler should write to Sheets inside a lock and then attempt an email notification in a separate try/catch block so the write remains durable even if mail delivery fails.
+
+**Solution Summary:**
+Use a lock-protected atomic sheet append first, then send the support email in a guarded secondary step and log any email failure without changing the success response.
+
+**Reasoning:**
+The user-facing requirement is that sheet persistence is primary and must succeed before the notification side effect. Separating the write and email steps preserves this ordering while avoiding rollback behavior on mail errors.
+
+**Tags:**
+`gas`, `sheets`, `notifications`, `feedback`, `atomicity`
+
+**Reusability Notes:**
+Apply this pattern to other side-effectful routes that must preserve a primary write while treating email or external integrations as secondary.
+
 ## Data Layer: Google Sheets
 ### Schema Design & Sheet Organization
 ### Avoiding Race Conditions
