@@ -48,6 +48,9 @@ Copilotin käyttäytymistä ohjaavat `.github/skills/*` SKILL.md -tiedostot.
 - Backend-reitit ja niiden access levelit on määritelty:
   - `.github/skills/gas-route-registry`
 
+## Testing conventions
+- Jos handler-funktio ottaa eksplisiittisen dependency-injection-parametrin (esim. `reader`), testien tulee antaa stub-objekti (`{ getSheetData, getSheetByName }`) tälle parametrille — globaalin `getSheetData`/`getSheetByName`-funktion ylikirjoittaminen ei enää vaikuta funktioon.
+
 ## See also
 - `.github/skills/gas-backend-architecture`
 - `.github/skills/security-secrets`

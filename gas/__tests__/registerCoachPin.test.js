@@ -331,18 +331,20 @@ test('registerCoachForSession_ appends lowercase session_type to coach_registrat
     },
   };
 
-  sandbox.getSheetData = sheetName => {
-    if (sheetName === 'coach_login') {
-      return [['id-1', 'John', 'Doe', '', '1234', '2026-01-01T00:00:00.000Z', '']];
-    }
-    if (sheetName === 'coach_registrations') {
+  const reader = {
+    getSheetData: sheetName => {
+      if (sheetName === 'coach_login') {
+        return [['id-1', 'John', 'Doe', '', '1234', '2026-01-01T00:00:00.000Z', '']];
+      }
+      if (sheetName === 'coach_registrations') {
+        return [];
+      }
       return [];
-    }
-    return [];
-  };
-  sandbox.getSheetByName = sheetName => {
-    if (sheetName === 'coach_registrations') return coachRegSheet;
-    return null;
+    },
+    getSheetByName: sheetName => {
+      if (sheetName === 'coach_registrations') return coachRegSheet;
+      return null;
+    },
   };
 
   const result = sandbox.registerCoachForSession_({
@@ -352,7 +354,7 @@ test('registerCoachForSession_ appends lowercase session_type to coach_registrat
     date: '2026-03-21',
     start_time: '10:00',
     end_time: '11:00',
-  });
+  }, reader);
 
   assert.deepEqual(toPlain(result), { id: 'uuid-1' });
   assert.equal(appendedRows.length, 1);
