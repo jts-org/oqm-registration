@@ -29,9 +29,41 @@ function todayYmd() {
   return formatDate(new Date(), 'yyyy-MM-dd');
 }
 
-function createSandbox() {
+function createInMemoryCacheService() {
+  const store = new Map();
+  return {
+    getScriptCache() {
+      return {
+        get(key) {
+          return store.has(key) ? store.get(key) : null;
+        },
+        put(key, value) {
+          store.set(key, value);
+        },
+      };
+    },
+  };
+}
+
+function createThrowingCacheService() {
+  return {
+    getScriptCache() {
+      return {
+        get() {
+          throw new Error('cache get failure');
+        },
+        put() {
+          throw new Error('cache put failure');
+        },
+      };
+    },
+  };
+}
+
+function createSandbox(cacheService) {
   const sandbox = {
     console,
+    CacheService: cacheService || createInMemoryCacheService(),
     PropertiesService: {
       getScriptProperties() {
         return {
@@ -100,6 +132,7 @@ function createSandbox() {
   const codePath = path.join(__dirname, '..', 'Code.gs');
   const code = fs.readFileSync(codePath, 'utf8');
   vm.runInContext(code, sandbox, { filename: 'Code.gs' });
+  sandbox.logToSheet = () => {};
   return sandbox;
 }
 
@@ -150,13 +183,13 @@ test('getTraineeSessions_ marks matching adult registration as trainee_registere
     },
   ]);
 
-  sandbox.getSheetData = (sheetName) => data[sheetName] || [];
+  const reader = { getSheetData: (sheetName) => data[sheetName] || [] };
 
   const sessions = sandbox.getTraineeSessions_({
     first_name: 'Jane',
     last_name: 'Doe',
     age_group: 'adult',
-  });
+  }, reader);
 
   const todaySession = pickTodayBasicSession(sessions);
   assert.ok(todaySession, 'Expected a Basic session in the current 21-day window');
@@ -179,16 +212,99 @@ test('getTraineeSessions_ requires matching underage_age for underage identity',
     },
   ]);
 
-  sandbox.getSheetData = (sheetName) => data[sheetName] || [];
+  const reader = { getSheetData: (sheetName) => data[sheetName] || [] };
 
   const sessions = sandbox.getTraineeSessions_({
     first_name: 'Junior',
     last_name: 'Doe',
     age_group: 'underage',
     underage_age: 13,
-  });
+  }, reader);
 
   const todaySession = pickTodayBasicSession(sessions);
   assert.ok(todaySession, 'Expected a Basic session in the current 21-day window');
   assert.notEqual(todaySession.trainee_registered, true);
+});
+
+test('getTraineeSessions_ caches the identity-independent base array and avoids re-reading sheets within TTL', () => {
+  const sandbox = createSandbox();
+  const data = buildSheetData([
+    {
+      id: 'reg-1',
+      first_name: 'Jane',
+      last_name: 'Doe',
+      age_group: 'adult',
+      underage_age: '',
+      session_type: 'basic',
+      camp_session_id: '',
+      start_time: '18:00',
+      end_time: '19:00',
+    },
+  ]);
+  let callCount = 0;
+  const reader = {
+    getSheetData: (sheetName) => {
+      callCount += 1;
+      return data[sheetName] || [];
+    },
+  };
+
+  sandbox.getTraineeSessions_({ first_name: 'Jane', last_name: 'Doe', age_group: 'adult' }, reader);
+  const callsAfterFirstInvocation = callCount;
+  assert.ok(callsAfterFirstInvocation > 0, 'Expected first call to read sheets');
+
+  sandbox.getTraineeSessions_({ first_name: 'Jane', last_name: 'Doe', age_group: 'adult' }, reader);
+  // trainee_registrations is read fresh every call (identity enrichment), only the base sheets should be skipped.
+  const baseSheetCallsFirst = callsAfterFirstInvocation - 1; // minus the one trainee_registrations read
+  const baseSheetCallsSecond = (callCount - callsAfterFirstInvocation) - 1;
+  assert.equal(baseSheetCallsSecond, 0, 'Expected cache hit to avoid re-reading base sheets');
+  assert.ok(baseSheetCallsFirst > 0);
+});
+
+test('getTraineeSessions_ applies correct distinct trainee_registered enrichment per identity against the same cached base', () => {
+  const sandbox = createSandbox();
+  const data = buildSheetData([
+    {
+      id: 'reg-1',
+      first_name: 'Jane',
+      last_name: 'Doe',
+      age_group: 'adult',
+      underage_age: '',
+      session_type: 'basic',
+      camp_session_id: '',
+      start_time: '18:00',
+      end_time: '19:00',
+    },
+  ]);
+  const reader = { getSheetData: (sheetName) => data[sheetName] || [] };
+
+  const janeSessions = sandbox.getTraineeSessions_({ first_name: 'Jane', last_name: 'Doe', age_group: 'adult' }, reader);
+  const otherSessions = sandbox.getTraineeSessions_({ first_name: 'Someone', last_name: 'Else', age_group: 'adult' }, reader);
+
+  assert.equal(pickTodayBasicSession(janeSessions).trainee_registered, true);
+  assert.notEqual(pickTodayBasicSession(otherSessions).trainee_registered, true);
+});
+
+test('getTraineeSessions_ fails open and still returns correct trainee_registered enrichment when CacheService throws', () => {
+  const sandbox = createSandbox(createThrowingCacheService());
+  const data = buildSheetData([
+    {
+      id: 'reg-1',
+      first_name: 'Jane',
+      last_name: 'Doe',
+      age_group: 'adult',
+      underage_age: '',
+      session_type: 'basic',
+      camp_session_id: '',
+      start_time: '18:00',
+      end_time: '19:00',
+    },
+  ]);
+  const reader = { getSheetData: (sheetName) => data[sheetName] || [] };
+
+  const sessions = sandbox.getTraineeSessions_({ first_name: 'Jane', last_name: 'Doe', age_group: 'adult' }, reader);
+
+  const todaySession = pickTodayBasicSession(sessions);
+  assert.ok(todaySession, 'Expected a Basic session in the current 21-day window despite CacheService failure');
+  assert.equal(todaySession.trainee_registered, true);
 });

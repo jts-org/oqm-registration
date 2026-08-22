@@ -42,11 +42,13 @@ function doGet(e) {
       return json_({ ok: true, data });
     }
     if (route === 'getCoachSessions') {
-      const data = getCoachSessions_();
+      const reader = createSheetReader_();
+      const data = getCoachSessions_(reader);
       return json_({ ok: true, data });
     }
     if (route === 'getTraineeSessions') {
-      const data = getTraineeSessions_();
+      const reader = createSheetReader_();
+      const data = getTraineeSessions_(undefined, reader);
       return json_({ ok: true, data });
     }
     if (route === 'listSessionsSchedule') {
@@ -84,7 +86,8 @@ function doPost(e) {
     authorize_(e, route, body);
     logToSheet(`doPost - route: ${route}`);
     if (route === 'getTraineeSessions') {
-      const data = getTraineeSessions_(payload);
+      const reader = createSheetReader_();
+      const data = getTraineeSessions_(payload, reader);
       return json_({ ok: true, data });
     }
     if (route === 'createItem') {
@@ -118,7 +121,8 @@ function doPost(e) {
       return json_({ ok: true, data: coachData });
     }
     if (route === 'registerCoachForSession') {
-      const result = registerCoachForSession_(payload);
+      const reader = createSheetReader_();
+      const result = registerCoachForSession_(payload, reader);
       if (result.alreadyTaken) {
         return json_({ ok: false, error: 'already_taken' });
       }
@@ -134,7 +138,8 @@ function doPost(e) {
       return json_({ ok: true, data: { id: result.id } });
     }
     if (route === 'removeCoachFromSession') {
-      const result = removeCoachFromSession_(payload);
+      const reader = createSheetReader_();
+      const result = removeCoachFromSession_(payload, reader);
       if (result.concurrentOperation) {
         return json_({ ok: false, error: 'concurrent_operation' });
       }
@@ -360,8 +365,11 @@ function doPost(e) {
 }
 
 function json_(obj, _status) {
-  logToSheet(`return - obj: ${JSON.stringify(obj)}, status: ${_status}`);
-  return ContentService.createTextOutput(JSON.stringify(obj))
+  const body = JSON.stringify(obj);
+  if (isLoggingEnabled_()) {
+    logToSheet(`return - obj: ${body}, status: ${_status}`);
+  }
+  return ContentService.createTextOutput(body)
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -539,6 +547,27 @@ function getSheetData(sheetName) {
     throw new Error(`Sheet not found: ${sheetName}`);
   }
   return sheet.getDataRange().getValues().slice(1);
+}
+
+/**
+ * Request-scoped sheet reader factory. Memoizes only the spreadsheet handle
+ * (SpreadsheetApp.openById result) within a per-call closure — never a global —
+ * so repeated multi-sheet reads within a single doGet/doPost invocation avoid
+ * redundant openById() calls while still reading fresh row data every time.
+ */
+function createSheetReader_() {
+  let spreadsheet = null;
+  return {
+    getSheetByName: function(name) {
+      if (!spreadsheet) spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+      return spreadsheet.getSheetByName(name);
+    },
+    getSheetData: function(name) {
+      const sheet = this.getSheetByName(name);
+      if (!sheet) throw new Error(`Sheet not found: ${name}`);
+      return sheet.getDataRange().getValues().slice(1);
+    }
+  };
 }
 
 function listItems_() {
@@ -1234,7 +1263,7 @@ function sendFeedback_(payload) {
  * See SKILL.sheet-schema.md for full schema definition.
  * See SKILL.wire-react-to-gas.md for API contract (OQM-0008).
  */
-function registerCoachForSession_(payload) {
+function registerCoachForSession_(payload, reader) {
   if (!payload || !payload.firstname || !payload.lastname || !payload.session_type || !payload.date) {
     throw new Error('Missing required fields: firstname, lastname, session_type, date');
   }
@@ -1246,7 +1275,7 @@ function registerCoachForSession_(payload) {
   }
   try {
     // Check coach exists in coach_login (columns B=firstname, C=lastname)
-    const coachRows = getSheetData('coach_login');
+    const coachRows = reader.getSheetData('coach_login');
     const coachExists = coachRows.some(r =>
       String(r[1]).trim().toLowerCase() === payload.firstname.trim().toLowerCase() &&
       String(r[2]).trim().toLowerCase() === payload.lastname.trim().toLowerCase()
@@ -1256,7 +1285,7 @@ function registerCoachForSession_(payload) {
     }
 
     // Check if session already has a registered coach (session_type + date with realized=true)
-    const coachRegRows = getSheetData('coach_registrations');
+    const coachRegRows = reader.getSheetData('coach_registrations');
     const tz = Session.getScriptTimeZone();
     const sessionTypeUpper = payload.session_type.toUpperCase();
     const alreadyRegistered = coachRegRows.some(r => {
@@ -1294,7 +1323,7 @@ function registerCoachForSession_(payload) {
     }
 
     // Append row to coach_registrations
-    const sh = getSheetByName('coach_registrations');
+    const sh = reader.getSheetByName('coach_registrations');
     const id = Utilities.getUuid();
     const now = new Date().toISOString();
     const startTime = payload.start_time || '';
@@ -1430,13 +1459,19 @@ function getCoachAliasMap(coachLoginRows) {
  * Only shows sessions where the course is currently active (within start/end dates)
  * @returns {Array} - Array of session objects
  */
-function getCoachSessions_() {
-
-  const sessionsScheduleRows = getSheetData('sessions_schedule');
-  const coachRegistrationsRowsData = getSheetData('coach_registrations');
-  const coachLoginRows = getSheetData('coach_login');
-
+function getCoachSessions_(reader) {
   const tz = Session.getScriptTimeZone();
+  const cacheKey = 'coach_sessions_v1_' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  const cachedSessions = getCachedSessionWindow_(cacheKey);
+  if (cachedSessions) {
+    logToSheet('getCoachSessions_() - cache hit, returned ' + cachedSessions.length + ' sessions');
+    return cachedSessions;
+  }
+
+  const sessionsScheduleRows = reader.getSheetData('sessions_schedule');
+  const coachRegistrationsRowsData = reader.getSheetData('coach_registrations');
+  const coachLoginRows = reader.getSheetData('coach_login');
+
   const aliasMap = getCoachAliasMap(coachLoginRows);
 
   // --- Pre-compute coach registrations index (once) ---
@@ -1593,7 +1628,7 @@ function getCoachSessions_() {
   }
 
   // --- Replace overlapping sessions with camp sessions ---
-  const campsRows = getSheetData('camps');
+  const campsRows = reader.getSheetData('camps');
   var campMap = {};
   var sessionStartDate = sessionDateStrs[0];
   var sessionEndDate = sessionDateStrs[sessionDateStrs.length - 1];
@@ -1618,7 +1653,7 @@ function getCoachSessions_() {
     var campDatesToReplace = {};
     var campSessions = [];
 
-    var campSchedulesRows = getSheetData('camp_schedules');
+    var campSchedulesRows = reader.getSheetData('camp_schedules');
     campSchedulesRows.forEach(function(r) {
       var campId = String(r[1]);
       var campDetails = campMap[campId];
@@ -1658,6 +1693,8 @@ function getCoachSessions_() {
 
   logToSheet('getCoachSessions_() - returned ' + sessions.length + ' sessions');
 
+  putCachedSessionWindow_(cacheKey, sessions);
+
   return sessions;
 }
 
@@ -1674,7 +1711,7 @@ function getCoachSessions_() {
  * See SKILL.sheet-schema.md for full schema definition.
  * See SKILL.wire-react-to-gas.md for API contract (OQM-0009).
  */
-function removeCoachFromSession_(payload) {
+function removeCoachFromSession_(payload, reader) {
   if (!payload || !payload.firstname || !payload.lastname || !payload.session_type || !payload.date) {
     throw new Error('Missing required fields: firstname, lastname, session_type, date');
   }
@@ -1688,7 +1725,7 @@ function removeCoachFromSession_(payload) {
   try {
     const tz = Session.getScriptTimeZone();
     const sessionTypeUpper = payload.session_type.toUpperCase();
-    const sheet = getSheetByName('coach_registrations');
+    const sheet = reader.getSheetByName('coach_registrations');
     if (!sheet) throw new Error('Sheet not found: coach_registrations');
 
     const data = sheet.getDataRange().getValues();
@@ -2239,27 +2276,77 @@ function registerTraineeBatchForSessions_(payload) {
 //  logToSheet(`removeCoachRegistration - alias: ${alias}`);
 //  logToSheet(`holder: ` + JSON.stringify(holder));
 function logToSheet(message) {
+  if (!isLoggingEnabled_()) return;
   const sheet = getSpreadsheet().getSheetByName("Logs");
   if (!sheet) return;
-  const loggingEnabled = sheet.getRange("A1").getValue();
-  if (String(loggingEnabled).trim() === "log_enabled") {
-    sheet.appendRow([new Date(), message]);
+  sheet.appendRow([new Date(), message]);
+}
+
+/**
+ * Checks whether Logs!A1 == "log_enabled", cached briefly to avoid opening
+ * the spreadsheet on every logToSheet() call within a request (perf).
+ */
+function isLoggingEnabled_() {
+  try {
+    const cache = CacheService.getScriptCache();
+    const cached = cache.get('logging_enabled');
+    if (cached !== null) {
+      return cached === '1';
+    }
+
+    const sheet = getSpreadsheet().getSheetByName("Logs");
+    const enabled = sheet ? String(sheet.getRange("A1").getValue()).trim() === "log_enabled" : false;
+    cache.put('logging_enabled', enabled ? '1' : '0', 30);
+    return enabled;
+  } catch (_err) {
+    return false;
+  }
+}
+
+// Short-TTL cache for computed session-window arrays (getCoachSessions_/getTraineeSessions_ only).
+const SESSION_WINDOW_CACHE_TTL_SECONDS = 25;
+
+/**
+ * Reads a cached session-window array. Fails open (returns null) on any
+ * CacheService error or unparseable payload, mirroring isLoggingEnabled_().
+ */
+function getCachedSessionWindow_(cacheKey) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const raw = cache.get(cacheKey);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (_err) {
+    return null;
   }
 }
 
 /**
- * Fetch trainee sessions for a 21-day window (7 days before current week's Monday through next 2 weeks).
- * Includes regular active sessions, realized free/sparring coach sessions, and camp session replacements.
- * Returns trainee-facing session objects sorted by date and start_time.
+ * Writes a computed session-window array to cache. Fails open (swallows
+ * errors) so a CacheService outage never breaks the calling route.
+ */
+function putCachedSessionWindow_(cacheKey, data) {
+  try {
+    const cache = CacheService.getScriptCache();
+    cache.put(cacheKey, JSON.stringify(data), SESSION_WINDOW_CACHE_TTL_SECONDS);
+  } catch (_err) {
+    // best-effort cache write only
+  }
+}
+
+/**
+ * Computes the identity-independent trainee session-window array (21-day
+ * window x sessions_schedule, realized free/sparring coach registrations,
+ * and camp replacements). Excludes trainee_registered enrichment — that is
+ * always applied fresh per-request by the caller, even when this result
+ * came from cache.
  * @returns {Array}
  */
-function getTraineeSessions_(traineeIdentity) {
-  const sessionsScheduleRows = getSheetData('sessions_schedule');
-  const coachRegistrationsRows = getSheetData('coach_registrations');
-  const campsRows = getSheetData('camps');
-  const campSchedulesRows = getSheetData('camp_schedules');
-
-  const tz = Session.getScriptTimeZone();
+function computeTraineeSessionsBase_(reader, tz) {
+  const sessionsScheduleRows = reader.getSheetData('sessions_schedule');
+  const coachRegistrationsRows = reader.getSheetData('coach_registrations');
+  const campsRows = reader.getSheetData('camps');
+  const campSchedulesRows = reader.getSheetData('camp_schedules');
 
   // Build 21-day window: previous Monday through next 2 weeks.
   var today = new Date();
@@ -2440,6 +2527,25 @@ function getTraineeSessions_(traineeIdentity) {
     return a.start_time.localeCompare(b.start_time);
   });
 
+  return merged;
+}
+
+/**
+ * Fetch trainee sessions for a 21-day window (7 days before current week's Monday through next 2 weeks).
+ * Includes regular active sessions, realized free/sparring coach sessions, and camp session replacements.
+ * Returns trainee-facing session objects sorted by date and start_time.
+ * @returns {Array}
+ */
+function getTraineeSessions_(traineeIdentity, reader) {
+  const tz = Session.getScriptTimeZone();
+  const cacheKey = 'trainee_sessions_base_v1_' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+
+  let merged = getCachedSessionWindow_(cacheKey);
+  if (!merged) {
+    merged = computeTraineeSessionsBase_(reader, tz);
+    putCachedSessionWindow_(cacheKey, merged);
+  }
+
   const identity = traineeIdentity || {};
   const identityFirstName = String(identity.first_name || '').trim().toLowerCase();
   const identityLastName = String(identity.last_name || '').trim().toLowerCase();
@@ -2451,7 +2557,7 @@ function getTraineeSessions_(traineeIdentity) {
   const hasIdentity = identityFirstName && identityLastName && (identityAgeGroup === 'adult' || identityAgeGroup === 'underage');
 
   if (hasIdentity) {
-    const traineeRegistrationsRows = getSheetData('trainee_registrations');
+    const traineeRegistrationsRows = reader.getSheetData('trainee_registrations');
     const registrationKeys = {};
 
     traineeRegistrationsRows.forEach(row => {

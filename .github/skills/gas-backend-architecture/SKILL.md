@@ -127,10 +127,15 @@ Rules:
 - no global arrays  
 - no global counters  
 - no global mutable objects  
+- sanctioned exception: a request-scoped closure factory (e.g. `createSheetReader_()`) created fresh per `doGet`/`doPost` invocation and threaded as an explicit function parameter — never assigned at module scope — may memoize expensive per-invocation calls  
 
 ## 6.4 No side effects outside route handlers
 - no writes in doGet/doPost  
 - no writes in utilities unless explicitly intended  
+
+## 6.5 CacheService usage must fail open
+- wrap all `CacheService` get/put calls in try/catch, falling back to full computation on any error (mirror `isLoggingEnabled_()`), since not all test sandboxes mock `CacheService`  
+- cache only identity-independent, shared data; always recompute identity-dependent enrichment fresh after every cache read (hit or miss) — never cache per-identity results under a shared key  
 
 ---
 

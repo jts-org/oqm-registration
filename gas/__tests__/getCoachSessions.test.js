@@ -29,9 +29,41 @@ function todayYmd() {
   return formatDate(new Date(), 'yyyy-MM-dd');
 }
 
-function createSandbox() {
+function createInMemoryCacheService() {
+  const store = new Map();
+  return {
+    getScriptCache() {
+      return {
+        get(key) {
+          return store.has(key) ? store.get(key) : null;
+        },
+        put(key, value) {
+          store.set(key, value);
+        },
+      };
+    },
+  };
+}
+
+function createThrowingCacheService() {
+  return {
+    getScriptCache() {
+      return {
+        get() {
+          throw new Error('cache get failure');
+        },
+        put() {
+          throw new Error('cache put failure');
+        },
+      };
+    },
+  };
+}
+
+function createSandbox(cacheService) {
   const sandbox = {
     console,
+    CacheService: cacheService || createInMemoryCacheService(),
     PropertiesService: {
       getScriptProperties() {
         return {
@@ -124,9 +156,9 @@ test('getCoachSessions_ builds regular and free/sparring sessions from sessions_
     camp_schedules: [],
   };
 
-  sandbox.getSheetData = (sheetName) => data[sheetName] || [];
+  const reader = { getSheetData: (sheetName) => data[sheetName] || [] };
 
-  const sessions = sandbox.getCoachSessions_();
+  const sessions = sandbox.getCoachSessions_(reader);
 
   const regular = sessions.find(s => s.session_type === 'BASIC' && s.date === today && s.is_free_sparring === false);
   assert.ok(regular, 'Expected regular BASIC session for today');
@@ -143,4 +175,88 @@ test('getCoachSessions_ builds regular and free/sparring sessions from sessions_
   assert.equal(sparring.end_time, '17:00');
   assert.equal(sparring.coach_alias, 'JD');
   assert.equal(sparring.registration_id, 'reg-spar');
+});
+
+function buildCoachSessionData(today) {
+  return {
+    sessions_schedule: [
+      ['schedule-basic', 'Basic', 'Perus', '2020-01-01', '2099-12-31', '0,1,2,3,4,5,6', '18:00', '19:00', 'Main Hall', '', true, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+    ],
+    coach_registrations: [
+      ['reg-basic', 'John', 'Doe', 'basic', today, true, '', '', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+    ],
+    coach_login: [
+      ['coach-1', 'John', 'Doe', 'JD', '1234', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+    ],
+    camps: [],
+    camp_schedules: [],
+  };
+}
+
+test('getCoachSessions_ caches computed sessions and avoids re-reading sheets within TTL', () => {
+  const sandbox = createSandbox();
+  const today = todayYmd();
+  const data = buildCoachSessionData(today);
+  let callCount = 0;
+  const reader = {
+    getSheetData: (sheetName) => {
+      callCount += 1;
+      return data[sheetName] || [];
+    },
+  };
+
+  const first = sandbox.getCoachSessions_(reader);
+  const callsAfterFirstInvocation = callCount;
+  assert.ok(callsAfterFirstInvocation > 0, 'Expected first call to read sheets');
+
+  const second = sandbox.getCoachSessions_(reader);
+  assert.equal(callCount, callsAfterFirstInvocation, 'Expected cache hit to avoid re-reading sheets');
+  assert.equal(second.length, first.length);
+  assert.equal(JSON.stringify(second), JSON.stringify(first));
+});
+
+test('getCoachSessions_ fails open and still returns correct sessions when CacheService throws', () => {
+  const sandbox = createSandbox(createThrowingCacheService());
+  const today = todayYmd();
+  const data = buildCoachSessionData(today);
+  const reader = { getSheetData: (sheetName) => data[sheetName] || [] };
+
+  const sessions = sandbox.getCoachSessions_(reader);
+
+  const regular = sessions.find(s => s.session_type === 'BASIC' && s.date === today);
+  assert.ok(regular, 'Expected regular BASIC session for today despite CacheService failure');
+  assert.equal(regular.coach_firstname, 'John');
+});
+
+test('getCoachSessions_ with a real createSheetReader_() opens the spreadsheet exactly once despite reading multiple sheets', () => {
+  const sandbox = createSandbox();
+  const today = todayYmd();
+  const data = buildCoachSessionData(today);
+
+  let openByIdCallCount = 0;
+  sandbox.SpreadsheetApp = {
+    openById() {
+      openByIdCallCount += 1;
+      return {
+        getSheetByName(name) {
+          return {
+            getDataRange() {
+              return {
+                getValues() {
+                  return [['header'], ...(data[name] || [])];
+                },
+              };
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const reader = sandbox.createSheetReader_();
+  const sessions = sandbox.getCoachSessions_(reader);
+
+  const regular = sessions.find(s => s.session_type === 'BASIC' && s.date === today);
+  assert.ok(regular, 'Expected regular BASIC session for today via real createSheetReader_()');
+  assert.equal(openByIdCallCount, 1, 'Expected SpreadsheetApp.openById to be called exactly once for a single getCoachSessions_ invocation despite reading multiple sheets');
 });
