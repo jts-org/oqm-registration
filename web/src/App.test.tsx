@@ -76,6 +76,10 @@ vi.mock('./pages/Admin/AdminPage', () => ({
   ),
 }));
 
+vi.mock('./pages/Register/RegisterPage', () => ({
+  RegisterPage: () => <div><h1>Register page</h1></div>,
+}));
+
 describe('App', () => {
   beforeEach(() => {
     window.history.pushState({}, '', '/');
@@ -141,5 +145,14 @@ describe('App', () => {
 
     expect(window.location.pathname).toBe('/');
     expect(screen.getByRole('heading', { name: 'Home page' })).toBeInTheDocument();
+  });
+
+  it('renders the qr register route when the session route is accessed', () => {
+    window.history.pushState({}, '', '/register?session=advanced');
+
+    render(<App />);
+
+    expect(window.location.pathname).toBe('/register');
+    expect(screen.getByRole('heading', { name: 'Register page' })).toBeInTheDocument();
   });
 });

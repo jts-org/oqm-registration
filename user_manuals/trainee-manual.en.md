@@ -43,6 +43,35 @@ Expected result:
 - The session card changes to a registered state.
 - Your name is shown in the Logged in alert.
 
+## QR Registration Flow
+1. Open the QR registration link from the session invite or campaign message.
+2. The app checks the selector against the backend's current day and shows the matching session summary.
+3. Select Continue, then enter your trainee PIN. A valid PIN fills in your existing name and age; choose manual entry if you do not have a valid PIN.
+4. For manual entry, first name and last name are required, along with underage age when applicable.
+5. After manual entry, choose whether to save your name, age, and PIN in this browser for future QR registrations. This is optional; decline if you are using a shared device.
+6. Review the session and trainee details in the confirmation dialog, then select Ok to submit.
+
+Expected result:
+- QR registration works when the selector matches a valid same-day session.
+- The app tells you clearly if the QR link is invalid or no matching session is available.
+- Your saved name and age are optional browser data and are not sent until you confirm a registration.
+- QR registration can use an existing trainee PIN or continue with required manual name entry.
+
+## Error and Recovery
+- Missing session selector in the QR link.
+  - Open a valid QR link or contact support if the link is broken.
+- This QR code is not supported.
+  - Use a valid campaign link for the current session set.
+- No matching training session is available today.
+  - Check the session schedule or try again on another day.
+- This registration is already recorded.
+  - No new registration is created. Check the session card or contact support if the record is unexpected.
+- Registration failed. Please try again.
+  - Refresh data and retry.
+
+Note:
+- Save identity only on a personal device. Shared devices can expose your personal name and age to others.
+
 ## Login With PIN
 1. On the trainee page, select Login.
 2. Enter your PIN code (4 to 6 digits).

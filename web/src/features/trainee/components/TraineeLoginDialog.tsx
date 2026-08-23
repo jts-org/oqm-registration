@@ -34,6 +34,12 @@ export interface TraineeLoginDialogProps {
   open: boolean;
   /** Called with the verified trainee data on successful PIN verification. */
   onLoginSuccess: (trainee: TraineeData) => void;
+  /** Optional action for flows that support manual identity entry. */
+  onManualFallback?: () => void;
+  /** Optional title override for a flow-specific login prompt. */
+  title?: string;
+  /** Optional label for the manual fallback action. */
+  manualFallbackLabel?: string;
   /** Called when the user cancels the dialog. */
   onCancel: () => void;
 }
@@ -42,7 +48,14 @@ export interface TraineeLoginDialogProps {
  * Modal dialog asking the trainee to authenticate via PIN code.
  * Calls verifyTraineePin on submit and propagates result via onLoginSuccess.
  */
-export function TraineeLoginDialog({ open, onLoginSuccess, onCancel }: TraineeLoginDialogProps) {
+export function TraineeLoginDialog({
+  open,
+  onLoginSuccess,
+  onManualFallback,
+  title,
+  manualFallbackLabel,
+  onCancel,
+}: TraineeLoginDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const { fullScreen } = useResponsiveDialog();
@@ -129,7 +142,7 @@ export function TraineeLoginDialog({ open, onLoginSuccess, onCancel }: TraineeLo
         },
       }}
     >
-      <DialogTitle id="trainee-login-title">{t('traineeLogin.title')}</DialogTitle>
+      <DialogTitle id="trainee-login-title">{title ?? t('traineeLogin.title')}</DialogTitle>
       <DialogContent 
         dividers 
         sx={
@@ -173,6 +186,11 @@ export function TraineeLoginDialog({ open, onLoginSuccess, onCancel }: TraineeLo
         </Stack>
       </DialogContent>
       <DialogActions>
+        {onManualFallback && (
+          <Button onClick={onManualFallback} variant="text">
+            {manualFallbackLabel ?? t('traineeLogin.manualEntry')}
+          </Button>
+        )}
         <Button onClick={handleCancel} variant="outlined">
           {t('traineeLogin.cancel')}
         </Button>

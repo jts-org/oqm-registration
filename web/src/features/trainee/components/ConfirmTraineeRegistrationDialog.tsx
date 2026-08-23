@@ -58,7 +58,7 @@ export function ConfirmTraineeRegistrationDialog({
       first_name: traineeData.first_name,
       last_name: traineeData.last_name,
       age_group: traineeData.age_group,
-      underage_age: traineeData.age_group === 'underage' ? traineeData.underage_age : undefined,
+      ...(traineeData.age_group === 'underage' ? { underage_age: traineeData.underage_age } : {}),
       session_type: session.session_type,
       camp_session_id: session.id.startsWith('camp_') ? session.id.split('_')[1] : undefined,
       date: session.date,

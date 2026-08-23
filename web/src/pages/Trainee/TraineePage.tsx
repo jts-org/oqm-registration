@@ -257,10 +257,13 @@ export function TraineePage({ onBack }: TraineePageProps) {
   function handleLoginSuccess(trainee: TraineeData) {
     setLoginDialogOpen(false);
     setTraineePinRegistered(true);
+    const age = Number(trainee.age);
+    const isUnderage = Number.isInteger(age) && age >= 1 && age <= 17;
     const resolvedTrainee: PendingTraineeData = {
       first_name: trainee.firstname,
       last_name: trainee.lastname,
-      age_group: 'adult',
+      age_group: isUnderage ? 'underage' : 'adult',
+      ...(isUnderage ? { underage_age: age } : {}),
     };
     setPendingTraineeData(resolvedTrainee);
     fetchSessions(resolvedTrainee);

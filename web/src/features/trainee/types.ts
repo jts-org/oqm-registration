@@ -112,6 +112,7 @@ export interface PendingTraineeData {
   last_name: string;
   age_group: 'adult' | 'underage';
   underage_age?: number;
+  pin?: string;
 }
 
 /**

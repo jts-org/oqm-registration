@@ -28,6 +28,7 @@ import { TraineePage } from './pages/Trainee/TraineePage'
 import { CoachPage } from './pages/Coach/CoachPage'
 import { AdminPage } from './pages/Admin/AdminPage'
 import { ManualsPage } from './pages/Manuals/ManualsPage'
+import { RegisterPage } from './pages/Register/RegisterPage'
 import type { CoachData } from './features/coach/types'
 
 const ADMIN_SESSION_TOKEN_KEY = 'oqm_admin_session_token'
@@ -202,6 +203,7 @@ export default function App() {
             )}
           />
           <Route path="/trainee" element={<TraineeRoute />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/manuals" element={<ManualsRoute />} />
           <Route
             path="/coach"

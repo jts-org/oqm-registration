@@ -43,6 +43,35 @@ Odotettu tulos:
 - Harjoituskortti muuttuu ilmoittautuneeksi.
 - Nimesi näkyy Kirjautunut-ilmoituksessa.
 
+## QR-ilmoittautumisvirta
+1. Avaa QR-koodi, joka tulee tunnin kutsusta tai kampanjaviestistä.
+2. Sovellus tarkistaa valitsimen taustapalvelun nykyisen päivän perusteella ja näyttää vastaavan harjoituksen yhteenvedon.
+3. Valitse Jatka ja syötä harrastajan PIN-koodi. Voimassa oleva PIN täyttää olemassa olevan nimen ja iän; jos PIN ei ole käytettävissä, valitse manuaalinen syöttö.
+4. Manuaalisessa syötössä etu- ja sukunimi ovat pakollisia sekä tarvittaessa alaikäisen ikä.
+5. Manuaalisen syötön jälkeen voit valita, tallennetaanko nimi, ikä ja PIN tähän selaimeen tulevia QR-ilmoittautumisia varten. Tallennus on vapaaehtoista; jaetulla laitteella kannattaa kieltäytyä.
+6. Tarkista harjoituksen ja ilmoittautujan tiedot vahvistusikkunassa ja valitse Ok lähettääksesi ilmoittautumisen.
+
+Odotettu tulos:
+- QR-ilmoittautuminen onnistuu, kun valitsin vastaa voimassa olevaa päivän harjoitusta.
+- Sovellus kertoo selvästi, jos linkki on virheellinen tai sopivaa harjoitusta ei ole saatavilla.
+- Tallennettu nimi ja ikä ovat vapaaehtoisia selaintietoja, eikä niitä lähetetä ennen ilmoittautumisen vahvistamista.
+- QR-ilmoittautumisessa voi käyttää olemassa olevaa harrastajan PIN-koodia tai jatkaa pakollisella nimen manuaalisella syötöllä.
+
+## Virheet ja toipuminen
+- QR-linkistä puuttuu harjoituksen valitsin.
+  - Avaa toimiva QR-linkki tai ota yhteyttä tukeen, jos linkki on viallinen.
+- Tämä QR-koodi ei ole tuettu.
+  - Käytä voimassa olevaa kampanjalinkkiä.
+- Tällä päivällä ei ole sopivaa harjoitusta.
+  - Tarkista harjoituslista tai yritä myöhemmin uudelleen.
+- Tämä ilmoittautuminen on jo tallennettu.
+  - Uutta ilmoittautumista ei luoda. Tarkista harjoituskortti tai ota yhteyttä tukeen, jos tieto on odottamaton.
+- Ilmoittautuminen epäonnistui. Yritä uudelleen.
+  - Päivitä tiedot ja yritä uudelleen.
+
+Huomio:
+- Tallenna henkilötiedot vain omassa laitteessa. Jaettu laite voi paljastaa nimesi ja iän muille.
+
 ## Kirjaudu PIN-koodilla
 1. Valitse harrastajasivulla Kirjaudu.
 2. Syötä PIN-koodi (4-6 numeroa).

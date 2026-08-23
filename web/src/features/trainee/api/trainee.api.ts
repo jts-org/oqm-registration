@@ -71,6 +71,36 @@ export async function verifyTraineePin(pin: string): Promise<TraineeData> {
  * Returns array of TraineeSessionItem sorted by date and start_time.
  * @see .github/skills/wire-react-to-gas/SKILL.md
  */
+export async function resolveSessionSelector(selector: string): Promise<{
+  selector: string;
+  session: TraineeSessionItem;
+  resolved_session_type: string;
+  date: string;
+}> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'resolveSessionSelector', payload: { selector } }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to resolve session');
+  return json.data as {
+    selector: string;
+    session: TraineeSessionItem;
+    resolved_session_type: string;
+    date: string;
+  };
+}
+
+/**
+ * Fetch all trainee sessions for the active 21-day registration window.
+ * Uses legacy GET for anonymous page load and POST when identity context is known.
+ * Returns array of TraineeSessionItem sorted by date and start_time.
+ * @see .github/skills/wire-react-to-gas/SKILL.md
+ */
 export async function getTraineeSessions(
   identity?: TraineeSessionIdentityPayload
 ): Promise<TraineeSessionItem[]> {

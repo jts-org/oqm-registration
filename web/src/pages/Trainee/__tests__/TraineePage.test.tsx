@@ -690,6 +690,80 @@ describe('OQM-0020 — trainee PIN login from TraineePage', () => {
     });
   });
 
+  it('classifies a verified PIN age of 16 as underage and preserves the age', async () => {
+    mockVerifyTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1', firstname: 'Jane', lastname: 'Doe', age: '16', pin: '1234', created_at: '', last_activity: '',
+    });
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(mockGetTraineeSessions).toHaveBeenLastCalledWith({
+        first_name: 'Jane', last_name: 'Doe', age_group: 'underage', underage_age: 16,
+      });
+    });
+  });
+
+  it('classifies the adult PIN age sentinel 0 as adult without an underage age', async () => {
+    mockVerifyTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1', firstname: 'Jane', lastname: 'Doe', age: '0', pin: '1234', created_at: '', last_activity: '',
+    });
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+    const dialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(dialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() => {
+      expect(mockGetTraineeSessions).toHaveBeenLastCalledWith({
+        first_name: 'Jane', last_name: 'Doe', age_group: 'adult',
+      });
+    });
+  });
+
+  it('omits underage age from adult registration payloads', async () => {
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+    await userEvent.type(screen.getByLabelText('First name:'), 'Jane');
+    await userEvent.type(screen.getByLabelText('Last name:'), 'Doe');
+    await userEvent.click(screen.getByRole('button', { name: 'Ok' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Confirm Registration' })).getByRole('button', { name: 'Ok' }));
+
+    await waitFor(() => expect(mockRegisterTraineeForSession).toHaveBeenCalledWith(expect.objectContaining({ age_group: 'adult' })));
+    expect(mockRegisterTraineeForSession.mock.calls[0][0]).not.toHaveProperty('underage_age');
+  });
+
+  it('preserves underage age in underage registration payloads', async () => {
+    mockVerifyTraineePin.mockResolvedValue({
+      id: 'trainee-pin-1', firstname: 'Jane', lastname: 'Doe', age: '16', pin: '1234', created_at: '', last_activity: '',
+    });
+    mockGetTraineeSessions.mockImplementation(async () => [{ ...mockSession, trainee_registered: false }]);
+
+    render(<TraineePage onBack={vi.fn()} />);
+    await screen.findByText('Basic');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+    const loginDialog = screen.getByRole('dialog', { name: 'Trainee login' });
+    await userEvent.type(within(loginDialog).getByLabelText('Enter PIN code'), '1234');
+    await userEvent.click(within(loginDialog).getByRole('button', { name: 'Verify' }));
+    await waitFor(() => expect(screen.getByText('Logged in: Jane Doe.')).toBeInTheDocument());
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Register' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Ok' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Confirm Registration' })).getByRole('button', { name: 'Ok' }));
+
+    await waitFor(() => expect(mockRegisterTraineeForSession).toHaveBeenCalledWith(expect.objectContaining({
+      age_group: 'underage', underage_age: 16,
+    })));
+  });
+
   it('no_match_found keeps dialog open and shows error message', async () => {
     mockVerifyTraineePin.mockRejectedValue(new Error('no_match_found'));
 
