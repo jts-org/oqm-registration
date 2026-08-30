@@ -11,22 +11,27 @@ describe('trainee identity storage', () => {
     window.localStorage.clear();
   });
 
-  it('reads a valid stored identity with only allowed fields', () => {
-    const fixture: StoredTraineeIdentity = {
+  it('reads and sanitizes a legacy stored identity containing a PIN', () => {
+    const legacyIdentity = {
       pin: '1234',
       name: 'Jane Doe',
       age: 28,
     };
 
-    window.localStorage.setItem('oqm_trainee_identity', JSON.stringify(fixture));
+    window.localStorage.setItem('oqm_trainee_identity', JSON.stringify(legacyIdentity));
 
-    expect(readStoredTraineeIdentity()).toEqual(fixture);
+    expect(readStoredTraineeIdentity()).toEqual({ name: 'Jane Doe', age: 28 });
+    expect(JSON.parse(window.localStorage.getItem('oqm_trainee_identity') ?? '{}')).toEqual({
+      name: 'Jane Doe',
+      age: 28,
+    });
   });
 
   it('ignores invalid persisted data and clears it', () => {
     window.localStorage.setItem('oqm_trainee_identity', JSON.stringify({
       pin: '1234',
       name: 'Jane',
+      age: 28,
       extra: 'bad',
     }));
 
@@ -46,7 +51,7 @@ describe('trainee identity storage', () => {
   });
 
   it('clears a stored identity', () => {
-    saveStoredTraineeIdentity({ pin: '1234', name: 'Jane Doe', age: 28 });
+    saveStoredTraineeIdentity({ name: 'Jane Doe', age: 28 });
 
     clearStoredTraineeIdentity();
 

@@ -48,14 +48,37 @@ Odotettu tulos:
 2. Sovellus tarkistaa valitsimen taustapalvelun nykyisen päivän perusteella ja näyttää vastaavan harjoituksen yhteenvedon.
 3. Valitse Jatka ja syötä harrastajan PIN-koodi. Voimassa oleva PIN täyttää olemassa olevan nimen ja iän; jos PIN ei ole käytettävissä, valitse manuaalinen syöttö.
 4. Manuaalisessa syötössä etu- ja sukunimi ovat pakollisia sekä tarvittaessa alaikäisen ikä.
-5. Manuaalisen syötön jälkeen voit valita, tallennetaanko nimi, ikä ja PIN tähän selaimeen tulevia QR-ilmoittautumisia varten. Tallennus on vapaaehtoista; jaetulla laitteella kannattaa kieltäytyä.
+5. Voimassa olevan PIN-koodin tai manuaalisen syötön jälkeen näytetään kysely, jossa valitset tallennetaanko nimi ja ikä tähän selaimeen tulevia QR-ilmoittautumisia varten. Valitse Tallenna tai Älä tallenna; tallennus on vapaaehtoista ja jaetulla laitteella kannattaa kieltäytyä. Näet vahvistusviestin siitä, onnistuiko tallennus.
 6. Tarkista harjoituksen ja ilmoittautujan tiedot vahvistusikkunassa ja valitse Ok lähettääksesi ilmoittautumisen.
+7. Seuraavalla käyntikerralla, jos selaimeen on tallennettu voimassa oleva henkilöllisyys, Jatka-painike ohittaa PIN- ja manuaalisyöttövaiheet ja avaa suoraan vahvistusikkunan uudelle harjoitukselle.
+8. Jos tallennettu henkilöllisyys ei ole sinun, valitse "Etkö ole sinä? Käytä toista henkilöllisyyttä" tyhjentääksesi tallennetut tiedot ja ilmoittautuaksesi omalla PIN-koodillasi tai manuaalisesti.
 
 Odotettu tulos:
 - QR-ilmoittautuminen onnistuu, kun valitsin vastaa voimassa olevaa päivän harjoitusta.
 - Sovellus kertoo selvästi, jos linkki on virheellinen tai sopivaa harjoitusta ei ole saatavilla.
 - Tallennettu nimi ja ikä ovat vapaaehtoisia selaintietoja, eikä niitä lähetetä ennen ilmoittautumisen vahvistamista.
 - QR-ilmoittautumisessa voi käyttää olemassa olevaa harrastajan PIN-koodia tai jatkaa pakollisella nimen manuaalisella syötöllä.
+- Aiemmin tallennettu henkilöllisyys antaa toistuvien QR-ilmoittautumisten edetä suoraan vahvistukseen, ja väärän henkilöllisyyden voi vaihtaa tarvittaessa.
+
+## QR-ilmoittautuminen: Tallennetut tiedot puuttuvat
+Tallennettu nimi ja ikä voivat poistua, kun selain tyhjentää tämän sivuston tiedot. Yksityinen tai incognito-selaus poistaa tallennetut sivustotiedot tavallisesti, kun yksityiset selainikkunat suljetaan. Sovellus ei voi estää selainta poistamasta tietoja. Tallennus on vapaaehtoista; PIN-koodisi on palvelun hallinnoima eikä sitä tallenneta selaimen muistiin tallennettuna henkilöllisyytenä.
+
+Jos haluat säilyttää tallennetut tiedot omalla laitteellasi, älä käytä yksityistä tai incognito-välilehteä äläkä tyhjennä tämän sivuston evästeitä tai sivustotietoja. Selaus- tai sivustotietojen tyhjentäminen poistaa tallennetun QR-henkilöllisyyden. Selain määrittää, säilyvätkö tiedot käytettävissä.
+
+### Työpöytäselaimet
+Tarkista, ettei selain ole asetettu poistamaan sivustotietoja suljettaessa:
+- Microsoft Edge: avaa `edge://settings/privacy` ja tarkista kohta **Clear browsing data on close** (tyhjennä selaustiedot suljettaessa). Älä ota käyttöön evästeiden tai sivustotietojen tyhjennystä tämän sovelluksen osalta.
+- Google Chrome: avaa `chrome://settings/content/siteData` tai siirry kohtaan **Privacy and security** (tietosuoja ja turvallisuus) ja tarkista **Delete data sites have saved to your device when you close all windows** (poista sivustojen laitteelle tallentamat tiedot, kun kaikki ikkunat suljetaan). Pidä asetus pois päältä, jotta tiedot säilyvät.
+- Mozilla Firefox: avaa `about:preferences#privacy` ja tarkista kohdasta **Cookies and Site Data** (evästeet ja sivustotiedot) asetus **Delete cookies and site data when Firefox is closed** (poista evästeet ja sivustotiedot, kun Firefox suljetaan). Poista asetus käytöstä tai lisää sovellukselle poikkeus, jos Firefox-versiosi tarjoaa tämän vaihtoehdon.
+- Safari: avaa **Safari Settings > Privacy > Manage Website Data** (Safari-asetukset > Tietosuoja > Hallitse sivustotietoja). Älä poista tämän sovelluksen sivustotietoja, jos haluat säilyttää tallennetut tiedot. Yksityinen selaus ei säilytä tietoja, kun yksityiset ikkunat suljetaan.
+
+### Mobiiliselaimet
+- Safari iPhonella tai iPadilla: avaa **Settings**-sovellus (Asetukset) ja siirry kohtaan **Safari > Advanced > Website Data** (Safari > Lisäasetukset > Sivustotiedot). Älä poista tämän sovelluksen sivustotietoja äläkä käytä yksityistä selausta (Private Browsing).
+- Chrome Androidilla: avaa kolmen pisteen valikko ja siirry kohtaan **Settings > Privacy and security > Clear browsing data** (Asetukset > Tietosuoja ja turvallisuus > Tyhjennä selaustiedot). Älä tyhjennä evästeitä tai sivustotietoja.
+- Samsung Internet: avaa valikko ja siirry kohtaan **Settings > Personal browsing data > Delete browsing data** (Asetukset > Henkilökohtaiset selaustiedot > Poista selaustiedot). Älä poista evästeitä tai sivustotietoja.
+- Firefox Androidilla: avaa valikko ja siirry kohtaan **Settings > Delete browsing data on quit** tai **Data Management** (Asetukset > Poista selaustiedot suljettaessa / Tietojen hallinta). Älä ota käyttöön evästeiden tai sivustotietojen poistamista Firefoxin sulkeutuessa.
+
+Jos tiedot ovat jo poistuneet, avaa QR-linkki uudelleen, valitse **Jatka** ja syötä PIN-koodisi tai käytä manuaalista syöttöä. Voit valita **Tallenna** uudelleen henkilöllisyytesi tarkistuksen jälkeen. Selainversiosta riippuen asetusten nimet voivat poiketa hieman.
 
 ## Virheet ja toipuminen
 - QR-linkistä puuttuu harjoituksen valitsin.

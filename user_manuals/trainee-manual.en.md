@@ -48,14 +48,37 @@ Expected result:
 2. The app checks the selector against the backend's current day and shows the matching session summary.
 3. Select Continue, then enter your trainee PIN. A valid PIN fills in your existing name and age; choose manual entry if you do not have a valid PIN.
 4. For manual entry, first name and last name are required, along with underage age when applicable.
-5. After manual entry, choose whether to save your name, age, and PIN in this browser for future QR registrations. This is optional; decline if you are using a shared device.
+5. After a valid PIN or manual entry, a dialog asks whether to save your name and age in this browser for future QR registrations. Select Save or Don't save; this is optional and you can decline if you are using a shared device. You see a confirmation message showing whether the save succeeded.
 6. Review the session and trainee details in the confirmation dialog, then select Ok to submit.
+7. On a later visit, if a valid identity is already saved in this browser, selecting Continue skips the PIN and manual entry steps and goes straight to the confirmation dialog for the new session.
+8. If the remembered identity is not yours, select "Not you? Use a different identity" to clear it and register with your own PIN or manual entry.
 
 Expected result:
 - QR registration works when the selector matches a valid same-day session.
 - The app tells you clearly if the QR link is invalid or no matching session is available.
 - Your saved name and age are optional browser data and are not sent until you confirm a registration.
 - QR registration can use an existing trainee PIN or continue with required manual name entry.
+- A previously saved identity lets repeat QR registrations skip straight to session confirmation, with a fallback to switch identities if needed.
+
+## QR Registration: Saved Details Missing
+Your saved name and age can be removed when the browser clears this site's data. Private or incognito browsing commonly removes saved site data when its private windows are closed. The app cannot keep these details if the browser removes them. Saving is optional; your PIN is managed by the service, not stored as saved browser identity data.
+
+To keep saved details on your personal device, do not use private or incognito tabs, and do not clear this site's cookies or site data. Clearing browser or site data removes the saved QR identity. The browser controls whether data remains available.
+
+### Desktop browsers
+Check that the browser is not set to delete site data when it closes:
+- Microsoft Edge: open `edge://settings/privacy`, then review **Clear browsing data on close**. Do not enable clearing cookies or site data for this app.
+- Google Chrome: open `chrome://settings/content/siteData`, or go to **Privacy and security** and check **Delete data sites have saved to your device when you close all windows**. Keep this option off for saved details to remain.
+- Mozilla Firefox: open `about:preferences#privacy`, then under **Cookies and Site Data** check **Delete cookies and site data when Firefox is closed**. Turn it off, or add an exception for this app if your Firefox version offers one.
+- Safari: open **Safari Settings > Privacy > Manage Website Data**. Do not remove this app's website data if you want to keep saved details. Private Browsing does not keep saved details after private windows are closed.
+
+### Mobile browsers
+- Safari on iPhone or iPad: open the **Settings** app, then **Safari > Advanced > Website Data**. Do not remove this app's website data, and do not use Private Browsing.
+- Chrome on Android: open the three-dot menu, then **Settings > Privacy and security > Clear browsing data**. Do not clear cookies or site data.
+- Samsung Internet: open the menu, then **Settings > Personal browsing data > Delete browsing data**. Do not delete cookies or site data.
+- Firefox on Android: open the menu, then **Settings > Delete browsing data on quit** or **Data Management**. Do not enable deletion of cookies or site data when Firefox closes.
+
+If the details have already been removed, open the QR link again, select **Continue**, and enter your PIN or use manual entry. You can choose **Save** again after your identity is verified. Browser labels may vary slightly by version.
 
 ## Error and Recovery
 - Missing session selector in the QR link.

@@ -22,8 +22,10 @@ import toast from 'react-hot-toast';
 import { resolveSessionSelector } from '../../features/trainee/api/trainee.api';
 import { ConfirmTraineeRegistrationDialog } from '../../features/trainee/components/ConfirmTraineeRegistrationDialog';
 import { ManualTraineeRegistrationDialog } from '../../features/trainee/components/ManualTraineeRegistrationDialog';
+import { StoreIdentityConsentDialog } from '../../features/trainee/components/StoreIdentityConsentDialog';
 import { TraineeLoginDialog } from '../../features/trainee/components/TraineeLoginDialog';
 import {
+  clearStoredTraineeIdentity,
   readStoredTraineeIdentity,
   saveStoredTraineeIdentity,
   storedIdentityToPendingTraineeData,
@@ -39,13 +41,16 @@ export function RegisterPage() {
   const [resolvedSession, setResolvedSession] = useState<TraineeSessionItem | null>(null);
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingTraineeData, setPendingTraineeData] = useState<PendingTraineeData | undefined>(undefined);
+  const [storedIdentityAvailable, setStoredIdentityAvailable] = useState(false);
 
   useEffect(() => {
     const storedIdentity = readStoredTraineeIdentity();
     if (storedIdentity) {
       setPendingTraineeData(storedIdentityToPendingTraineeData(storedIdentity));
+      setStoredIdentityAvailable(true);
     }
   }, []);
 
@@ -100,6 +105,18 @@ export function RegisterPage() {
   }, [i18n, searchParams, t]);
 
   function handleContinue() {
+    if (storedIdentityAvailable) {
+      setConfirmDialogOpen(true);
+      return;
+    }
+    setPinDialogOpen(true);
+  }
+
+  function handleUseDifferentIdentity() {
+    setConfirmDialogOpen(false);
+    clearStoredTraineeIdentity();
+    setStoredIdentityAvailable(false);
+    setPendingTraineeData(undefined);
     setPinDialogOpen(true);
   }
 
@@ -117,35 +134,47 @@ export function RegisterPage() {
           last_name: trainee.lastname,
           age_group: 'underage',
           underage_age: age,
-          pin: trainee.pin,
         }
       : {
           first_name: trainee.firstname,
           last_name: trainee.lastname,
           age_group: 'adult',
-          pin: trainee.pin,
         };
 
     setPendingTraineeData(verifiedTrainee);
     setPinDialogOpen(false);
-    setConfirmDialogOpen(true);
+    setConsentDialogOpen(true);
   }
 
   function handleManualConfirm(data: PendingTraineeData) {
     setPendingTraineeData(data);
-    const shouldStore = window.confirm(t('qrRegister.storeIdentityConsent'));
-    if (shouldStore) {
-      const ageValue = data.age_group === 'underage'
-        ? Number(data.underage_age ?? 15)
-        : 18;
-      const normalisedName = `${data.first_name} ${data.last_name}`.trim();
-      saveStoredTraineeIdentity({
-        pin: data.pin,
-        name: normalisedName,
-        age: ageValue,
-      });
-    }
     setManualDialogOpen(false);
+    setConsentDialogOpen(true);
+  }
+
+  function handleStoreIdentitySave() {
+    const data = pendingTraineeData;
+    if (data) {
+      try {
+        const ageValue = data.age_group === 'underage'
+          ? Number(data.underage_age ?? 15)
+          : 18;
+        const normalisedName = `${data.first_name} ${data.last_name}`.trim();
+        saveStoredTraineeIdentity({
+          name: normalisedName,
+          age: ageValue,
+        });
+        toast.success(t('qrRegister.storeIdentitySuccess'));
+      } catch {
+        toast.error(t('qrRegister.storeIdentityFailed'));
+      }
+    }
+    setConsentDialogOpen(false);
+    setConfirmDialogOpen(true);
+  }
+
+  function handleStoreIdentitySkip() {
+    setConsentDialogOpen(false);
     setConfirmDialogOpen(true);
   }
 
@@ -213,6 +242,12 @@ export function RegisterPage() {
         onCancel={() => setManualDialogOpen(false)}
       />
 
+      <StoreIdentityConsentDialog
+        open={consentDialogOpen}
+        onSave={handleStoreIdentitySave}
+        onSkip={handleStoreIdentitySkip}
+      />
+
       <ConfirmTraineeRegistrationDialog
         open={confirmDialogOpen}
         session={resolvedSession}
@@ -220,6 +255,7 @@ export function RegisterPage() {
         onSuccess={handleConfirmSuccess}
         onAlreadyRegistered={handleAlreadyRegistered}
         onCancel={() => setConfirmDialogOpen(false)}
+        onUseDifferentIdentity={storedIdentityAvailable ? handleUseDifferentIdentity : undefined}
       />
     </Container>
   );
