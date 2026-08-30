@@ -30,6 +30,7 @@ Keep this list in sync with actual routes in `gas/Code.gs`.
 
 - `getTraineeSessions`  
 - `getCoachSessions`  
+- `resolveSessionSelector` (public; GET or POST; payload/query selector; returns one backend-day session or `missing_selector`, `unsupported_selector`, or `no_session_today`)
 - `registerTraineeForSession`  
 - `registerCoachForSession`  
 - `registerTraineeBatchForSessions`  

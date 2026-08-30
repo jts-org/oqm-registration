@@ -17,6 +17,7 @@
  *  - POST { route: "verifyTraineePin", payload: { pin } } — verify a trainee PIN against trainee_login sheet (OQM-0016)
  *  - POST { route: "sendFeedback", payload: { type: "feedback"|"bug_report"|"support_request", from, message } } — store feedback, bug reports, or support requests in the Messages sheet and notify support (OQM-0046)
  *  - POST { route: "registerTraineeForSession", payload: { first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time, end_time } } — register trainee for a session (OQM-0014)
+ *  - POST { route: "resolveSessionSelector", payload: { selector } } — resolve a QR selector against today’s backend-day session schedule and return a single deterministic candidate (OQM-0049 tracer)
  *  - POST { route: "registerTraineeBatchForSessions", payload: { rows: [{ first_name, last_name, age_group, underage_age?, session_type, camp_session_id?, date, start_time?, end_time? }] }, sessionToken } — admin batch trainee registrations (OQM-0034)
  *  - POST { route: "registerCustomerEventWithSchedule", payload: { event, event_alias, instructor, start_date, end_date, schedules: [{ session_name, session_name_alias, date, start_time, end_time }] }, sessionToken } — admin customer event + schedule creation (OQM-0035)
  * Internal helpers (not exposed as routes):
@@ -50,6 +51,16 @@ function doGet(e) {
       const reader = createSheetReader_();
       const data = getTraineeSessions_(undefined, reader);
       return json_({ ok: true, data });
+    }
+    if (route === 'resolveSessionSelector') {
+      const selectorPayload = {
+        selector: e.parameter && e.parameter.selector ? e.parameter.selector : e.parameter && e.parameter.session ? e.parameter.session : ''
+      };
+      const result = resolveSessionSelector_(selectorPayload, createSheetReader_());
+      if (!result.ok) {
+        return json_({ ok: false, error: result.error });
+      }
+      return json_({ ok: true, data: result.data });
     }
     if (route === 'listSessionsSchedule') {
       const data = listSessionsSchedule_();
@@ -89,6 +100,13 @@ function doPost(e) {
       const reader = createSheetReader_();
       const data = getTraineeSessions_(payload, reader);
       return json_({ ok: true, data });
+    }
+    if (route === 'resolveSessionSelector') {
+      const result = resolveSessionSelector_(payload, createSheetReader_());
+      if (!result.ok) {
+        return json_({ ok: false, error: result.error });
+      }
+      return json_({ ok: true, data: result.data });
     }
     if (route === 'createItem') {
       const created = createItem_(payload);
@@ -399,6 +417,7 @@ function isPublicRoute_(route) {
     'registerCoachPin',
     'verifyCoachPin',
     'getTraineeSessions',
+    'resolveSessionSelector',
     'registerTraineeForSession',
     'registerTraineePin',
     'verifyTraineePin',
@@ -1340,6 +1359,96 @@ function getBooleanValue(value) {
     if (typeof value === 'boolean') return value;
     const trimmed = value.trim().toUpperCase();
     return trimmed !== 'FALSE' && trimmed !== '0' && trimmed !== 'NO' && trimmed !== 'N';  
+}
+
+function resolveSessionSelector_(payload, reader) {
+  const selector = String((payload && payload.selector) || '').trim().toLowerCase();
+  if (!selector) {
+    return { ok: false, error: 'missing_selector' };
+  }
+
+  const supportedSelectorMap = {
+    advanced: 'advanced',
+    fitness: 'fitness',
+    joint: 'joint',
+    sparring: 'free/sparring',
+    basic: 'basic'
+  };
+
+  if (!supportedSelectorMap[selector]) {
+    return { ok: false, error: 'unsupported_selector' };
+  }
+
+  const tz = Session.getScriptTimeZone();
+  const today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  const sheetReader = reader || createSheetReader_();
+  const todaysSessions = getTraineeSessions_(undefined, sheetReader).filter(session => session.date === today);
+
+  if (selector === 'basic') {
+    const basicMatch = todaysSessions.find(session => {
+      const type = String(session.session_type || '').trim().toLowerCase();
+      return !session.is_free_sparring && type.indexOf('basic_') === 0;
+    });
+    if (!basicMatch) {
+      return { ok: false, error: 'no_session_today' };
+    }
+    return {
+      ok: true,
+      data: {
+        selector: selector,
+        session: basicMatch,
+        resolved_session_type: basicMatch.session_type,
+        date: today
+      }
+    };
+  }
+
+  if (selector === 'sparring') {
+    const sparringRegistrationRows = sheetReader.getSheetData('coach_registrations');
+    const hasSparringRegistration = sparringRegistrationRows.some(row => {
+      if (!row || row.length < 8) return false;
+      const rowType = String(row[3] || '').trim().toLowerCase();
+      const rowDate = normalizeDateYmd_(row[4], tz);
+      const active = row.length >= 6 ? getBooleanValue(row[5]) : true;
+      return active && rowType === 'free/sparring' && rowDate === today;
+    });
+
+    const sparringMatch = todaysSessions.find(session => {
+      return session.is_free_sparring === true && String(session.session_type || '').trim().toLowerCase() === 'free/sparring';
+    });
+
+    if (!hasSparringRegistration || !sparringMatch) {
+      return { ok: false, error: 'no_session_today' };
+    }
+
+    return {
+      ok: true,
+      data: {
+        selector: selector,
+        session: sparringMatch,
+        resolved_session_type: sparringMatch.session_type,
+        date: today
+      }
+    };
+  }
+
+  const standardMatch = todaysSessions.find(session => {
+    return String(session.session_type || '').trim().toLowerCase() === supportedSelectorMap[selector];
+  });
+
+  if (!standardMatch) {
+    return { ok: false, error: 'no_session_today' };
+  }
+
+  return {
+    ok: true,
+    data: {
+      selector: selector,
+      session: standardMatch,
+      resolved_session_type: standardMatch.session_type,
+      date: today
+    }
+  };
 }
 
 /**

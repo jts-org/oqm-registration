@@ -101,7 +101,16 @@ Rules:
 
 ---
 
-## 7. Required Behavior for Copilot
+## 7. Client-Side Identity Persistence
+
+When a flow offers optional browser persistence for trainee identity, Copilot must:
+- request explicit consent before writing identity data
+- persist only the exact schema `{ pin?, name, age }`
+- validate the parsed object before use and ignore malformed, extra-field, or invalid data
+- keep declined consent non-blocking for the registration flow
+- treat optional PIN persistence or automatic identity reuse as unimplemented until the UI and tests support it
+
+## 8. Required Behavior for Copilot
 
 Copilot must:
 - always use MUI  
@@ -113,7 +122,7 @@ Copilot must:
 
 ---
 
-## 8. Interaction With Other Skills
+## 9. Interaction With Other Skills
 
 - **frontend-responsive-design** — mobile-first layout + dialog rules  
 - **frontend-i18n** — localized UI text  
@@ -122,7 +131,7 @@ Copilot must:
 
 ---
 
-## 9. Future Extensions
+## 10. Future Extensions
 
 UX rules may expand.  
 Copilot must not assume fixed patterns or design-system constraints.

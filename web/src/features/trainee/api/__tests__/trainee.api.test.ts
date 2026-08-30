@@ -14,6 +14,7 @@ import {
   getTraineeSessions,
   registerTraineeForSession,
   registerTraineePin,
+  resolveSessionSelector,
   verifyTraineePin,
 } from '../trainee.api';
 import type { RegisterTraineeForSessionPayload } from '../../types';
@@ -370,6 +371,57 @@ describe('registerTraineeForSession', () => {
     await registerTraineeForSession(payload);
     const bodyArg = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(bodyArg.payload.camp_session_id).toBe('camp-session-abc');
+  });
+});
+
+describe('resolveSessionSelector', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    mockFetch.mockReset();
+  });
+
+  it('throws when VITE_GAS_BASE_URL is not configured', async () => {
+    vi.stubEnv('VITE_GAS_BASE_URL', '');
+    await expect(resolveSessionSelector('advanced')).rejects.toThrow('VITE_GAS_BASE_URL is not configured');
+  });
+
+  it('posts the selector to the backend and returns resolved session data', async () => {
+    const resolvedSession = {
+      selector: 'advanced',
+      session: {
+        id: 'session-1',
+        session_type: 'advanced',
+        session_type_alias: 'Advanced',
+        date: '2026-03-17',
+        start_time: '18:00',
+        end_time: '19:00',
+        location: '',
+        coach_firstname: '',
+        coach_lastname: '',
+        camp_instructor_name: '',
+        is_free_sparring: false,
+      },
+      resolved_session_type: 'advanced',
+      date: '2026-03-17',
+    };
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: resolvedSession }) });
+
+    await expect(resolveSessionSelector('advanced')).resolves.toEqual(resolvedSession);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      BASE,
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ route: 'resolveSessionSelector', payload: { selector: 'advanced' } }),
+      })
+    );
+  });
+
+  it('throws backend error when resolution fails', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'missing_selector' }) });
+    await expect(resolveSessionSelector('')).rejects.toThrow('missing_selector');
   });
 });
 

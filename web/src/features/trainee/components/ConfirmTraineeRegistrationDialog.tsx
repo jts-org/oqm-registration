@@ -32,6 +32,7 @@ export interface ConfirmTraineeRegistrationDialogProps {
   onSuccess: (registrationId: string) => void;
   onAlreadyRegistered: () => void;
   onCancel: () => void;
+  onUseDifferentIdentity?: () => void;
 }
 
 /** Confirm and submit trainee registration request while handling known business errors. */
@@ -42,6 +43,7 @@ export function ConfirmTraineeRegistrationDialog({
   onSuccess,
   onAlreadyRegistered,
   onCancel,
+  onUseDifferentIdentity,
 }: ConfirmTraineeRegistrationDialogProps) {
   const { t } = useTranslation();
   const { fullScreen } = useResponsiveDialog();
@@ -58,7 +60,7 @@ export function ConfirmTraineeRegistrationDialog({
       first_name: traineeData.first_name,
       last_name: traineeData.last_name,
       age_group: traineeData.age_group,
-      underage_age: traineeData.age_group === 'underage' ? traineeData.underage_age : undefined,
+      ...(traineeData.age_group === 'underage' ? { underage_age: traineeData.underage_age } : {}),
       session_type: session.session_type,
       camp_session_id: session.id.startsWith('camp_') ? session.id.split('_')[1] : undefined,
       date: session.date,
@@ -179,6 +181,17 @@ export function ConfirmTraineeRegistrationDialog({
               <Typography variant="body2">
                 <strong>{t('traineeRegistration.traineeAgeLabel')}:</strong> {traineeData.underage_age}
               </Typography>
+            )}
+            {onUseDifferentIdentity && (
+              <Button
+                variant="text"
+                size="small"
+                onClick={onUseDifferentIdentity}
+                disabled={loading}
+                sx={{ mt: 0.5 }}
+              >
+                {t('qrRegister.useDifferentIdentity')}
+              </Button>
             )}
           </>
         )}

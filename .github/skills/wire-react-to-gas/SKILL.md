@@ -59,6 +59,7 @@ On unauthorized response:
 | registerCoachPin | POST | Register coach PIN |
 | getTraineeSessions | GET/POST | Anonymous or identity-based session loading |
 | registerTraineePin | POST | Register trainee PIN |
+| resolveSessionSelector | GET/POST | Resolve a QR selector against the backend-day session schedule |
 | registerTraineeForSession | POST | Register trainee for a session |
 | sendFeedback | POST | Send feedback or a bug report; no sessionToken required |
 
@@ -203,9 +204,59 @@ Payload and domain constraints are defined by backend validation and `sheet-sche
 Supports anonymous and identity-based loading under public-route rules.
 Return shape remains strict and route-specific fields must align with backend handlers.
 
+## 6.7 Resolve Session Selector (OQM‑0049)
+
+Supports QR selector resolution from a public frontend route.
+
+Request payload:
+- `POST { route: "resolveSessionSelector", payload: { selector } }`
+- `GET ?route=resolveSessionSelector&session=<selector>`
+
+Success data shape:
+- `{ selector, session: TraineeSessionItem, resolved_session_type: string, date: "YYYY-MM-DD" }`
+
+Errors:
+- `missing_selector`
+- `unsupported_selector`
+- `no_session_today`
+
+Behavior rules:
+- Backend must resolve against `Session.getScriptTimeZone()` and same-day schedule only.
+- `basic` resolves to an active same-day `basic_*` session, never the literal `basic` campaign name.
+- `sparring` requires same-day `free/sparring` coach registration evidence before resolving.
+
 ---
 
-## 6.7 Admin Account Management (feature-admin-account-crud)
+## 6.7 QR Session Selector Resolution (OQM-0049)
+
+Public route used by `/register?session=<selector>` to resolve one eligible same-day session before the trainee registration write.
+
+### POST
+
+Request payload:
+- `{ selector }`
+
+Success data shape:
+- `{ selector, session: TraineeSessionItem, resolved_session_type, date }`
+
+### GET
+
+Request query:
+- `route=resolveSessionSelector&session=<selector>`
+- `route=resolveSessionSelector&selector=<selector>` is also accepted
+
+The route is public and does not require a `sessionToken`. Both methods return only the strict global envelope:
+- success: `{ ok: true, data: { selector, session, resolved_session_type, date } }`
+- failure: `{ ok: false, error: "<error_code>" }`
+
+Resolver errors:
+- `missing_selector`: no non-empty selector was supplied
+- `unsupported_selector`: selector is not `advanced`, `fitness`, `joint`, `sparring`, or `basic`
+- `no_session_today`: no eligible backend-day session exists; `sparring` also requires same-day active `free/sparring` coach evidence
+
+Resolution uses the Apps Script timezone and backend date, not the browser date. `basic` resolves to an active `basic_*` session and returns its concrete `resolved_session_type`; the final trainee write continues through `registerTraineeForSession`.
+
+## 6.8 Admin Account Management (feature-admin-account-crud)
 
 All account routes require admin `sessionToken` and strict response envelope.
 
