@@ -80,15 +80,34 @@ Tarkista, ettei selain ole asetettu poistamaan sivustotietoja suljettaessa:
 
 Jos tiedot ovat jo poistuneet, avaa QR-linkki uudelleen, valitse **Jatka** ja syötä PIN-koodisi tai käytä manuaalista syöttöä. Voit valita **Tallenna** uudelleen henkilöllisyytesi tarkistuksen jälkeen. Selainversiosta riippuen asetusten nimet voivat poiketa hieman.
 
+## QR-ilmoittautuminen asiakastapahtumissa
+Kun luet asiakastapahtuman QR-koodin salilla (esim. `https://jts-org.github.io/oqm-registration/register?customer-event=<id>`):
+
+1. **Tapahtuman haku**: Sovellus hakee automaattisesti tapahtuman tiedot ja kaikki siihen kuuluvat harjoitussessiot.
+2. **Harjoitusten valinta**:
+   - **Yksi harjoitus**: Jos tapahtumassa on vain yksi harjoitus, se valitaan automaattisesti.
+   - **Useampi harjoitus**: Jos saatavilla on kaksi tai useampi harjoitussessio, näet valintalistan valintaruutuineen. Voit valita haluamasi harjoitukset tai käyttää **Valitse kaikki** / **Poista valinnat** -toimintoja.
+3. **Henkilötietojen syöttö**: Syötä etunimi ja sukunimi. Jos olet alle 18-vuotias, valitse alaikäisyys ja aseta ikäsi (1–17).
+4. **Vahvistus**: Paina **Vahvista ilmoittautuminen** nähdäksesi yhteenvedon valituista harjoituksista ja henkilötiedoistasi.
+5. **Lähetys**: Paina **Lähetä ilmoittautuminen**. Onnistuneen rekisteröinnin jälkeen saat vahvistusviestin kaikista valituista harjoituksista.
+
 ## Virheet ja toipuminen
 - QR-linkistä puuttuu harjoituksen valitsin.
   - Avaa toimiva QR-linkki tai ota yhteyttä tukeen, jos linkki on viallinen.
+- Linkistä puuttuu asiakastapahtumatunnus.
+  - Varmista, että koko QR-koodin osoite avattiin oikein.
+- Asiakastapahtumakoodi on virheellinen tai ei saatavilla / ei enää aktiivinen.
+  - Ota yhteyttä tapahtuman järjestäjään tai salin henkilökuntaan.
+- Tälle tapahtumalle ei ole saatavilla harjoitusistuntoja.
+  - Tapahtuman päivämäärille ei löytynyt aktiivisia harjoituksia.
+- Valitse vähintään yksi istunto jatkaaksesi.
+  - Usean harjoituksen tapahtumassa valitse vähintään yksi valintaruutu ennen vahvistusta.
 - Tämä QR-koodi ei ole tuettu.
   - Käytä voimassa olevaa kampanjalinkkiä.
 - Tällä päivällä ei ole sopivaa harjoitusta.
   - Tarkista harjoituslista tai yritä myöhemmin uudelleen.
-- Tämä ilmoittautuminen on jo tallennettu.
-  - Uutta ilmoittautumista ei luoda. Tarkista harjoituskortti tai ota yhteyttä tukeen, jos tieto on odottamaton.
+- Tämä ilmoittautuminen on jo tallennettu / Olet jo ilmoittautunut.
+  - Uutta päällekkäistä ilmoittautumista ei luoda.
 - Ilmoittautuminen epäonnistui. Yritä uudelleen.
   - Päivitä tiedot ja yritä uudelleen.
 

@@ -124,3 +124,101 @@ export interface TraineeSessionIdentityPayload {
   age_group: 'adult' | 'underage';
   underage_age?: number;
 }
+
+/**
+ * Customer event data returned by resolveCustomerEvent resolver route.
+ * Maps to customer_events sheet row.
+ * @see .github/skills/wire-react-to-gas/SKILL.md
+ */
+export interface CustomerEvent {
+  /** Unique identifier for the customer event. */
+  id: string;
+  /** Event name. */
+  event: string;
+  /** Localized event name alias. */
+  event_alias: string;
+  /** Instructor name. */
+  instructor: string;
+  /** Event start date in 'YYYY-MM-DD' format. */
+  start_date: string;
+  /** Event end date in 'YYYY-MM-DD' format. */
+  end_date: string;
+  /** Whether the event is active/realized. */
+  realized: boolean;
+  /** ISO-8601 creation timestamp. */
+  created_at: string;
+  /** ISO-8601 last update timestamp. */
+  updated_at: string;
+}
+
+/**
+ * Customer event session (schedule) data.
+ * Maps to customer_event_schedules sheet row.
+ * @see .github/skills/wire-react-to-gas/SKILL.md
+ */
+export interface CustomerEventSession {
+  /** Unique identifier for this session/schedule. */
+  id: string;
+  /** Reference to the parent event. */
+  event_id: string;
+  /** Session name. */
+  session_name: string;
+  /** Localized session name alias. */
+  session_name_alias: string;
+  /** Session date in 'YYYY-MM-DD' format. */
+  date: string;
+  /** Session start time in 'HH:MM' format. */
+  start_time: string;
+  /** Session end time in 'HH:MM' format. */
+  end_time: string;
+  /** Whether the session is active/realized. */
+  realized: boolean;
+  /** ISO-8601 creation timestamp. */
+  created_at: string;
+  /** ISO-8601 last update timestamp. */
+  updated_at: string;
+}
+
+/**
+ * Response from resolveCustomerEvent backend route.
+ * @see .github/skills/wire-react-to-gas/SKILL.md
+ */
+export interface ResolveCustomerEventResponse {
+  event: CustomerEvent;
+  sessions: CustomerEventSession[];
+}
+
+/**
+ * Payload for registering a trainee for one or more customer event sessions.
+ * Maps to the registerTraineeBatchForCustomerEvent GAS backend route.
+ * @see .github/skills/wire-react-to-gas/SKILL.md
+ */
+export interface RegisterTraineeBatchForCustomerEventPayload {
+  /** Trainee's first name (required). */
+  first_name: string;
+  /** Trainee's last name (required). */
+  last_name: string;
+  /** 'adult' or 'underage' (required). */
+  age_group: 'adult' | 'underage';
+  /** Trainee's age — required when age_group is 'underage'. */
+  underage_age?: number;
+  /** Non-empty array of customer_event_schedules row IDs to register (required). */
+  schedule_ids: string[];
+}
+
+/**
+ * Single registration result within batch response.
+ */
+export interface CustomerEventRegistrationResult {
+  schedule_id: string;
+  registration_id: string;
+}
+
+/**
+ * Response from registerTraineeBatchForCustomerEvent backend route.
+ * @see .github/skills/wire-react-to-gas/SKILL.md
+ */
+export interface RegisterTraineeBatchForCustomerEventResponse {
+  registrations: CustomerEventRegistrationResult[];
+}
+

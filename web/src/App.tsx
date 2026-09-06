@@ -17,7 +17,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Toaster } from 'react-hot-toast'
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom'
 import { getTheme } from './theme.config';
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -29,6 +29,7 @@ import { CoachPage } from './pages/Coach/CoachPage'
 import { AdminPage } from './pages/Admin/AdminPage'
 import { ManualsPage } from './pages/Manuals/ManualsPage'
 import { RegisterPage } from './pages/Register/RegisterPage'
+import { RegisterCustomerEventPage } from './pages/Register/RegisterCustomerEventPage'
 import type { CoachData } from './features/coach/types'
 
 const ADMIN_SESSION_TOKEN_KEY = 'oqm_admin_session_token'
@@ -87,6 +88,21 @@ function ManualsRoute() {
   const navigate = useNavigate();
 
   return <ManualsPage onBack={() => navigate('/')} />;
+}
+
+function RegisterRoute() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  // Route to appropriate register page based on query parameter
+  const hasCustomerEvent = searchParams.has('customer-event');
+  
+  if (hasCustomerEvent) {
+    return <RegisterCustomerEventPage />;
+  }
+  
+  // Default to session-based registration (OQM-0049)
+  return <RegisterPage />;
 }
 
 interface CoachRouteProps {
@@ -203,7 +219,7 @@ export default function App() {
             )}
           />
           <Route path="/trainee" element={<TraineeRoute />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register" element={<RegisterRoute />} />
           <Route path="/manuals" element={<ManualsRoute />} />
           <Route
             path="/coach"

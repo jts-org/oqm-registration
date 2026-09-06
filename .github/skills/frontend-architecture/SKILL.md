@@ -103,7 +103,8 @@ Pages compose features; no business logic.
 
 Rules:
 - Pages import feature components.  
-- Pages must not contain API calls or state/business logic.
+- Pages must not contain API calls or state/business logic.  
+- All router views and page components belong under `src/pages/` (e.g. `src/pages/Register/RegisterCustomerEventPage.tsx`). Never place page/route components inside `src/features/<feature>/pages/`.
 
 ---
 

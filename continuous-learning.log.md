@@ -29,3 +29,12 @@
   summary=Promoted consent-gated exact-schema identity storage validation; retained backend-day and public-route ownership in existing authoritative skills and removed redundant registry detail |
   why=The lessons validate reusable privacy behavior while existing date/API contract surfaces already own timezone and route rules; optional PIN persistence and automatic reuse are deferred until the QR UI implements and tests them |
   invoker=implement
+
+## 2026-09
+
+- 2026-09-06T00:00:00Z | event=promotion | track=tracks/feature-oqm-0050-qr-customer-event-registration |
+  lessons=tracks/feature-oqm-0050-qr-customer-event-registration/lessons.md |
+  surfaces=.github/skills/gas-date-and-time/SKILL.md,.github/skills/wire-react-to-gas/SKILL.md,.github/skills/frontend-architecture/SKILL.md |
+  summary=Promoted localized date/time cell normalization, customer-event multi-session atomic write contract, and strict src/pages/ route component location rules |
+  why=The customer event registration flow establishes essential fixes for localized Apps Script Date cell string parsing, atomic single-lock multi-session writes, and route page co-location constraints that benefit all future event and batch registration features |
+  invoker=implement
