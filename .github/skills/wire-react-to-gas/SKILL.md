@@ -60,7 +60,9 @@ On unauthorized response:
 | getTraineeSessions | GET/POST | Anonymous or identity-based session loading |
 | registerTraineePin | POST | Register trainee PIN |
 | resolveSessionSelector | GET/POST | Resolve a QR selector against the backend-day session schedule |
+| resolveCustomerEvent | POST | Resolve customer event details and qualifying sessions (OQM-0050) |
 | registerTraineeForSession | POST | Register trainee for a session |
+| registerTraineeBatchForCustomerEvent | POST | Atomically register trainee for one or more customer event sessions (OQM-0050) |
 | sendFeedback | POST | Send feedback or a bug report; no sessionToken required |
 
 **Legacy**: `verifyCoachPin`, `verifyTraineePin` supported for compatibility only. Prefer modern login flows.
@@ -204,29 +206,6 @@ Payload and domain constraints are defined by backend validation and `sheet-sche
 Supports anonymous and identity-based loading under public-route rules.
 Return shape remains strict and route-specific fields must align with backend handlers.
 
-## 6.7 Resolve Session Selector (OQM‑0049)
-
-Supports QR selector resolution from a public frontend route.
-
-Request payload:
-- `POST { route: "resolveSessionSelector", payload: { selector } }`
-- `GET ?route=resolveSessionSelector&session=<selector>`
-
-Success data shape:
-- `{ selector, session: TraineeSessionItem, resolved_session_type: string, date: "YYYY-MM-DD" }`
-
-Errors:
-- `missing_selector`
-- `unsupported_selector`
-- `no_session_today`
-
-Behavior rules:
-- Backend must resolve against `Session.getScriptTimeZone()` and same-day schedule only.
-- `basic` resolves to an active same-day `basic_*` session, never the literal `basic` campaign name.
-- `sparring` requires same-day `free/sparring` coach registration evidence before resolving.
-
----
-
 ## 6.7 QR Session Selector Resolution (OQM-0049)
 
 Public route used by `/register?session=<selector>` to resolve one eligible same-day session before the trainee registration write.
@@ -306,6 +285,110 @@ All account routes require admin `sessionToken` and strict response envelope.
 
 - `CoachAccountRecord`: `{ id, firstname, lastname, alias, pin, created_at, last_activity }`
 - `TraineeAccountRecord`: `{ id, firstname, lastname, age, pin, created_at, last_activity }`
+
+---
+
+## 6.9 Customer Event Resolution (OQM-0050)
+
+Public route used by `/register?customer-event=<id>` to resolve an active customer event and its eligible sessions.
+
+### POST
+
+Request payload:
+```json
+{
+  "customer_event": "customer-event-id"
+}
+```
+
+Success data shape:
+```json
+{
+  "event": {
+    "id": "event-1",
+    "event": "Weekend Seminar",
+    "event_alias": "Viikonloppuseminaari",
+    "instructor": "Jane Coach",
+    "start_date": "2026-09-01",
+    "end_date": "2026-09-03",
+    "realized": true,
+    "created_at": "2026-09-01T00:00:00.000Z",
+    "updated_at": "2026-09-01T00:00:00.000Z"
+  },
+  "sessions": [
+    {
+      "id": "schedule-1",
+      "event_id": "event-1",
+      "session_name": "Morning Session",
+      "session_name_alias": "Aamutreeni",
+      "date": "2026-09-01",
+      "start_time": "10:00",
+      "end_time": "12:00",
+      "realized": true,
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "updated_at": "2026-09-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+Errors:
+- `missing_customer_event`: no non-empty `customer_event` identifier provided
+- `invalid_customer_event`: customer event ID not found in `customer_events`
+- `inactive_customer_event`: customer event exists but `realized` is `false`
+
+Behavior rules:
+- Filters `customer_event_schedules` to only include rows where `event_id` matches, `realized` is `true`, and `date` falls within the event's `start_date` and `end_date`.
+- Returns an empty `sessions` array if no sessions qualify.
+
+---
+
+## 6.10 Batch Trainee Registration for Customer Event (OQM-0050)
+
+Public route used by customer-event registration flow to register a trainee for one or more sessions atomically.
+
+### POST
+
+Request payload:
+```json
+{
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "age_group": "adult",
+  "underage_age": 15,
+  "schedule_ids": ["schedule-1", "schedule-2"]
+}
+```
+
+Success data shape:
+```json
+{
+  "registrations": [
+    {
+      "schedule_id": "schedule-1",
+      "registration_id": "uuid-1"
+    },
+    {
+      "schedule_id": "schedule-2",
+      "registration_id": "uuid-2"
+    }
+  ]
+}
+```
+
+Errors:
+- `validation_failed`: missing required fields (`first_name`, `last_name`, `age_group`, or empty `schedule_ids`)
+- `validation_failed_age`: `age_group` is `"underage"` but `underage_age` is missing
+- `concurrent_request`: could not acquire ScriptLock within timeout
+- `invalid_schedule`: one or more `schedule_ids` not found in `customer_event_schedules`
+- `invalid_customer_event`: parent event not found
+- `inactive_customer_event`: parent event `realized` is `false`
+- `invalid_session_eligibility`: session `realized` is `false` or outside event date range
+- `duplicate_registration`: trainee is already registered for one or more of the selected sessions
+
+Behavior rules:
+- Atomic: acquires lock, validates all sessions, checks duplicates for all selected sessions. If any validation or duplicate check fails, zero rows are appended to `trainee_registrations`.
+- Maps `schedule_id` into the `camp_session_id` column of `trainee_registrations`.
 
 ---
 

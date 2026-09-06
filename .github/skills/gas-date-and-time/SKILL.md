@@ -68,25 +68,75 @@ const isoDate = Utilities.formatDate(dateObj, "Europe/Helsinki", "yyyy-MM-dd");
 
 When reading from Sheets:
 
-- string → treat as ISO‑8601  
+- string → treat as ISO‑8601 or raw Date string  
+- Date object → format using `Utilities.formatDate(value, tz, 'yyyy-MM-dd')` or `'HH:mm'`  
 - number → treat as Google Sheets serial date  
 - empty → null  
 
-Required parsing:
+Required parsing and normalization (`normalizeDateYmd_` / `normalizeTimeHm_`):
 ```js
-function parseSheetDate(value) {
-  if (!value) return null;
-  if (typeof value === "string") return new Date(value);
-  if (typeof value === "number") {
-    return new Date(Math.round((value - 25569) * 86400 * 1000));
+/**
+ * Normalize mixed sheet/date values to 'YYYY-MM-DD' for stable comparisons.
+ * Accepts Date objects, ISO-like strings, plain 'YYYY-MM-DD', and Date strings with localized timezones.
+ */
+function normalizeDateYmd_(value, tz) {
+  if (!value) return '';
+  if (value instanceof Date || (typeof value === 'object' && value !== null && typeof value.getTime === 'function' && !isNaN(value.getTime()))) {
+    return Utilities.formatDate(value, tz, 'yyyy-MM-dd');
   }
-  return null;
+
+  const raw = String(value).trim();
+  if (!raw) return '';
+
+  const directYmdMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (directYmdMatch) {
+    return directYmdMatch[1];
+  }
+
+  // Strip localized timezone in parentheses e.g. " (Itä-Euroopan kesäaika)"
+  const cleanRaw = raw.replace(/\s*\([^)]*\)/g, '');
+  const parsed = new Date(cleanRaw);
+  if (!isNaN(parsed.getTime())) {
+    return Utilities.formatDate(parsed, tz, 'yyyy-MM-dd');
+  }
+
+  return raw;
+}
+
+/**
+ * Normalize mixed time values to 'HH:mm' for stable comparisons.
+ * Accepts Date objects, 'HH:mm', 'HH:mm:ss', and Date strings containing time.
+ */
+function normalizeTimeHm_(value, tz) {
+  if (!value) return '';
+  if (value instanceof Date || (typeof value === 'object' && value !== null && typeof value.getTime === 'function' && !isNaN(value.getTime()))) {
+    return Utilities.formatDate(value, tz, 'HH:mm');
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return '';
+
+  // Extract HH:mm time pattern if present in raw string
+  const timeMatch = raw.match(/(?:^|\s|T)(\d{1,2}):(\d{2})(?::\d{2})?/);
+  if (timeMatch) {
+    const hh = String(Number(timeMatch[1])).padStart(2, '0');
+    return `${hh}:${timeMatch[2]}`;
+  }
+
+  const cleanRaw = raw.replace(/\s*\([^)]*\)/g, '');
+  const parsed = new Date(cleanRaw);
+  if (!isNaN(parsed.getTime())) {
+    return Utilities.formatDate(parsed, tz, 'HH:mm');
+  }
+
+  return raw;
 }
 ```
 
 Copilot must never:
 - assume Sheets stores dates as strings  
 - assume Sheets stores dates as numbers  
+- parse localized Date strings without stripping parenthesized localized timezone text (`\s*\([^)]*\)`)  
 - parse using locale formats  
 
 ---

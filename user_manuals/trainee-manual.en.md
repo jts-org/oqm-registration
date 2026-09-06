@@ -80,15 +80,34 @@ Check that the browser is not set to delete site data when it closes:
 
 If the details have already been removed, open the QR link again, select **Continue**, and enter your PIN or use manual entry. You can choose **Save** again after your identity is verified. Browser labels may vary slightly by version.
 
+## QR Registration for Customer Events
+When scanning a customer event QR code at the gym (e.g. `https://jts-org.github.io/oqm-registration/register?customer-event=<id>`):
+
+1. **Event Resolution**: The app automatically fetches the event details and all eligible training sessions for that event.
+2. **Session Selection**:
+   - **Single Session**: If exactly one session is available, it is selected automatically.
+   - **Multiple Sessions**: If two or more sessions are available, a selection list with checkboxes appears. You can select any non-empty subset or use **Select all** / **Deselect all**.
+3. **Identity Entry**: Enter your first name and last name. If you are under 18, check the underage box and specify your age (1–17).
+4. **Confirmation**: Select **Confirm Registration** to view the summary of your selected sessions and identity details.
+5. **Submission**: Select **Submit Registration**. Upon success, a confirmation message confirms your registration for all selected sessions.
+
 ## Error and Recovery
 - Missing session selector in the QR link.
   - Open a valid QR link or contact support if the link is broken.
+- Missing customer event identifier in the link.
+  - Ensure the full QR URL was scanned or opened properly.
+- The customer event is invalid or unavailable / inactive.
+  - Contact the event organizer or gym staff to verify the event is active.
+- No training sessions are available for this event.
+  - No active schedule rows were found within the event dates.
+- Please select at least one session to continue.
+  - In multi-session events, select at least one session checkbox before confirming.
 - This QR code is not supported.
   - Use a valid campaign link for the current session set.
 - No matching training session is available today.
   - Check the session schedule or try again on another day.
-- This registration is already recorded.
-  - No new registration is created. Check the session card or contact support if the record is unexpected.
+- This registration is already recorded / You are already registered.
+  - No new duplicate registration is created.
 - Registration failed. Please try again.
   - Refresh data and retry.
 

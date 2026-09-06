@@ -215,6 +215,20 @@ function doPost(e) {
       }
       return json_({ ok: true, data: { id: result.id } });
     }
+    if (route === 'resolveCustomerEvent') {
+      const result = resolveCustomerEvent_(payload, createSheetReader_());
+      if (!result.ok) {
+        return json_({ ok: false, error: result.error });
+      }
+      return json_({ ok: true, data: result.data });
+    }
+    if (route === 'registerTraineeBatchForCustomerEvent') {
+      const result = registerTraineeBatchForCustomerEvent_(payload);
+      if (!result.ok) {
+        return json_({ ok: false, error: result.error });
+      }
+      return json_({ ok: true, data: result.data });
+    }
     if (route === 'registerTraineeBatchForSessions') {
       const result = registerTraineeBatchForSessions_(payload);
       if (result.validationFailed) {
@@ -418,7 +432,9 @@ function isPublicRoute_(route) {
     'verifyCoachPin',
     'getTraineeSessions',
     'resolveSessionSelector',
+    'resolveCustomerEvent',
     'registerTraineeForSession',
+    'registerTraineeBatchForCustomerEvent',
     'registerTraineePin',
     'verifyTraineePin',
     'sendFeedback'
@@ -1452,6 +1468,125 @@ function resolveSessionSelector_(payload, reader) {
 }
 
 /**
+ * Resolve a customer event identifier to the event record and available qualifying sessions.
+ * OQM-0050 tracer: customer event registration entry point.
+ * 
+ * Validation:
+ * - customer_event parameter must be non-empty string
+ * - Must resolve to exactly one row in customer_events sheet by id column (A)
+ * - Event must have realized=true
+ * 
+ * Session Filtering:
+ * - Fetch matching rows from customer_event_schedules where event_id matches resolved event
+ * - Filter by date: within event start_date (column E) and end_date (column F) range
+ * - Filter by realized status: realized=true (column H)
+ * 
+ * Response on success: { ok: true, data: { event: {...}, sessions: [...] } }
+ * Response on failure: { ok: false, error: "<deterministic_code>" }
+ * 
+ * Error codes:
+ * - missing_customer_event: customer_event parameter is empty or missing
+ * - invalid_customer_event: customer_event identifier does not resolve to a row
+ * - inactive_customer_event: resolved event has realized!=true
+ * 
+ * Sessions array may be empty (returns ok: true with empty sessions array).
+ * 
+ * @param {Object} payload - Request payload { customer_event: string }
+ * @param {Object} reader - Sheet reader (result of createSheetReader_())
+ * @returns {Object} { ok, data | error }
+ */
+function resolveCustomerEvent_(payload, reader) {
+  const customerId = String((payload && payload.customer_event) || '').trim();
+  if (!customerId) {
+    return { ok: false, error: 'missing_customer_event' };
+  }
+
+  const tz = Session.getScriptTimeZone();
+  const eventRows = reader.getSheetData('customer_events');
+  const eventRow = eventRows.find(r => String(r[0] || '') === customerId);
+
+  if (!eventRow) {
+    return { ok: false, error: 'invalid_customer_event' };
+  }
+
+  // Check event is active (realized = true, column G, index 6)
+  const eventRealized = eventRow.length >= 7 ? getBooleanValue(eventRow[6]) : true;
+  if (!eventRealized) {
+    return { ok: false, error: 'inactive_customer_event' };
+  }
+
+  // Map event row to response format
+  const event = mapCustomerEventRow_(eventRow);
+
+  // Fetch and filter qualifying sessions from customer_event_schedules
+  const scheduleRows = reader.getSheetData('customer_event_schedules');
+  const eventId = String(eventRow[0] || '');
+  const eventStartDate = normalizeDateYmd_(eventRow[4], tz); // column E, index 4
+  const eventEndDate = normalizeDateYmd_(eventRow[5], tz);   // column F, index 5
+
+  const qualifyingSessions = scheduleRows
+    .filter(row => {
+      // Match event_id (column B, index 1)
+      if (String(row[1] || '') !== eventId) return false;
+      // Check realized status (column H, index 7)
+      const scheduleRealized = row.length >= 8 ? getBooleanValue(row[7]) : true;
+      if (!scheduleRealized) return false;
+      // Check date within event date range (column E, index 4)
+      const scheduleDate = normalizeDateYmd_(row[4], tz);
+      if (scheduleDate < eventStartDate || scheduleDate > eventEndDate) return false;
+      return true;
+    })
+    .map(row => mapCustomerEventScheduleRow_(row));
+
+  return {
+    ok: true,
+    data: {
+      event: event,
+      sessions: qualifyingSessions
+    }
+  };
+}
+
+/**
+ * Map a customer_events sheet row to response format.
+ * Schema: id, event, event_alias, instructor, start_date, end_date, realized, created_at, updated_at (columns A–I)
+ */
+function mapCustomerEventRow_(row) {
+  const tz = Session.getScriptTimeZone();
+  return {
+    id: String(row[0] || ''),
+    event: String(row[1] || ''),
+    event_alias: String(row[2] || ''),
+    instructor: String(row[3] || ''),
+    start_date: normalizeDateYmd_(row[4], tz),
+    end_date: normalizeDateYmd_(row[5], tz),
+    realized: row.length >= 7 ? getBooleanValue(row[6]) : true,
+    created_at: String(row[7] || ''),
+    updated_at: String(row[8] || '')
+  };
+}
+
+/**
+ * Map a customer_event_schedules sheet row to response format.
+ * Schema: id, event_id, session_name, session_name_alias, date, start_time, end_time, realized, created_at, updated_at (columns A–J)
+ */
+function mapCustomerEventScheduleRow_(row) {
+  const tz = Session.getScriptTimeZone();
+  return {
+    id: String(row[0] || ''),
+    event_id: String(row[1] || ''),
+    session_name: String(row[2] || ''),
+    session_name_alias: String(row[3] || ''),
+    date: normalizeDateYmd_(row[4], tz),
+    start_time: normalizeTimeHm_(row[5], tz),
+    end_time: normalizeTimeHm_(row[6], tz),
+    realized: row.length >= 8 ? getBooleanValue(row[7]) : true,
+    created_at: String(row[8] || ''),
+    updated_at: String(row[9] || '')
+  };
+}
+
+/**
  * Update the last_activity timestamp for a coach in the coach_login sheet.
  * Sets current datetime in ISO-8601 format into the coach's row's last_activity cell (column G, index 6).
  * Schema: id, firstname, lastname, alias, pin, created_at, last_activity (columns A–G)
@@ -1483,12 +1618,25 @@ function timeToStr(rawTime, format) {
 }
 
 /**
+ * Helper to check if a value is a Date instance or Date-like object with a valid getTime method.
+ */
+function isDateObject_(value) {
+  return (
+    value instanceof Date ||
+    (typeof value === 'object' &&
+      value !== null &&
+      typeof value.getTime === 'function' &&
+      !isNaN(value.getTime()))
+  );
+}
+
+/**
  * Normalize mixed sheet/date values to 'YYYY-MM-DD' for stable comparisons.
- * Accepts Date objects, ISO-like strings, and plain 'YYYY-MM-DD'.
+ * Accepts Date objects, ISO-like strings, plain 'YYYY-MM-DD', and Date strings with localized timezones.
  */
 function normalizeDateYmd_(value, tz) {
   if (!value) return '';
-  if (value instanceof Date) {
+  if (isDateObject_(value)) {
     return Utilities.formatDate(value, tz, 'yyyy-MM-dd');
   }
 
@@ -1500,7 +1648,9 @@ function normalizeDateYmd_(value, tz) {
     return directYmdMatch[1];
   }
 
-  const parsed = new Date(raw);
+  // Strip localized timezone in parentheses e.g. " (Itä-Euroopan kesäaika)"
+  const cleanRaw = raw.replace(/\s*\([^)]*\)/g, '');
+  const parsed = new Date(cleanRaw);
   if (!isNaN(parsed.getTime())) {
     return Utilities.formatDate(parsed, tz, 'yyyy-MM-dd');
   }
@@ -1510,24 +1660,26 @@ function normalizeDateYmd_(value, tz) {
 
 /**
  * Normalize mixed time values to 'HH:mm' for stable comparisons.
- * Accepts Date objects and string representations.
+ * Accepts Date objects, 'HH:mm', 'HH:mm:ss', and Date strings containing time.
  */
 function normalizeTimeHm_(value, tz) {
   if (!value) return '';
-  if (value instanceof Date) {
+  if (isDateObject_(value)) {
     return Utilities.formatDate(value, tz, 'HH:mm');
   }
 
   const raw = String(value).trim();
   if (!raw) return '';
 
-  const directHmMatch = raw.match(/^(\d{1,2}):(\d{2})/);
-  if (directHmMatch) {
-    const hh = String(Number(directHmMatch[1])).padStart(2, '0');
-    return `${hh}:${directHmMatch[2]}`;
+  // Extract HH:mm time pattern if present in raw string (e.g. "11:45", "11:45:00", or embedded in Date string "Sat Dec 30 1899 11:45:00 GMT...")
+  const timeMatch = raw.match(/(?:^|\s|T)(\d{1,2}):(\d{2})(?::\d{2})?/);
+  if (timeMatch) {
+    const hh = String(Number(timeMatch[1])).padStart(2, '0');
+    return `${hh}:${timeMatch[2]}`;
   }
 
-  const parsed = new Date(raw);
+  const cleanRaw = raw.replace(/\s*\([^)]*\)/g, '');
+  const parsed = new Date(cleanRaw);
   if (!isNaN(parsed.getTime())) {
     return Utilities.formatDate(parsed, tz, 'HH:mm');
   }
@@ -1960,9 +2112,9 @@ function registerTraineeForSession_(payload) {
       payload.age_group === 'underage' ? payload.underage_age : '',
       payload.session_type,
       payload.camp_session_id || '',
-      payload.date,
-      payload.start_time,
-      payload.end_time,
+      payloadDate,
+      payloadStartTime,
+      payloadEndTime,
       true,
       now,
       now
@@ -1973,6 +2125,286 @@ function registerTraineeForSession_(payload) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * Register a trainee for multiple customer event sessions atomically (OQM-0050).
+ * Validates trainee identity and all selected sessions for eligibility and duplicates.
+ * If any validation fails (eligibility, duplicate, missing schedule), returns error with no sheet write.
+ * If all pass, appends all registrations atomically in single lock window.
+ * 
+ * Payload: {
+ *   first_name: string,
+ *   last_name: string,
+ *   age_group: 'adult' | 'underage',
+ *   underage_age?: number | string (required if age_group='underage'),
+ *   schedule_ids: [string, ...] (array of customer_event_schedule IDs to register for)
+ * }
+ * 
+ * Response on success: { ok: true, data: { registrations: [{ schedule_id, registration_id }, ...] } }
+ * Response on failure: { ok: false, error: "<deterministic_code>" }
+ * 
+ * Error codes:
+ * - validation_failed: missing required fields or invalid age_group
+ * - validation_failed_age: age_group='underage' but underage_age is missing
+ * - concurrent_request: script lock cannot be acquired
+ * - invalid_schedule: schedule_id not found in customer_event_schedules
+ * - invalid_customer_event: parent customer_event not found
+ * - inactive_customer_event: parent customer_event has realized=false
+ * - invalid_session_eligibility: schedule date outside event date range or realized=false
+ * - duplicate_registration: trainee already registered for this schedule
+ * 
+ * Schema: trainee_registrations row structure as per SKILL.sheet-schema.md
+ * Duplicate key: first_name + last_name + date + session_name + start_time + end_time + age_group + underage_age + camp_session_id
+ * 
+ * @param {Object} payload - Registration payload
+ * @returns {Object} { ok, data|error, details? }
+ */
+function registerTraineeBatchForCustomerEvent_(payload) {
+  // Validate required trainee identity fields
+  const required = ['first_name', 'last_name', 'age_group'];
+  const missing = required.filter(field => !payload || !payload[field]);
+  if (missing.length > 0) {
+    return { ok: false, error: 'validation_failed' };
+  }
+
+  const ageGroup = String(payload.age_group).trim().toLowerCase();
+  if (ageGroup !== 'adult' && ageGroup !== 'underage') {
+    return { ok: false, error: 'validation_failed' };
+  }
+
+  if (ageGroup === 'underage' && (payload.underage_age === undefined || payload.underage_age === null || payload.underage_age === '')) {
+    return { ok: false, error: 'validation_failed_age' };
+  }
+
+  const scheduleIds = Array.isArray(payload.schedule_ids) ? payload.schedule_ids : [];
+  if (scheduleIds.length === 0) {
+    return { ok: false, error: 'validation_failed' };
+  }
+
+  // Acquire lock once at function entry
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    return { ok: false, error: 'concurrent_request' };
+  }
+
+  try {
+    const tz = Session.getScriptTimeZone();
+    
+    // Pre-fetch all needed data within lock window
+    const scheduleRows = getSheetData('customer_event_schedules');
+    const eventRows = getSheetData('customer_events');
+    const traineeRegRows = getSheetData('trainee_registrations');
+    
+    // Normalize trainee identity
+    const traineeFirstName = String(payload.first_name || '').trim();
+    const traineeLastName = String(payload.last_name || '').trim();
+    const traineeAgeGroup = ageGroup;
+    const traineeUnderageAge = ageGroup === 'underage' ? String(payload.underage_age || '').trim() : '';
+    
+    const traineeFirstNameLower = traineeFirstName.toLowerCase();
+    const traineeLastNameLower = traineeLastName.toLowerCase();
+    
+    // Build a map of event_id -> event row for quick lookups
+    const eventMap = {};
+    eventRows.forEach(row => {
+      const eventId = String(row[0] || '');
+      eventMap[eventId] = row;
+    });
+    
+    // Build a map of existing duplicate keys
+    const existingDuplicateKeys = {};
+    const existingScheduleIds = {};
+    traineeRegRows.forEach(row => {
+      if (row.length >= 11 && !getBooleanValue(row[10])) return; // skip realized=false
+      const key = buildMultiSessionDuplicateKey_(row, tz);
+      existingDuplicateKeys[key] = true;
+
+      const scheduleIdCol = String(row[6] || '').trim();
+      if (scheduleIdCol) {
+        const schedKey = [
+          String(row[1] || '').trim().toLowerCase(),
+          String(row[2] || '').trim().toLowerCase(),
+          String(row[3] || '').trim().toLowerCase(),
+          String(row[4] || '').trim(),
+          scheduleIdCol
+        ].join('|');
+        existingScheduleIds[schedKey] = true;
+      }
+    });
+    
+    // Validate all schedules and check eligibility + duplicates
+    const validatedSessions = [];
+    
+    for (let i = 0; i < scheduleIds.length; i++) {
+      const scheduleId = String(scheduleIds[i] || '').trim();
+      if (!scheduleId) {
+        return { ok: false, error: 'validation_failed' };
+      }
+      
+      // Find schedule row
+      const scheduleRow = scheduleRows.find(r => String(r[0] || '') === scheduleId);
+      if (!scheduleRow) {
+        return { ok: false, error: 'invalid_schedule' };
+      }
+      
+      // Extract and normalize schedule data
+      const eventId = String(scheduleRow[1] || '');
+      const sessionName = String(scheduleRow[2] || '').trim();
+      const sessionNameAlias = String(scheduleRow[3] || '').trim();
+      const scheduleDate = normalizeDateYmd_(scheduleRow[4], tz);
+      const startTime = normalizeTimeHm_(scheduleRow[5], tz);
+      const endTime = normalizeTimeHm_(scheduleRow[6], tz);
+      const scheduleRealized = scheduleRow.length >= 8 ? getBooleanValue(scheduleRow[7]) : true;
+      
+      // Check schedule is realized
+      if (!scheduleRealized) {
+        return { ok: false, error: 'invalid_session_eligibility' };
+      }
+      
+      // Find parent event
+      const event = eventMap[eventId];
+      if (!event) {
+        return { ok: false, error: 'invalid_customer_event' };
+      }
+      
+      // Check event is realized
+      const eventRealized = event.length >= 7 ? getBooleanValue(event[6]) : true;
+      if (!eventRealized) {
+        return { ok: false, error: 'inactive_customer_event' };
+      }
+      
+      // Check schedule date is within event date range
+      const eventStartDate = normalizeDateYmd_(event[4], tz);
+      const eventEndDate = normalizeDateYmd_(event[5], tz);
+      if (scheduleDate < eventStartDate || scheduleDate > eventEndDate) {
+        return { ok: false, error: 'invalid_session_eligibility' };
+      }
+      
+      // Combine event name and session name for column F (session_type)
+      const eventName = String(event[1] || event[2] || '').trim();
+      let fullSessionType = sessionName;
+      if (eventName) {
+        if (!sessionName) {
+          fullSessionType = eventName;
+        } else if (!sessionName.toLowerCase().startsWith(eventName.toLowerCase())) {
+          fullSessionType = `${eventName} - ${sessionName}`;
+        }
+      }
+      
+      // Check for duplicate registration
+      // Duplicate key: first_name + last_name + date + session_type + start_time + end_time + age_group + underage_age + camp_session_id
+      const duplicateKey = [
+        traineeFirstNameLower,
+        traineeLastNameLower,
+        scheduleDate,
+        String(fullSessionType || '').trim().toLowerCase(),
+        startTime,
+        endTime,
+        traineeAgeGroup,
+        traineeUnderageAge,
+        scheduleId  // camp_session_id = schedule_id for customer events
+      ].join('|');
+
+      const traineeSchedKey = [
+        traineeFirstNameLower,
+        traineeLastNameLower,
+        traineeAgeGroup,
+        traineeUnderageAge,
+        scheduleId
+      ].join('|');
+      
+      if (existingDuplicateKeys[duplicateKey] || existingScheduleIds[traineeSchedKey]) {
+        return { ok: false, error: 'duplicate_registration' };
+      }
+
+      existingDuplicateKeys[duplicateKey] = true;
+      existingScheduleIds[traineeSchedKey] = true;
+      
+      // Add to validated sessions and mark as checked
+      validatedSessions.push({
+        schedule_id: scheduleId,
+        session_type: fullSessionType,
+        session_name: sessionName,
+        session_name_alias: sessionNameAlias,
+        date: scheduleDate,
+        start_time: startTime,
+        end_time: endTime,
+        duplicateKey: duplicateKey
+      });
+      
+      existingDuplicateKeys[duplicateKey] = true;
+    }
+    
+    // All validations passed; append all registrations atomically
+    const sh = getSheetByName('trainee_registrations');
+    if (!sh) {
+      throw new Error('Sheet not found: trainee_registrations');
+    }
+    
+    const now = new Date().toISOString();
+    const registrations = [];
+    
+    for (let i = 0; i < validatedSessions.length; i++) {
+      const session = validatedSessions[i];
+      const registrationId = Utilities.getUuid();
+      
+      sh.appendRow([
+        registrationId,
+        traineeFirstName,
+        traineeLastName,
+        traineeAgeGroup,
+        traineeAgeGroup === 'underage' ? traineeUnderageAge : '',
+        session.session_type,
+        session.schedule_id,  // camp_session_id field
+        session.date,
+        session.start_time,
+        session.end_time,
+        true,  // realized
+        now,
+        now
+      ]);
+      
+      registrations.push({
+        schedule_id: session.schedule_id,
+        registration_id: registrationId
+      });
+    }
+    
+    logToSheet(`registerTraineeBatchForCustomerEvent_ - appended ${registrations.length} rows for ${traineeFirstName} ${traineeLastName}`);
+    
+    return {
+      ok: true,
+      data: {
+        registrations: registrations
+      }
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Build duplicate key for multi-session registrations.
+ * Key: first_name + last_name + date + session_name + start_time + end_time + age_group + underage_age + camp_session_id
+ * Used for both checking existing rows and building duplicate keys for new entries.
+ * 
+ * @param {Array} row - trainee_registrations sheet row
+ * @param {string} tz - timezone
+ * @returns {string} - duplicate key
+ */
+function buildMultiSessionDuplicateKey_(row, tz) {
+  return [
+    String(row[1] || '').trim().toLowerCase(),  // first_name
+    String(row[2] || '').trim().toLowerCase(),  // last_name
+    normalizeDateYmd_(row[7], tz),              // date
+    String(row[5] || '').trim().toLowerCase(),  // session_type/session_name
+    normalizeTimeHm_(row[8], tz),               // start_time
+    normalizeTimeHm_(row[9], tz),               // end_time
+    String(row[3] || '').trim().toLowerCase(),  // age_group
+    String(row[4] || '').trim(),                // underage_age
+    String(row[6] || '').trim()                 // camp_session_id
+  ].join('|');
 }
 
 function buildTraineeRegistrationKey_(entry, tz) {

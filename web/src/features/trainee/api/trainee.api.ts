@@ -16,6 +16,9 @@ import type {
   TraineeData,
   TraineeSessionIdentityPayload,
   TraineeSessionItem,
+  ResolveCustomerEventResponse,
+  RegisterTraineeBatchForCustomerEventPayload,
+  RegisterTraineeBatchForCustomerEventResponse,
 } from '../types';
 
 /**
@@ -148,3 +151,61 @@ export async function registerTraineeForSession(
   if (!json.ok) throw new Error(json.error || 'Registration failed');
   return json.data.id as string;
 }
+
+/**
+ * Resolve a customer event by identifier and fetch its available sessions.
+ * POST { route: "resolveCustomerEvent", payload: { customer_event } }
+ * Returns event data and list of available qualifying sessions.
+ * Throws Error('missing_customer_event') if customer_event parameter is missing/empty.
+ * Throws Error('invalid_customer_event') if the customer event ID is not found.
+ * Throws Error('inactive_customer_event') if the event exists but is not active/realized.
+ * Throws other Errors for network/service failures.
+ * @see .github/skills/wire-react-to-gas/SKILL.md
+ */
+export async function resolveCustomerEvent(
+  customerId: string
+): Promise<ResolveCustomerEventResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'resolveCustomerEvent', payload: { customer_event: customerId } }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to resolve customer event');
+  return json.data as ResolveCustomerEventResponse;
+}
+
+/**
+ * Register a trainee for one or more customer event sessions by posting to the GAS backend.
+ * POST { route: "registerTraineeBatchForCustomerEvent", payload: RegisterTraineeBatchForCustomerEventPayload }
+ * Returns array of registration results on success.
+ * Throws Error('validation_failed') if required fields are missing or invalid.
+ * Throws Error('validation_failed_age') if age_group is 'underage' but underage_age is missing.
+ * Throws Error('invalid_schedule') if any schedule_id is invalid.
+ * Throws Error('invalid_customer_event') if parent event not found.
+ * Throws Error('inactive_customer_event') if parent event has realized=false.
+ * Throws Error('invalid_session_eligibility') if schedule date outside event range or realized=false.
+ * Throws Error('already_registered') if trainee is already registered for any selected session.
+ * Throws Error('concurrent_request') if the backend lock cannot be acquired.
+ * Throws other Errors for network/service failures.
+ * @see .github/skills/wire-react-to-gas/SKILL.md
+ */
+export async function registerTraineeBatchForCustomerEvent(
+  payload: RegisterTraineeBatchForCustomerEventPayload
+): Promise<RegisterTraineeBatchForCustomerEventResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'registerTraineeBatchForCustomerEvent', payload }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data as RegisterTraineeBatchForCustomerEventResponse;
+}
+
