@@ -172,6 +172,12 @@ All schemas preserved exactly.
 | H   | end_time     | time     |
 | I   | created_at   | ISO-8601 |
 | J   | updated_at   | ISO-8601 |
+| K   | location     | string   |
+| L   | location_alias | string |
+
+Free/sparring writes populate K/L from the registration payload, defaulting independently to `home gym`
+and `kotisali` when blank or omitted. Non-sparring writes store empty strings. Existing A-J legacy rows
+are not migrated; session reads treat their missing K/L values as empty strings.
 
 ---
 

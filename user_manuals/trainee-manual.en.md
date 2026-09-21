@@ -159,6 +159,7 @@ Expected result:
 - Session cards are grouped by day inside the selected week tab.
 - The current calendar week is shown first when it exists in the loaded session data.
 - Session cards show session name and time.
+- Session cards show Location and Location alias for scheduled sessions and realized free/sparring sessions.
 - Coach name is shown only for free/sparring sessions.
 - Camp instructor is shown for camp sessions.
 - A registered card shows a Done icon and Unregister label.

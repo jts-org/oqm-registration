@@ -359,6 +359,55 @@ test('registerCoachForSession_ appends lowercase session_type to coach_registrat
   assert.deepEqual(toPlain(result), { id: 'uuid-1' });
   assert.equal(appendedRows.length, 1);
   assert.equal(appendedRows[0][3], 'free/sparring');
+  assert.equal(appendedRows[0][10], 'home gym');
+  assert.equal(appendedRows[0][11], 'kotisali');
+});
+
+test('registerCoachForSession_ trims supplied free/sparring locations and leaves non-sparring K/L blank', () => {
+  const sandbox = createSandbox();
+  const appendedRows = [];
+  const reader = {
+    getSheetData: sheetName => {
+      if (sheetName === 'coach_login') return [['id-1', 'John', 'Doe']];
+      if (sheetName === 'coach_registrations') return [];
+      return [];
+    },
+    getSheetByName: () => ({ appendRow: row => appendedRows.push(row) }),
+  };
+
+  sandbox.registerCoachForSession_({
+    firstname: 'John',
+    lastname: 'Doe',
+    session_type: 'BASIC',
+    date: '2026-03-21',
+    location: '  Main Hall ',
+    location_alias: '  Pääsali ',
+  }, reader);
+
+  assert.equal(appendedRows[0][10], '');
+  assert.equal(appendedRows[0][11], '');
+
+  sandbox.registerCoachForSession_({
+    firstname: 'John',
+    lastname: 'Doe',
+    session_type: 'FREE/SPARRING',
+    date: '2026-03-22',
+    location: '  Main Hall ',
+    location_alias: '  Pääsali ',
+  }, reader);
+
+  assert.equal(appendedRows[1][10], 'Main Hall');
+  assert.equal(appendedRows[1][11], 'Pääsali');
+});
+
+test('registerCoachForSession_ rejects missing required fields without appending', () => {
+  const sandbox = createSandbox();
+  let appendCount = 0;
+  assert.throws(() => sandbox.registerCoachForSession_({ firstname: 'John' }, {
+    getSheetData: () => [],
+    getSheetByName: () => ({ appendRow: () => { appendCount += 1; } }),
+  }), /Missing required fields/);
+  assert.equal(appendCount, 0);
 });
 
 test('doPost returns new registerCoachPin error codes to frontend', () => {

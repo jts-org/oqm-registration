@@ -29,6 +29,7 @@ const baseSession: SessionItem = {
   start_time: '18:00',
   end_time: '19:30',
   location: 'Gym A',
+  location_alias: 'Main gym',
   coach_firstname: '',
   coach_lastname: '',
   coach_alias: '',
@@ -76,6 +77,14 @@ describe('SessionCard', () => {
   it('renders location', () => {
     renderCard(baseSession);
     expect(screen.getByText('Gym A')).toBeInTheDocument();
+  });
+
+  it('renders localized location labels and alias', () => {
+    renderCard(baseSession);
+    expect(screen.getAllByText(/Location/)).toHaveLength(2);
+    expect(screen.getByText('Gym A')).toBeInTheDocument();
+    expect(screen.getByText(/Location alias/)).toBeInTheDocument();
+    expect(screen.getByText('Main gym')).toBeInTheDocument();
   });
 
   it('renders Register button when no coach assigned', () => {

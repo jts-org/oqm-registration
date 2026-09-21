@@ -159,6 +159,7 @@ Odotettu tulos:
 - Harjoituskortit on ryhmitelty päivän mukaan valitun viikkovälilehden sisällä.
 - Nykyinen kalenteriviikko näytetään ensin, jos se löytyy ladatuista harjoituksista.
 - Kortti näyttää harjoituksen nimen ja ajan.
+- Harjoituskortti näyttää sijainnin ja sijainnin aliaksen aikataulutetuille sekä toteutuneille vapaa/sparraus-harjoituksille.
 - Valmentajan nimi näkyy vain vapaa/sparraus-harjoituksissa.
 - Leirin ohjaaja näkyy leiriharjoituksissa.
 - Ilmoittautunut kortti näyttää Done-kuvakkeen ja Peru ilmoittautuminen -tekstin.

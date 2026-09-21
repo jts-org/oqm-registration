@@ -32,6 +32,7 @@ const mockSession: SessionItem = {
   start_time: '18:00',
   end_time: '19:30',
   location: 'Gym A',
+  location_alias: 'Main gym',
   coach_firstname: '',
   coach_lastname: '',
   coach_alias: '',
@@ -146,9 +147,20 @@ describe('ConfirmCoachRegistrationDialog', () => {
     render(<ConfirmCoachRegistrationDialog {...defaultProps} session={freeSession} />);
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     expect(mockRegisterCoachForSession).toHaveBeenCalledWith(
-      expect.objectContaining({ start_time: '10:00', end_time: '11:30' }),
+      expect.objectContaining({
+        start_time: '10:00',
+        end_time: '11:30',
+        location: 'Gym A',
+        location_alias: 'Main gym',
+      }),
       'coach-session-token'
     );
+  });
+
+  it('renders both location values in the confirmation', () => {
+    render(<ConfirmCoachRegistrationDialog {...defaultProps} />);
+    expect(screen.getByText(/Gym A/)).toBeInTheDocument();
+    expect(screen.getByText(/Main gym/)).toBeInTheDocument();
   });
 
   it('disables Confirm button and shows loading overlay during API call', async () => {

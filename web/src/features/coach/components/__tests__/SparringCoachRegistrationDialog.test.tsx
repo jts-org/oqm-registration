@@ -69,6 +69,34 @@ describe('SparringCoachRegistrationDialog', () => {
     expect(screen.getAllByLabelText(/End time/i).length).toBeGreaterThan(0);
   });
 
+  it('resets location fields to the approved defaults when opened', () => {
+    renderDialog(defaultProps);
+    expect((screen.getByLabelText('Location') as HTMLInputElement).value).toBe('home gym');
+    expect((screen.getByLabelText('Location alias') as HTMLInputElement).value).toBe('kotisali');
+  });
+
+  it('resets edited location fields when reopened', async () => {
+    const { rerender } = renderDialog(defaultProps);
+    await userEvent.clear(screen.getByLabelText('Location'));
+    await userEvent.type(screen.getByLabelText('Location'), 'Competition hall');
+    await userEvent.clear(screen.getByLabelText('Location alias'));
+    await userEvent.type(screen.getByLabelText('Location alias'), 'Kilpahalli');
+
+    rerender(
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <SparringCoachRegistrationDialog {...defaultProps} open={false} />
+      </LocalizationProvider>
+    );
+    rerender(
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <SparringCoachRegistrationDialog {...defaultProps} open />
+      </LocalizationProvider>
+    );
+
+    expect((screen.getByLabelText('Location') as HTMLInputElement).value).toBe('home gym');
+    expect((screen.getByLabelText('Location alias') as HTMLInputElement).value).toBe('kotisali');
+  });
+
   it('disables Confirm button when firstname is empty', () => {
     renderDialog({ ...defaultProps, coachData: undefined });
     expect(screen.getByRole('button', { name: /Confirm/i })).toBeDisabled();
@@ -83,8 +111,26 @@ describe('SparringCoachRegistrationDialog', () => {
     renderDialog(defaultProps);
     await userEvent.click(screen.getByRole('button', { name: /Confirm/i }));
     expect(defaultProps.onConfirm).toHaveBeenCalledWith(
-      expect.objectContaining({ firstname: 'John', lastname: 'Doe' })
+      expect.objectContaining({
+        firstname: 'John',
+        lastname: 'Doe',
+        location: 'home gym',
+        location_alias: 'kotisali',
+      })
     );
+  });
+
+  it('forwards edited location values', async () => {
+    renderDialog(defaultProps);
+    await userEvent.clear(screen.getByLabelText('Location'));
+    await userEvent.type(screen.getByLabelText('Location'), 'Long Training Hall');
+    await userEvent.clear(screen.getByLabelText('Location alias'));
+    await userEvent.type(screen.getByLabelText('Location alias'), 'Main hall');
+    await userEvent.click(screen.getByRole('button', { name: /Confirm/i }));
+    expect(defaultProps.onConfirm).toHaveBeenCalledWith(expect.objectContaining({
+      location: 'Long Training Hall',
+      location_alias: 'Main hall',
+    }));
   });
 
   it('calls onCancel when Cancel button is clicked', async () => {

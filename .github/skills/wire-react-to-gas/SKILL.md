@@ -206,6 +206,49 @@ Payload and domain constraints are defined by backend validation and `sheet-sche
 Supports anonymous and identity-based loading under public-route rules.
 Return shape remains strict and route-specific fields must align with backend handlers.
 
+### 6.6.1 Shared Session Location Fields (OQM-0051)
+
+`getCoachSessions` and `getTraineeSessions` session items expose both location fields:
+
+- `location`: canonical training location string
+- `location_alias`: localized/display location alias string
+
+Scheduled sessions read both values from `sessions_schedule`. Realized free/sparring sessions read both
+values from `coach_registrations`. Legacy `coach_registrations` rows that contain only columns A-J,
+and camp sessions, return empty strings for both fields. The frontend must render the returned values
+without synthesizing a fallback.
+
+### 6.6.2 Register Coach for Session (OQM-0051)
+
+Existing coach-protected route. The route and strict response envelope are unchanged.
+
+For a scheduled/non-sparring registration, the payload is:
+
+```json
+{ "firstname": "Jane", "lastname": "Doe", "session_type": "advanced", "date": "2026-09-20" }
+```
+
+For a free/sparring registration, the payload additionally carries the editable time and location
+fields:
+
+```json
+{
+  "firstname": "Jane",
+  "lastname": "Doe",
+  "session_type": "free/sparring",
+  "date": "2026-09-20",
+  "start_time": "18:00",
+  "end_time": "19:00",
+  "location": "home gym",
+  "location_alias": "kotisali"
+}
+```
+
+The backend trims free/sparring location values and defaults blank or omitted values independently to
+`home gym` and `kotisali`. Non-sparring registrations store empty location fields. Success returns
+`{ "ok": true, "data": { "id": "..." } }`; existing errors remain `already_taken`, `unknown_coach`,
+`concurrent_request`, and `overlapping_session|date|start|end`.
+
 ## 6.7 QR Session Selector Resolution (OQM-0049)
 
 Public route used by `/register?session=<selector>` to resolve one eligible same-day session before the trainee registration write.

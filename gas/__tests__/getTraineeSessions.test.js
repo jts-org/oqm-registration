@@ -196,6 +196,35 @@ test('getTraineeSessions_ marks matching adult registration as trainee_registere
   assert.equal(todaySession.trainee_registered, true);
 });
 
+test('getTraineeSessions_ maps scheduled and realized sparring locations with legacy fallback', () => {
+  const sandbox = createSandbox();
+  const today = todayYmd();
+  const data = {
+    sessions_schedule: [
+      ['schedule-basic', 'Basic', 'Perus', '2020-01-01', '2099-12-31', '0,1,2,3,4,5,6', '18:00', '19:00', 'Main Hall', 'Pääsali', true, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+    ],
+    coach_registrations: [
+      ['reg-spar', 'John', 'Doe', 'free/sparring', today, true, '16:00', '17:00', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', 'Training Hall', 'Harjoitussali'],
+      ['legacy-spar', 'Jane', 'Doe', 'free/sparring', today, true, '17:00', '18:00', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+    ],
+    camps: [],
+    camp_schedules: [],
+    trainee_registrations: [],
+  };
+
+  const sessions = sandbox.getTraineeSessions_(undefined, { getSheetData: sheetName => data[sheetName] || [] });
+  const scheduled = sessions.find(session => session.session_type === 'Basic' && session.date === today);
+  const sparring = sessions.find(session => session.id === `sparring_reg-spar_${today}`);
+  const legacy = sessions.find(session => session.id === `sparring_legacy-spar_${today}`);
+
+  assert.equal(scheduled.location, 'Main Hall');
+  assert.equal(scheduled.location_alias, 'Pääsali');
+  assert.equal(sparring.location, 'Training Hall');
+  assert.equal(sparring.location_alias, 'Harjoitussali');
+  assert.equal(legacy.location, '');
+  assert.equal(legacy.location_alias, '');
+});
+
 test('getTraineeSessions_ requires matching underage_age for underage identity', () => {
   const sandbox = createSandbox();
   const data = buildSheetData([
