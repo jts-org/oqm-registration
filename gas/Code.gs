@@ -11,7 +11,7 @@
  *  - POST { route: "createItem", payload: { name, email } }
  *  - POST { route: "registerCoachPin", payload: { firstname, lastname, alias, pin, password } } — register a new coach PIN code (OQM-0003, OQM-0030)
  *  - POST { route: "verifyCoachPin", payload: { pin } } — verify a coach PIN against coach_login sheet (OQM-0004)
- *  - POST { route: "registerCoachForSession", payload: { firstname, lastname, session_type, date, start_time?, end_time? } } — register coach for a session (OQM-0008/OQM-0011); returns overlapping_session|date|start|end for time conflicts
+ *  - POST { route: "registerCoachForSession", payload: { firstname, lastname, session_type, date, start_time?, end_time?, location?, location_alias? } } — register coach for a session (OQM-0008/OQM-0011); returns overlapping_session|date|start|end for time conflicts
  *  - POST { route: "removeCoachFromSession", payload: { firstname, lastname, session_type, date } } — remove coach from a session (OQM-0009)
  *  - POST { route: "registerTraineePin", payload: { firstname, lastname, age, pin } } — register a new trainee PIN code (OQM-0016)
  *  - POST { route: "verifyTraineePin", payload: { pin } } — verify a trainee PIN against trainee_login sheet (OQM-0016)
@@ -1294,7 +1294,7 @@ function sendFeedback_(payload) {
  * On success, appends a row to coach_registrations and returns the new row id.
  * Returns { alreadyTaken: true } if a coach is already registered for the session+date.
  * Returns { unknownCoach: true } if the coach is not in coach_login.
- * Schema: id, first_name, last_name, session_type, date, realized, start_time, end_time, created_at, updated_at (columns A–J)
+ * Schema: id, first_name, last_name, session_type, date, realized, start_time, end_time, created_at, updated_at, location, location_alias (columns A–L)
  * See SKILL.sheet-schema.md for full schema definition.
  * See SKILL.wire-react-to-gas.md for API contract (OQM-0008).
  */
@@ -1363,7 +1363,10 @@ function registerCoachForSession_(payload, reader) {
     const now = new Date().toISOString();
     const startTime = payload.start_time || '';
     const endTime = payload.end_time || '';
-    sh.appendRow([id, payload.firstname, payload.lastname, String(payload.session_type).toLowerCase(), payload.date, true, startTime, endTime, now, now]);
+    const isFreeSparring = sessionTypeUpper === 'FREE/SPARRING';
+    const location = isFreeSparring ? String(payload.location || '').trim() || 'home gym' : '';
+    const locationAlias = isFreeSparring ? String(payload.location_alias || '').trim() || 'kotisali' : '';
+    sh.appendRow([id, payload.firstname, payload.lastname, String(payload.session_type).toLowerCase(), payload.date, true, startTime, endTime, now, now, location, locationAlias]);
 
     return { id };
   } finally {
@@ -1722,7 +1725,7 @@ function getCoachAliasMap(coachLoginRows) {
  */
 function getCoachSessions_(reader) {
   const tz = Session.getScriptTimeZone();
-  const cacheKey = 'coach_sessions_v1_' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  const cacheKey = 'coach_sessions_v2_' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
   const cachedSessions = getCachedSessionWindow_(cacheKey);
   if (cachedSessions) {
     logToSheet('getCoachSessions_() - cache hit, returned ' + cachedSessions.length + ' sessions');
@@ -1753,7 +1756,9 @@ function getCoachSessions_(reader) {
       lastname: lastname,
       alias: alias,
       startTime: row.length >= 8 ? timeToStr(row[6], tz, 'HH:mm') : '',
-      endTime: row.length >= 8 ? timeToStr(row[7], tz, 'HH:mm') : ''
+      endTime: row.length >= 8 ? timeToStr(row[7], tz, 'HH:mm') : '',
+      location: row.length > 10 && row[10] != null ? String(row[10]).trim() : '',
+      locationAlias: row.length > 11 && row[11] != null ? String(row[11]).trim() : ''
     };
 
     if (sessionType === 'FREE/SPARRING') {
@@ -1799,7 +1804,8 @@ function getCoachSessions_(reader) {
       weekdaySet: weekdaySet,
       startTime: normalizeTimeHm_(row[6], tz),
       endTime: normalizeTimeHm_(row[7], tz),
-      location: row[8] || ''
+      location: row[8] || '',
+      locationAlias: row[9] || ''
     });
   });
 
@@ -1855,6 +1861,7 @@ function getCoachSessions_(reader) {
         start_time: sched.startTime,
         end_time: sched.endTime,
         location: sched.location,
+        location_alias: sched.locationAlias,
         coach_firstname: registeredCoaches.length > 0 ? registeredCoaches[0].firstname : '',
         coach_lastname: registeredCoaches.length > 0 ? registeredCoaches[0].lastname : '',
         coach_alias: registeredCoaches.length > 0 ? registeredCoaches[0].alias : '',
@@ -1877,7 +1884,8 @@ function getCoachSessions_(reader) {
           weekday: weekday,
           start_time: coach.startTime,
           end_time: coach.endTime,
-          location: '',
+          location: coach.location,
+          location_alias: coach.locationAlias,
           coach_firstname: coach.firstname,
           coach_lastname: coach.lastname,
           coach_alias: coach.alias,
@@ -1931,6 +1939,7 @@ function getCoachSessions_(reader) {
         start_time: timeToStr(r[4], tz, 'HH:mm'),
         end_time: timeToStr(r[5], tz, 'HH:mm'),
         location: '',
+        location_alias: '',
         coach_firstname: campDetails.campInstructor,
         coach_lastname: '',
         coach_alias: '',
@@ -2951,6 +2960,7 @@ function computeTraineeSessionsBase_(reader, tz) {
       startTime: normalizeTimeHm_(row[6], tz),
       endTime: normalizeTimeHm_(row[7], tz),
       location: String(row[8] || ''),
+      locationAlias: String(row[9] || ''),
     });
   });
 
@@ -2977,6 +2987,7 @@ function computeTraineeSessionsBase_(reader, tz) {
         start_time: sched.startTime,
         end_time: sched.endTime,
         location: sched.location,
+        location_alias: sched.locationAlias,
         coach_firstname: '',
         coach_lastname: '',
         camp_instructor_name: '',
@@ -3004,7 +3015,8 @@ function computeTraineeSessionsBase_(reader, tz) {
       date: dateStr,
       start_time: timeToStr(row[6], tz, 'HH:mm'),
       end_time: timeToStr(row[7], tz, 'HH:mm'),
-      location: '',
+      location: row.length > 10 && row[10] != null ? String(row[10]).trim() : '',
+      location_alias: row.length > 11 && row[11] != null ? String(row[11]).trim() : '',
       coach_firstname: String(row[1] || '').trim(),
       coach_lastname: String(row[2] || '').trim(),
       camp_instructor_name: '',
@@ -3050,6 +3062,7 @@ function computeTraineeSessionsBase_(reader, tz) {
       start_time: timeToStr(row[4], tz, 'HH:mm'),
       end_time: timeToStr(row[5], tz, 'HH:mm'),
       location: '',
+      location_alias: '',
       coach_firstname: '',
       coach_lastname: '',
       camp_instructor_name: camp.instructor,
@@ -3079,7 +3092,7 @@ function computeTraineeSessionsBase_(reader, tz) {
  */
 function getTraineeSessions_(traineeIdentity, reader) {
   const tz = Session.getScriptTimeZone();
-  const cacheKey = 'trainee_sessions_base_v1_' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  const cacheKey = 'trainee_sessions_base_v2_' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
 
   let merged = getCachedSessionWindow_(cacheKey);
   if (!merged) {

@@ -66,7 +66,12 @@ export function SessionCard({ session, onRegister, onRemove }: SessionCardProps)
           <Typography variant="body2">
             {session.start_time} - {session.end_time}
           </Typography>
-          <Typography variant="body2">{session.location}</Typography>
+          <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+            <strong>{t('coachQuickRegistration.location')}:</strong> {session.location}
+          </Typography>
+          <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+            <strong>{t('coachQuickRegistration.locationAlias')}:</strong> {session.location_alias}
+          </Typography>
           {hasCoach && (
             <Typography variant="body2">
               {t('coachQuickRegistration.coach', {

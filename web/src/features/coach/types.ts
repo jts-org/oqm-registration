@@ -41,6 +41,8 @@ export interface SessionItem {
   end_time: string;
   /** Training location */
   location: string;
+  /** Localized/display alias for the training location. */
+  location_alias: string;
   /** Assigned coach first name, empty if none */
   coach_firstname: string;
   /** Assigned coach last name, empty if none */
@@ -67,6 +69,10 @@ export interface RegisterCoachForSessionPayload {
   start_time?: string;
   /** End time 'HH:MM' — only for free/sparring sessions */
   end_time?: string;
+  /** Canonical training location, used for free/sparring sessions. */
+  location?: string;
+  /** Display alias for the training location, used for free/sparring sessions. */
+  location_alias?: string;
 }
 
 /**

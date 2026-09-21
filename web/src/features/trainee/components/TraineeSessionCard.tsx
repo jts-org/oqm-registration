@@ -64,7 +64,12 @@ export function TraineeSessionCard({ session, onRegister }: TraineeSessionCardPr
           <Typography variant="body2">
             {session.start_time} - {session.end_time}
           </Typography>
-          {session.location && <Typography variant="body2">{session.location}</Typography>}
+          <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+            <strong>{t('traineeRegistration.locationLabel')}:</strong> {session.location}
+          </Typography>
+          <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+            <strong>{t('traineeRegistration.locationAliasLabel')}:</strong> {session.location_alias}
+          </Typography>
           <Stack spacing={0.25} mt={0.5}>
             {session.is_free_sparring && (session.coach_firstname || session.coach_lastname) && (
               <Typography variant="body2">

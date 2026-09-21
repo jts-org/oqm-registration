@@ -27,6 +27,7 @@ const baseSession: TraineeSessionItem = {
   start_time: '18:00',
   end_time: '19:00',
   location: 'Gym A',
+  location_alias: 'Main gym',
   coach_firstname: '',
   coach_lastname: '',
   camp_instructor_name: '',
@@ -55,5 +56,13 @@ describe('TraineeSessionCard', () => {
     await i18n.changeLanguage('fi');
     renderCard();
     expect(screen.getByText('Nyrkkeilyharjoitus')).toBeInTheDocument();
+  });
+
+  it('renders both location values with accessible labels', () => {
+    renderCard();
+    expect(screen.getAllByText(/Location/)).toHaveLength(2);
+    expect(screen.getByText('Gym A')).toBeInTheDocument();
+    expect(screen.getByText(/Location alias/)).toBeInTheDocument();
+    expect(screen.getByText('Main gym')).toBeInTheDocument();
   });
 });

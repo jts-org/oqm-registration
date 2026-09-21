@@ -72,6 +72,8 @@ export function ConfirmCoachRegistrationDialog({
         ...(session.is_free_sparring && {
           start_time: session.start_time,
           end_time: session.end_time,
+          location: session.location,
+          location_alias: session.location_alias,
         }),
       };
       const registrationId = await registerCoachForSession(payload, sessionToken);
@@ -172,6 +174,14 @@ export function ConfirmCoachRegistrationDialog({
               <strong>{t('coachQuickRegistration.sessionTimeLabel')}:</strong>{' '}
               {session.start_time} – {session.end_time}
             </Typography>
+              <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+                <strong>{t('coachQuickRegistration.location')}:</strong>{' '}
+                {session.location}
+              </Typography>
+              <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+                <strong>{t('coachQuickRegistration.locationAlias')}:</strong>{' '}
+                {session.location_alias}
+              </Typography>
           </>
         )}
         {coachName && (

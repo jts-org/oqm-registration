@@ -72,12 +72,15 @@ Odotettu tulos:
 
 ## Luo vapaa/sparraus-harjoitus
 1. Valitse Vapaa/sparraus.
-2. Täytä etunimi, sukunimi, päivämäärä, aloitusaika ja lopetusaika.
-3. Valitse Vahvista.
+2. Täytä etunimi, sukunimi, päivämäärä, aloitusaika, lopetusaika, sijainti ja sijainnin alias.
+  - Sijainnin oletus on `home gym` ja sijainnin aliaksen oletus `kotisali`.
+  - Muokkaa kumpaa tahansa arvoa, jos harjoitus järjestetään muualla.
+3. Valitse Vahvista ja tarkista molemmat sijaintiarvot vahvistusikkunassa.
 4. Vahvista ilmoittautuminen seuraavassa ikkunassa.
 
 Odotettu tulos:
 - Uusi vapaa/sparraus-ilmoittautuminen luodaan.
+- Valmentajan harjoituskortilla näytetään sekä sijainti että sijainnin alias.
 - Jos päivä on näkyvän aikajakson ulkopuolella, saat siitä ilmoituksen.
 
 ## Rekisteröi uusi PIN-koodi (valmentaja)
@@ -121,12 +124,15 @@ Odotettu tulos:
   - Muuta vapaa/sparraus-harjoituksen aikaa tai päivää ja yritä uudelleen.
 - Samanaikainen operaatio käynnissä. Päivitä sivu ennen kuin yrität uudelleen.
   - Päivitä ja yritä uudelleen.
+- Ilmoittautuminen epäonnistui, koska harjoituksen tietoja ei hyväksytty.
+  - Tarkista nimi-, päivä-, aika- ja sijaintitiedot ja yritä uudelleen. Palvelin käyttää vapaa/sparraus-harjoituksen tyhjiin sijaintiarvoihin oletuksia.
 
 ## Huomiot harjoituskorteista
 - Vihreä kortti tarkoittaa, että valmentaja on asetettu.
 - Muu väri tarkoittaa, että harjoitus on vapaa.
 - Vapaa/sparraus-korttia ilman valmentajaa ei voi ottaa Ilmoittaudu-painikkeella.
   - Luo harjoitus Vapaa/sparraus-toiminnolla.
+- Harjoituskorteilla näytetään sekä sijainti että sijainnin alias, kun taustapalvelu palauttaa ne, aikataulutetuille ja toteutuneille vapaa/sparraus-harjoituksille.
 
 ## Pikaohjeet
 - Käytä PIN-kirjautumista nopeaan käyttöön.

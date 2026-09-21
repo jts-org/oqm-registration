@@ -43,6 +43,8 @@ export interface SparringCoachRegistrationDialogProps {
     date: string;
     start_time: string;
     end_time: string;
+    location: string;
+    location_alias: string;
   }) => void;
   onCancel: () => void;
 }
@@ -62,6 +64,8 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
   const [date, setDate] = useState<Dayjs | null>(dayjs());
   const [startTime, setStartTime] = useState<Dayjs | null>(dayjs());
   const [endTime, setEndTime] = useState<Dayjs | null>(dayjs());
+  const [location, setLocation] = useState('home gym');
+  const [locationAlias, setLocationAlias] = useState('kotisali');
 
   // Sync state when dialog opens or coachData changes
   useEffect(() => {
@@ -71,6 +75,8 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
       setDate(dayjs());
       setStartTime(dayjs());
       setEndTime(dayjs());
+      setLocation('home gym');
+      setLocationAlias('kotisali');
     }
   }, [open, coachData]);
 
@@ -84,6 +90,8 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
       date: date!.format('YYYY-MM-DD'),
       start_time: startTime!.format('HH:mm'),
       end_time: endTime!.format('HH:mm'),
+      location,
+      location_alias: locationAlias,
     });
   }
 
@@ -202,6 +210,30 @@ export function SparringCoachRegistrationDialog({ open, coachData, onConfirm, on
                     value={endTime}
                     onChange={setEndTime}
                     format="HH:mm"
+                  />
+                </Item>
+              </Grid>
+            </Grid>
+            <Grid container spacing={2} sx={{ mt: 2 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Item>
+                  <TextField
+                    id="sparring-location"
+                    label={t('coachQuickRegistration.location')}
+                    value={location}
+                    onChange={e => setLocation(e.target.value)}
+                    fullWidth
+                  />
+                </Item>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Item>
+                  <TextField
+                    id="sparring-location-alias"
+                    label={t('coachQuickRegistration.locationAlias')}
+                    value={locationAlias}
+                    onChange={e => setLocationAlias(e.target.value)}
+                    fullWidth
                   />
                 </Item>
               </Grid>

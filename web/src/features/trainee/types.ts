@@ -92,6 +92,8 @@ export interface TraineeSessionItem {
   end_time: string;
   /** Session location, empty string when unknown. */
   location: string;
+  /** Localized/display alias for the session location, empty when unknown. */
+  location_alias: string;
   /** Coach first name for free/sparring sessions, otherwise empty. */
   coach_firstname: string;
   /** Coach last name for free/sparring sessions, otherwise empty. */

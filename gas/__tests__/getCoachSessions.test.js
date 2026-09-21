@@ -142,12 +142,12 @@ test('getCoachSessions_ builds regular and free/sparring sessions from sessions_
 
   const data = {
     sessions_schedule: [
-      ['schedule-basic', 'Basic', 'Perus', '2020-01-01', '2099-12-31', '0,1,2,3,4,5,6', '18:00', '19:00', 'Main Hall', '', true, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+      ['schedule-basic', 'Basic', 'Perus', '2020-01-01', '2099-12-31', '0,1,2,3,4,5,6', '18:00', '19:00', 'Main Hall', 'Pääsali', true, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
       ['schedule-sparring', 'FREE/SPARRING', 'VAPAASPARI', '2020-01-01', '2099-12-31', '0,1,2,3,4,5,6', '00:00', '00:00', '', '', true, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
     ],
     coach_registrations: [
       ['reg-basic', 'John', 'Doe', 'basic', today, true, '', '', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
-      ['reg-spar', 'John', 'Doe', 'free/sparring', today, true, '16:00', '17:00', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
+      ['reg-spar', 'John', 'Doe', 'free/sparring', today, true, '16:00', '17:00', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', 'Training Hall', 'Harjoitussali'],
     ],
     coach_login: [
       ['coach-1', 'John', 'Doe', 'JD', '1234', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'],
@@ -163,6 +163,8 @@ test('getCoachSessions_ builds regular and free/sparring sessions from sessions_
   const regular = sessions.find(s => s.session_type === 'BASIC' && s.date === today && s.is_free_sparring === false);
   assert.ok(regular, 'Expected regular BASIC session for today');
   assert.equal(regular.session_type_alias, 'PERUS');
+  assert.equal(regular.location, 'Main Hall');
+  assert.equal(regular.location_alias, 'Pääsali');
   assert.equal(regular.coach_firstname, 'John');
   assert.equal(regular.coach_lastname, 'Doe');
   assert.equal(regular.coach_alias, 'JD');
@@ -173,8 +175,28 @@ test('getCoachSessions_ builds regular and free/sparring sessions from sessions_
   assert.equal(sparring.session_type_alias, 'VAPAASPARI');
   assert.equal(sparring.start_time, '16:00');
   assert.equal(sparring.end_time, '17:00');
+  assert.equal(sparring.location, 'Training Hall');
+  assert.equal(sparring.location_alias, 'Harjoitussali');
   assert.equal(sparring.coach_alias, 'JD');
   assert.equal(sparring.registration_id, 'reg-spar');
+});
+
+test('getCoachSessions_ returns empty location fields for legacy A-J registrations', () => {
+  const sandbox = createSandbox();
+  const today = todayYmd();
+  const data = {
+    sessions_schedule: [],
+    coach_registrations: [['legacy-spar', 'John', 'Doe', 'free/sparring', today, true, '16:00', '17:00', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z']],
+    coach_login: [['coach-1', 'John', 'Doe', 'JD', '1234', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z']],
+    camps: [],
+    camp_schedules: [],
+  };
+
+  const sessions = sandbox.getCoachSessions_({ getSheetData: sheetName => data[sheetName] || [] });
+  const sparring = sessions.find(session => session.registration_id === 'legacy-spar');
+  assert.ok(sparring);
+  assert.equal(sparring.location, '');
+  assert.equal(sparring.location_alias, '');
 });
 
 function buildCoachSessionData(today) {

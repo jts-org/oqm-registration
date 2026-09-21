@@ -72,12 +72,15 @@ Expected result:
 
 ## Create a Free/Sparring Session
 1. Select Free/sparring session.
-2. Fill first name, last name, date, start time, and end time.
-3. Select Confirm.
+2. Fill first name, last name, date, start time, end time, location, and location alias.
+  - Location starts as `home gym` and location alias starts as `kotisali`.
+  - Edit either value when the session will take place somewhere else.
+3. Select Confirm and review both location values in the confirmation dialog.
 4. Confirm the registration in the next dialog.
 
 Expected result:
 - A new free/sparring registration is created.
+- The Coach session card shows both Location and Location alias values.
 - If the date is outside the visible window, you are informed it will appear when in range.
 
 ## Register New PIN Code (Coach)
@@ -121,12 +124,15 @@ Expected result:
   - Adjust free/sparring date or time and retry.
 - Concurrent operation ongoing. Refresh page before trying again.
   - Refresh and retry.
+- Registration failed because the session details were not accepted.
+  - Review the name, date, time, and location values, then retry. The server supplies defaults for blank free/sparring location values.
 
 ## Notes About Session Cards
 - Green card means a coach is assigned.
 - Non-green card means session is available.
 - Free/sparring cards without coach cannot be claimed with Register button.
   - Use Free/sparring session action to create and register one.
+- Session cards show both Location and Location alias when the backend provides them, for scheduled and realized free/sparring sessions.
 
 ## Quick Tips
 - Use PIN login for faster access.
