@@ -1,0 +1,224 @@
+---
+description: "Use when changing API contracts, Google Sheets schemas, GAS routes, backend architecture, or related developer documentation."
+---
+
+# Copilot — Repository-wide Instructions
+
+## Coding Standards (Frontend)
+
+### React
+- Use functional components and hooks.
+- Colocate component-specific CSS/TS.
+- Extract repeated logic into reusable hooks.
+- Avoid class components.
+- Keep components small and focused.
+
+### Memoization
+- Use React.memo, useMemo, and useCallback **only when profiling shows benefit**.
+- Avoid unnecessary re-renders by keeping state local and passing stable props.
+
+### Error Boundaries
+- Wrap critical UI sections to prevent full-app crashes.
+
+### Vite
+- Use ES modules everywhere.
+- Avoid unnecessary polyfills.
+- Prefix environment variables with `VITE_`.
+- Never commit secrets.
+- Use Vite plugins for SVG imports, env vars, and bundle analysis.
+
+### Imports
+- Prefer direct imports over index barrels.
+- Use index files sparingly.
+
+### Assets
+- Store images, icons, and fonts in `web/src/assets/`.
+
+### Code Splitting & Performance
+- Use dynamic imports for large or rarely used components.
+- Use modern image formats (WebP/AVIF).
+- Use Vite’s asset handling for optimization.
+- For deeper performance rules, see `.github/skills/vite-react-performance`.
+
+### State Management
+- Prefer local state.
+- Use React Context sparingly.
+- Use lightweight libraries (Zustand, Jotai) when needed.
+
+### Data Fetching
+- Use fetch with:
+  - `redirect: "follow"`
+  - `Content-Type: text/plain;charset=utf-8` for POST
+- Parse JSON responses.
+- Follow API contract defined in `.github/skills/wire-react-to-gas`.
+
+### Error Handling
+- Show user-visible messages.
+- Log context to console.
+- Follow backend error codes defined in `.github/skills/gas-error-handling`.
+
+### Styling
+- Use CSS Modules or inline styles.
+- Avoid global CSS.
+
+### ESLint
+- Enable React-specific, type-aware, and modern best-practice rulesets.
+
+### Exports
+- Avoid default exports for better discoverability.
+
+---
+
+## Coding Standards (Backend — gas/)
+
+### Architecture
+- Backend exposes `doGet` and `doPost` and returns JSON via `ContentService`.
+- All backend architectural rules are defined in:
+  - `.github/skills/gas-backend-architecture`
+  - `.github/skills/gas-response-format`
+
+### Secrets
+- Store secrets in Script Properties.
+- Never hardcode secrets.
+- See `.github/skills/security-secrets`.
+
+### Concurrency
+- All write operations must be atomic.
+- Use `tryLock(5000)` and release in `finally`.
+- Do **not** use `waitLock()`.
+- See `.github/skills/gas-locking-and-concurrency`.
+
+### Sheets
+- Follow sheet schemas and column order.
+- Never write partial rows.
+- See `.github/skills/gas-sheet-operations` and `.github/skills/sheet-schema`.
+
+### Error Handling
+- Return `{ ok: true, data: ... }` for successful backend responses.
+- Return `{ ok: false, error: "<error_code>" }`.
+- Never return stack traces.
+- See `.github/skills/gas-error-handling`.
+
+### API Contracts
+- All route names, payloads, and response formats are defined in:
+  - `.github/skills/wire-react-to-gas`
+  - `.github/skills/gas-route-registry`
+
+---
+
+## Testing
+
+- Use TDD for new features and bugfixes.
+- Write failing tests before implementation.
+- Use Jest (or equivalent) for frontend.
+- Use Apps Script built-in testing for backend.
+- Place tests next to source files or in `__tests__` folders.
+
+---
+
+## Deployment
+
+- Use `clasp push` for backend code upload.
+- Deploy Web App via Apps Script UI (not via `clasp deploy`).
+- Document deployment steps in `.github/skills/deploy-ci`.
+
+---
+
+## Documentation
+
+- Update SKILL.md files when code changes affect:
+  - API contracts
+  - sheet schemas
+  - backend architecture
+- Keep contract ownership split stable to reduce drift:
+  - `.github/skills/wire-react-to-gas` is the detailed request/response contract source.
+  - `.github/skills/gas-route-registry` is the method-qualified route inventory.
+  - When routes change, update both surfaces in the same task/PR.
+- Add rationale and test outline to PRs.
+- Keep instructions developer-focused; keep skills Copilot-focused.
+
+### Scripted Validation Notes
+
+- In Git Bash inline Node snippets, avoid `!` expressions (history expansion can corrupt checks).
+- Prefer explicit comparisons such as `includes(...)===false`.
+
+---
+
+## User Manuals
+
+- Update `user_manuals/*.en.md` and `*.fi.md` when UI behavior changes.
+- Manuals must be user-focused, not technical.
+- Include expected outcomes and error recovery steps.
+- Include a “Manual impact” note in PRs.
+
+---
+
+## Conventions
+
+- Use conventional commits (`feat:`, `fix:`, `chore:`).
+- Keep PRs small (<300 lines).
+- Remove unused imports and variables before committing.
+- Use issue-based branches (`feature/issue-123-description`).
+
+---
+
+## Pull Request Behavior (Copilot)
+
+When assisting with PR creation, editing, or review:
+
+### General PR Rules
+- Always fill every section of `pull_request_template.md`.
+- Summaries must be 2–4 sentences, concrete, and reference the linked issue.
+- Never invent issue numbers; require the user to confirm.
+- Enforce conventional commits in the PR title.
+- Enforce small PRs (<300 LOC) unless user explicitly overrides.
+- Ensure the branch name follows `feature/issue-123-description`.
+
+### Required Checks
+Before marking any checklist item as completed, Copilot must verify:
+- Tests exist, are colocated, and follow TDD rules.
+- No secrets are committed.
+- API contract matches `.github/skills/wire-react-to-gas`.
+- Backend responses follow `.github/skills/gas-response-format`.
+- Sheet schemas match `.github/skills/sheet-schema`.
+- Concurrency rules follow `.github/skills/gas-locking-and-concurrency`.
+- Documentation updates were made when flows or schemas changed.
+- User manuals updated when UI behavior changed.
+
+### Frontend-Specific PR Rules
+If PR touches `web/`, Copilot must:
+- Expand the Frontend Checklist section.
+- Validate mobile-first rules (320px, no horizontal scroll, responsive MUI props).
+- Validate theme usage (no hardcoded colors, spacing, fonts).
+- Validate localization (translation keys, unicode escapes).
+- Validate accessibility (keyboard nav, ARIA, focus mgmt).
+- Validate architecture (feature ownership and dependency direction; shared and infrastructure modules must not import features).
+- Validate API usage (`VITE_GAS_BASE_URL`, correct error handling).
+- Validate tests are colocated and cover mobile/tablet/desktop.
+
+### PR Review Behavior
+When reviewing a PR, Copilot must:
+- Identify missing tests, missing docs, missing schema updates.
+- Flag any deviation from coding standards in this file.
+- Flag any deviation from SKILL.md rules.
+- Suggest improvements but never auto-approve.
+- Provide a structured review with:
+  - **Summary**
+  - **Strengths**
+  - **Issues**
+  - **Required fixes**
+  - **Optional improvements**
+
+### Documentation Impact
+Copilot must always ask:
+- “Did this PR change API contracts, sheet schemas, or backend architecture?”
+- “Did this PR change user-visible UI behavior requiring manual updates?”
+
+If yes, Copilot must update:
+- relevant SKILL.md files  
+- `user_manuals/*.en.md` and `*.fi.md`  
+
+---
+
+
+---
