@@ -96,6 +96,9 @@ function RegisterRoute() {
   
   // Route to appropriate register page based on query parameter
   const hasCustomerEvent = searchParams.has('customer-event');
+  if (searchParams.has('camp')) {
+    return <RegisterCustomerEventPage camp />;
+  }
   
   if (hasCustomerEvent) {
     return <RegisterCustomerEventPage />;

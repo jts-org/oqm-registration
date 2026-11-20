@@ -17,6 +17,7 @@ import type {
   TraineeSessionIdentityPayload,
   TraineeSessionItem,
   ResolveCustomerEventResponse,
+  CustomerEventSession,
   RegisterTraineeBatchForCustomerEventPayload,
   RegisterTraineeBatchForCustomerEventResponse,
 } from '../types';
@@ -176,6 +177,40 @@ export async function resolveCustomerEvent(
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Failed to resolve customer event');
   return json.data as ResolveCustomerEventResponse;
+}
+
+/** Resolve a camp using the same presentation shape as a customer event. */
+export async function resolveCamp(camp: string): Promise<ResolveCustomerEventResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'resolveCamp', payload: { camp } }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Failed to resolve camp');
+  return json.data as ResolveCustomerEventResponse;
+}
+
+export async function registerTraineeBatchForCamp(
+  payload: RegisterTraineeBatchForCustomerEventPayload & {
+    camp: string;
+    schedules: Array<Pick<CustomerEventSession, 'id' | 'session_name' | 'date' | 'start_time' | 'end_time'>>;
+  }
+): Promise<RegisterTraineeBatchForCustomerEventResponse> {
+  const base = import.meta.env.VITE_GAS_BASE_URL as string;
+  if (!base) throw new Error('VITE_GAS_BASE_URL is not configured');
+  const res = await fetch(base, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ route: 'registerTraineeBatchForCamp', payload }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Registration failed');
+  return json.data as RegisterTraineeBatchForCustomerEventResponse;
 }
 
 /**

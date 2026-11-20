@@ -91,6 +91,19 @@ Kun luet asiakastapahtuman QR-koodin salilla (esim. `https://jts-org.github.io/o
 4. **Vahvistus**: Paina **Vahvista ilmoittautuminen** nähdäksesi yhteenvedon valituista harjoituksista ja henkilötiedoistasi.
 5. **Lähetys**: Paina **Lähetä ilmoittautuminen**. Onnistuneen rekisteröinnin jälkeen saat vahvistusviestin kaikista valituista harjoituksista.
 
+## Ilmoittautuminen leirille
+1. Avaa leirin ilmoittautumislinkki tai lue sen QR-koodi.
+2. Tarkista leirin tiedot. Jos harjoituksia on useita, valitse vähintään yksi;
+   ainoa saatavilla oleva harjoitus valitaan automaattisesti.
+3. Syötä etu- ja sukunimesi. Jos olet alle 18-vuotias, syötä myös ikäsi.
+4. Valitse **Vahvista ilmoittautuminen**, tarkista valitut harjoitukset ja
+   tietosi ja valitse **Lähetä ilmoittautuminen**.
+5. Odota tulosviestiä. Ilmoittautuminen valittuihin harjoituksiin on samalla
+   leiri-ilmoittautuminen; erillistä ilmoittautumista ei tarvita.
+
+Jos leiriä tai harjoituksia ei ole saatavilla, tarkista linkki järjestäjältä. Jos olet
+jo ilmoittautunut valittuun harjoitukseen, muuta valintaa ja yritä uudelleen.
+
 ## Virheet ja toipuminen
 - QR-linkistä puuttuu harjoituksen valitsin.
   - Avaa toimiva QR-linkki tai ota yhteyttä tukeen, jos linkki on viallinen.
