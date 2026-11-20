@@ -31,6 +31,8 @@ import {
   resolveCustomerEvent,
   registerTraineeForSession,
   registerTraineeBatchForCustomerEvent,
+  resolveCamp,
+  registerTraineeBatchForCamp,
 } from '../../features/trainee/api/trainee.api';
 import { SessionSelector } from '../../features/trainee/components/SessionSelector';
 import type {
@@ -55,7 +57,7 @@ interface FormState {
   age: string;
 }
 
-export function RegisterCustomerEventPage() {
+export function RegisterCustomerEventPage({ camp = false }: { camp?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -80,15 +82,16 @@ export function RegisterCustomerEventPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
+  const [campSubmitError, setCampSubmitError] = useState('');
 
   // Resolve customer event on component mount
   useEffect(() => {
-    const customerId = (searchParams.get('customer-event') ?? '').trim();
+    const customerId = (searchParams.get(camp ? 'camp' : 'customer-event') ?? '').trim();
 
     if (!customerId) {
       setResolverState(prev => ({
         ...prev,
-        error: t('customerEventRegister.missingCustomerEvent'),
+        error: t(camp ? 'campRegister.missingCamp' : 'customerEventRegister.missingCustomerEvent'),
       }));
       return;
     }
@@ -99,7 +102,7 @@ export function RegisterCustomerEventPage() {
       setResolverState(prev => ({ ...prev, loading: true, error: '' }));
 
       try {
-        const result = await resolveCustomerEvent(customerId);
+        const result = await (camp ? resolveCamp(customerId) : resolveCustomerEvent(customerId));
         if (!isCancelled && result) {
           const sessions = result.sessions ?? [];
           setResolverState(prev => ({
@@ -117,8 +120,8 @@ export function RegisterCustomerEventPage() {
       } catch (err: unknown) {
         if (isCancelled) return;
         const code = err instanceof Error ? err.message : '';
-        let errorMessage = t('customerEventRegister.invalidCustomerEvent');
-        if (code === 'missing_customer_event') {
+        let errorMessage = t(camp ? 'campRegister.invalidCamp' : 'customerEventRegister.invalidCustomerEvent');
+        if (!camp && code === 'missing_customer_event') {
           errorMessage = t('customerEventRegister.missingCustomerEvent');
         } else if (code === 'invalid_customer_event') {
           errorMessage = t('customerEventRegister.invalidCustomerEvent');
@@ -138,13 +141,15 @@ export function RegisterCustomerEventPage() {
     return () => {
       isCancelled = true;
     };
-  }, [searchParams, t]);
+  }, [searchParams, t, camp]);
 
   // Validate form
   const isFormValid = () => {
     const firstNameValid = formState.firstName.trim().length > 0;
     const lastNameValid = formState.lastName.trim().length > 0;
-    const ageValid = !formState.isUnderage || (formState.age.trim().length > 0 && !isNaN(Number(formState.age)));
+    const ageValid = !formState.isUnderage || (camp
+      ? /^\d+$/.test(formState.age.trim()) && Number(formState.age) >= 1 && Number(formState.age) <= 17
+      : formState.age.trim().length > 0 && !isNaN(Number(formState.age)));
     const sessionsValid = selectedSessionIds.length > 0;
     return firstNameValid && lastNameValid && ageValid && sessionsValid;
   };
@@ -178,9 +183,10 @@ export function RegisterCustomerEventPage() {
       selectedSessionIds.includes(s.id)
     );
 
-    if (selectedSessions.length === 0) return;
+    if (selectedSessions.length === 0 || (camp && selectedSessions.length !== selectedSessionIds.length)) return;
 
     setSubmitting(true);
+    if (camp) setCampSubmitError('');
     try {
       const ageGroup = formState.isUnderage ? 'underage' : 'adult';
 
@@ -194,7 +200,23 @@ export function RegisterCustomerEventPage() {
         ...(ageGroup === 'underage' ? { underage_age: Number(formState.age) } : {}),
       };
 
-      await registerTraineeBatchForCustomerEvent(batchPayload);
+      if (camp) {
+        await registerTraineeBatchForCamp({
+          camp: resolverState.event.id,
+          schedule_ids: batchPayload.schedule_ids,
+          schedules: selectedSessionIds.map(id => {
+            const session = selectedSessions.find(s => s.id === id)!;
+            return { id, session_name: session.session_name, date: session.date,
+              start_time: session.start_time, end_time: session.end_time };
+          }),
+          first_name: batchPayload.first_name,
+          last_name: batchPayload.last_name,
+          age_group: batchPayload.age_group,
+          ...(batchPayload.underage_age !== undefined ? { underage_age: batchPayload.underage_age } : {}),
+        });
+      } else {
+        await registerTraineeBatchForCustomerEvent(batchPayload);
+      }
       toast.success(
         selectedSessionIds.length === 1
           ? t('customerEventRegister.registrationSuccess')
@@ -209,12 +231,12 @@ export function RegisterCustomerEventPage() {
       const code = error instanceof Error ? error.message : '';
       let errorMessage = t('customerEventRegister.registrationFailed');
       
-      if (code === 'already_registered') {
+      if (code === 'already_registered' || (camp && code === 'duplicate_registration')) {
         errorMessage = t('customerEventRegister.alreadyRegistered');
       } else if (code === 'concurrent_request') {
         errorMessage = t('customerEventRegister.concurrentRequest');
       } else if (code === 'validation_failed') {
-        errorMessage = t('customerEventRegister.validationFailed');
+        errorMessage = t(camp ? 'campRegister.staleSelection' : 'customerEventRegister.validationFailed');
       } else if (code === 'validation_failed_age') {
         errorMessage = t('customerEventRegister.validationFailedAge');
       } else if (code === 'invalid_schedule') {
@@ -224,6 +246,7 @@ export function RegisterCustomerEventPage() {
       }
       
       toast.error(errorMessage);
+      if (camp) setCampSubmitError(errorMessage);
       setShowConfirmation(false);
     } finally {
       setSubmitting(false);
@@ -245,7 +268,7 @@ export function RegisterCustomerEventPage() {
         </Button>
 
         <Typography variant="h4" component="h1">
-          {t('customerEventRegister.title')}
+          {t(camp ? 'campRegister.title' : 'customerEventRegister.title')}
         </Typography>
 
         {/* Resolver state: Loading */}
@@ -261,11 +284,12 @@ export function RegisterCustomerEventPage() {
             {resolverState.error}
           </Alert>
         )}
+        {camp && campSubmitError && <Alert severity="error">{campSubmitError}</Alert>}
 
         {/* Resolver state: No sessions */}
         {hasNoSessions && (
           <Alert severity="warning">
-            {t('customerEventRegister.noSessionsAvailable')}
+            {t(camp ? 'campRegister.noSessions' : 'customerEventRegister.noSessionsAvailable')}
           </Alert>
         )}
 
@@ -276,7 +300,7 @@ export function RegisterCustomerEventPage() {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  {t('customerEventRegister.eventLabel')}
+                  {t(camp ? 'campRegister.campLabel' : 'customerEventRegister.eventLabel')}
                 </Typography>
                 <Typography variant="body1">
                   {event.event_alias || event.event}
@@ -293,7 +317,6 @@ export function RegisterCustomerEventPage() {
                 )}
               </CardContent>
             </Card>
-
             {/* Multi-session selector (2+ sessions) */}
             {hasMultipleSessions && (
               <SessionSelector
@@ -302,7 +325,7 @@ export function RegisterCustomerEventPage() {
                 onToggleSession={handleToggleSession}
                 onSelectAll={handleSelectAllSessions}
                 onDeselectAll={handleDeselectAllSessions}
-                disabled={submitting}
+                disabled={submitting || (camp && showConfirmation)}
               />
             )}
 
@@ -403,7 +426,7 @@ export function RegisterCustomerEventPage() {
 
                   <Stack spacing={1}>
                     <Typography variant="body2">
-                      <strong>{t('customerEventRegister.eventLabel')}:</strong>{' '}
+                      <strong>{t(camp ? 'campRegister.campLabel' : 'customerEventRegister.eventLabel')}:</strong>{' '}
                       {event.event_alias || event.event}
                     </Typography>
 

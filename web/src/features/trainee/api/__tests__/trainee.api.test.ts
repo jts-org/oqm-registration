@@ -16,6 +16,8 @@ import {
   registerTraineePin,
   resolveSessionSelector,
   verifyTraineePin,
+  resolveCamp,
+  registerTraineeBatchForCamp,
 } from '../trainee.api';
 import type { RegisterTraineeForSessionPayload } from '../../types';
 
@@ -23,6 +25,36 @@ const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 const BASE = 'https://script.google.com/test';
+
+describe('camp registration API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_GAS_BASE_URL', BASE);
+    mockFetch.mockReset();
+  });
+
+  it('posts the camp resolver and batch payloads using the public API', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: true, data: {} }) });
+    await resolveCamp('c1');
+    expect(mockFetch).toHaveBeenLastCalledWith(BASE, expect.objectContaining({
+      method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ route: 'resolveCamp', payload: { camp: 'c1' } }),
+    }));
+    const payload = {
+      camp: 'c1', schedule_ids: ['s1'], first_name: 'Jane', last_name: 'Doe', age_group: 'adult' as const,
+      schedules: [{ id: 's1', session_name: 'First', date: '2026-04-01', start_time: '10:00', end_time: '11:00' }],
+    };
+    await registerTraineeBatchForCamp(payload);
+    expect(mockFetch).toHaveBeenLastCalledWith(BASE, expect.objectContaining({
+      body: JSON.stringify({ route: 'registerTraineeBatchForCamp', payload }),
+    }));
+  });
+
+  it('propagates backend error codes', async () => {
+    mockFetch.mockResolvedValue({ json: async () => ({ ok: false, error: 'already_registered' }) });
+    await expect(resolveCamp('c1')).rejects.toThrow('already_registered');
+  });
+});
 
 const validAdultPayload: RegisterTraineeForSessionPayload = {
   first_name: 'Jane',

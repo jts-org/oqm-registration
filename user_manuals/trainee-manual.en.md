@@ -91,6 +91,19 @@ When scanning a customer event QR code at the gym (e.g. `https://jts-org.github.
 4. **Confirmation**: Select **Confirm Registration** to view the summary of your selected sessions and identity details.
 5. **Submission**: Select **Submit Registration**. Upon success, a confirmation message confirms your registration for all selected sessions.
 
+## Camp registration
+1. Open the camp registration link or scan its QR code.
+2. Check the camp details. For multiple sessions, select at least one session;
+   a single available session is selected automatically.
+3. Enter your first and last name. If you are under 18, enter your age.
+4. Choose **Confirm Registration**, review the selected sessions and your
+   details, then choose **Submit Registration**.
+5. Wait for the result. Registering for the selected sessions is your camp
+   registration; no separate enrollment is needed.
+
+If the camp or sessions are unavailable, check the link with the organizer. If a selected
+session is already registered, change the selection before trying again.
+
 ## Error and Recovery
 - Missing session selector in the QR link.
   - Open a valid QR link or contact support if the link is broken.

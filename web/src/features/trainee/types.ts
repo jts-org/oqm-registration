@@ -196,6 +196,8 @@ export interface ResolveCustomerEventResponse {
  * @see .github/skills/wire-react-to-gas/SKILL.md
  */
 export interface RegisterTraineeBatchForCustomerEventPayload {
+  /** Existing customer-event identifier sent by the registration page. */
+  customer_event?: string;
   /** Trainee's first name (required). */
   first_name: string;
   /** Trainee's last name (required). */

@@ -222,6 +222,16 @@ function doPost(e) {
       }
       return json_({ ok: true, data: result.data });
     }
+    if (route === 'resolveCamp' || route === 'registerTraineeBatchForCamp') {
+      try {
+        const result = route === 'resolveCamp'
+          ? resolveCamp_(payload, createSheetReader_())
+          : registerTraineeBatchForCamp_(payload);
+        return json_(result);
+      } catch (err) {
+        return json_({ ok: false, error: 'validation_failed' });
+      }
+    }
     if (route === 'registerTraineeBatchForCustomerEvent') {
       const result = registerTraineeBatchForCustomerEvent_(payload);
       if (!result.ok) {
@@ -433,6 +443,8 @@ function isPublicRoute_(route) {
     'getTraineeSessions',
     'resolveSessionSelector',
     'resolveCustomerEvent',
+    'resolveCamp',
+    'registerTraineeBatchForCamp',
     'registerTraineeForSession',
     'registerTraineeBatchForCustomerEvent',
     'registerTraineePin',
@@ -1468,6 +1480,118 @@ function resolveSessionSelector_(payload, reader) {
       date: today
     }
   };
+}
+
+/**
+ * Resolve a camp and its in-range schedules using the existing camp schema.
+ * Camps and camp schedules have no realized flag.
+ */
+function resolveCamp_(payload, reader) {
+  const campId = String((payload && payload.camp) || '').trim();
+  if (!campId) return { ok: false, error: 'validation_failed' };
+  const camp = reader.getSheetData('camps').find(row => String(row[0] || '') === campId);
+  if (!camp) return { ok: false, error: 'validation_failed' };
+  const tz = Session.getScriptTimeZone();
+  const start = normalizeDateYmd_(camp[4], tz);
+  const end = normalizeDateYmd_(camp[5], tz);
+  if (!isValidCampDate_(start) || !isValidCampDate_(end) || start > end) {
+    return { ok: false, error: 'validation_failed' };
+  }
+  const sessions = reader.getSheetData('camp_schedules').filter(row => {
+    const date = normalizeDateYmd_(row[3], tz);
+    const startTime = normalizeTimeHm_(row[4], tz);
+    const endTime = normalizeTimeHm_(row[5], tz);
+    return String(row[1] || '') === campId && !!row[0] &&
+      isValidCampDate_(date) && date >= start && date <= end &&
+      /^([01]\d|2[0-3]):[0-5]\d$/.test(startTime) &&
+      /^([01]\d|2[0-3]):[0-5]\d$/.test(endTime) && startTime < endTime;
+  }).map(row => ({
+    id: String(row[0]), event_id: campId, session_name: String(row[2] || ''),
+    session_name_alias: '', date: normalizeDateYmd_(row[3], tz),
+    start_time: normalizeTimeHm_(row[4], tz), end_time: normalizeTimeHm_(row[5], tz),
+    realized: true, created_at: String(row[6] || ''), updated_at: String(row[7] || '')
+  }));
+  return { ok: true, data: {
+    event: { id: campId, event: String(camp[1] || ''), event_alias: String(camp[2] || ''),
+      instructor: String(camp[3] || ''), start_date: start, end_date: end,
+      realized: true, created_at: String(camp[6] || ''), updated_at: String(camp[7] || '') },
+    sessions: sessions
+  } };
+}
+
+function isValidCampDate_(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(value + 'T00:00:00Z');
+  return !isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+/**
+ * Validate the complete selection and write one contiguous batch under the lock.
+ * There is no separate camp enrollment record.
+ */
+function registerTraineeBatchForCamp_(payload) {
+  const first = String((payload && payload.first_name) || '').trim();
+  const last = String((payload && payload.last_name) || '').trim();
+  const ageGroup = String((payload && payload.age_group) || '').trim().toLowerCase();
+  const age = ageGroup === 'underage' ? String(payload.underage_age || '').trim() : '';
+  const ids = payload && Array.isArray(payload.schedule_ids) ? payload.schedule_ids : [];
+  const snapshots = payload && Array.isArray(payload.schedules) ? payload.schedules : [];
+  if (!first || !last || (ageGroup !== 'adult' && ageGroup !== 'underage') || !ids.length) {
+    return { ok: false, error: 'validation_failed' };
+  }
+  if (snapshots.length !== ids.length) return { ok: false, error: 'validation_failed' };
+  if (ageGroup === 'underage' && (!/^\d+$/.test(age) || Number(age) < 1 || Number(age) > 17)) {
+    return { ok: false, error: 'validation_failed_age' };
+  }
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, error: 'concurrent_request' };
+  try {
+    const resolved = resolveCamp_(payload, { getSheetData: getSheetData });
+    if (!resolved.ok) return resolved;
+    const registrations = getSheetData('trainee_registrations');
+    const seen = {};
+    const selected = [];
+    for (let i = 0; i < ids.length; i++) {
+      const id = typeof ids[i] === 'string' ? ids[i].trim() : '';
+      const session = resolved.data.sessions.find(s => s.id === id);
+      const snapshot = snapshots[i];
+      if (!id || !session || seen[id] || !snapshot || snapshot.id !== id ||
+          snapshot.session_name !== session.session_name || snapshot.date !== session.date ||
+          snapshot.start_time !== session.start_time || snapshot.end_time !== session.end_time) {
+        return { ok: false, error: 'validation_failed' };
+      }
+      seen[id] = true;
+      const duplicate = registrations.some(row =>
+        (row.length < 11 || getBooleanValue(row[10])) &&
+        String(row[1] || '').trim().toLowerCase() === first.toLowerCase() &&
+        String(row[2] || '').trim().toLowerCase() === last.toLowerCase() &&
+        String(row[3] || '').trim().toLowerCase() === ageGroup &&
+        String(row[4] || '').trim() === age && String(row[6] || '').trim() === id);
+      if (duplicate) return { ok: false, error: 'already_registered' };
+      selected.push(session);
+    }
+    const sheet = getSheetByName('trainee_registrations');
+    if (!sheet) throw new Error('Missing registration sheet');
+    const now = new Date().toISOString();
+    const results = [];
+    const rows = selected.map(session => {
+      const id = Utilities.getUuid();
+      results.push({ schedule_id: session.id, registration_id: id });
+      const campName = resolved.data.event.event || resolved.data.event.event_alias;
+      const sessionName = session.session_name.trim();
+      const type = sessionName && !sessionName.toLowerCase().startsWith(campName.toLowerCase())
+        ? campName + ' - ' + sessionName : (sessionName || campName);
+      return [id, first, last, ageGroup, ageGroup === 'underage' ? Number(age) : '', type, session.id, session.date,
+        session.start_time, session.end_time, true, now, now];
+    });
+    const firstRow = sheet.getLastRow() + 1;
+    const extraRows = firstRow + rows.length - 1 - sheet.getMaxRows();
+    if (extraRows > 0) sheet.insertRowsAfter(sheet.getMaxRows(), extraRows);
+    sheet.getRange(firstRow, 1, rows.length, 13).setValues(rows);
+    return { ok: true, data: { registrations: results } };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**
